@@ -1,0 +1,18 @@
+# API Configuration
+# Copy this file to .env and fill in your actual values
+# Never commit the .env file to version control
+
+# Required: Base URL for the third-party verification API
+REACT_APP_API_BASE_URL=https://selfie.imsgh.org:2035/skyface
+
+# Required: User ID for API authentication
+REACT_APP_DEFAULT_USER_ID=your-user-id-here
+
+# Required: Merchant Key for API authentication
+REACT_APP_DEFAULT_MERCHANT_KEY=your-merchant-key-here
+
+# Optional: Center (defaults to 'BRANCHLESS' if not set)
+REACT_APP_DEFAULT_CENTER=BRANCHLESS
+
+# Note: Users will only need to enter their Ghana card number (PIN Number)
+# in the frontend UI. All other credentials are loaded from this .env file.

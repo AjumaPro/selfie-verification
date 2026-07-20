@@ -1,0 +1,146 @@
+.description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.mode-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-option {
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.mode-option strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #222;
+  font-size: 1rem;
+}
+
+.mode-option span {
+  display: block;
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.mode-option:hover {
+  border-color: #81c784;
+}
+
+.mode-option.active {
+  border-color: #2e7d32;
+  background: #f1f8f1;
+  box-shadow: 0 0 0 1px #2e7d32;
+}
+
+.form-row {
+  margin-bottom: 1rem;
+}
+
+.form-group.full-width {
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.4rem;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.form-hint.warn {
+  color: #b26a00;
+}
+
+.image-info-success {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.local-detect-details {
+  margin-top: 1rem;
+  color: #666;
+}
+
+.local-detect-details summary {
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.btn-secondary:hover {
+  background: #a5d6a7;
+}
+
+@media (max-width: 700px) {
+  .mode-options {
+    grid-template-columns: 1fr;
+  }
+}

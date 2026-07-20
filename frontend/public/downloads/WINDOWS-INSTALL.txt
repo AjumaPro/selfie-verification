@@ -1,0 +1,32 @@
+Selfie Verification — Windows install
+=====================================
+
+File: Selfie-Verification-Windows.exe
+Type: NSIS installer (64-bit)
+
+Install
+-------
+1. Download Selfie-Verification-Windows.exe
+2. Double-click to run the setup wizard
+3. Choose install folder (optional)
+4. Finish — desktop and Start Menu shortcuts are created
+5. Launch "Selfie Verification"
+
+Windows SmartScreen warning (unsigned build)
+--------------------------------------------
+Because this installer is not code-signed with a paid certificate,
+Windows may show: "Windows protected your PC"
+
+Fix:
+1. Click "More info"
+2. Click "Run anyway"
+
+Antivirus may also scan the first run; allow the app if prompted.
+
+Camera / microphone
+-------------------
+Allow camera access when Windows or the app asks — required for live selfie capture.
+
+Support
+-------
+Rebuild installers: cd frontend && npm run electron:build

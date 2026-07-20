@@ -1,0 +1,269 @@
+.admin-dash {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  border: 1px solid #e3e8f0;
+}
+
+.admin-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.admin-dash-header h2 {
+  margin: 0 0 0.35rem;
+  color: #1a237e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.45rem;
+}
+
+.admin-dash-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+  max-width: 40rem;
+  line-height: 1.45;
+}
+
+.admin-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid #c5cae9;
+  border-radius: 8px;
+  background: #e8eaf6;
+  color: #283593;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-refresh:hover:not(:disabled) {
+  background: #c5cae9;
+}
+
+.admin-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.admin-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  background: #e8eaf6;
+  color: #283593;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.admin-stat.pending {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.admin-stat.approved {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.admin-error {
+  background: #fee;
+  color: #c33;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.admin-info {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.admin-loading {
+  color: #666;
+}
+
+.admin-create {
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.15rem;
+  background: #f7f8fc;
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+}
+
+.admin-create h3 {
+  margin: 0 0 0.85rem;
+  font-size: 1.05rem;
+  color: #283593;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-create .form-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.admin-create .btn-primary {
+  background: linear-gradient(135deg, #5c6bc0 0%, #283593 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.65rem 1rem;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  color: #555;
+  font-weight: 700;
+  background: #f7f8fc;
+}
+
+.admin-table tr.row-pending {
+  background: #fffdf5;
+}
+
+.admin-empty {
+  text-align: center;
+  color: #888;
+  padding: 1.5rem !important;
+}
+
+.role-badge,
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.role-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.role-badge.super {
+  background: #e8eaf6;
+  color: #1a237e;
+}
+
+.status-badge.pending {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.status-badge.approved {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.rejected {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-actions-muted {
+  color: #aaa;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #444;
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.action-btn.approve {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #c8e6c9;
+}
+
+.action-btn.reject {
+  background: #fff8e1;
+  color: #f57f17;
+  border-color: #ffe082;
+}
+
+.action-btn.delete {
+  background: #ffebee;
+  color: #c62828;
+  border-color: #ffcdd2;
+}
+
+@media (max-width: 700px) {
+  .admin-create-grid {
+    grid-template-columns: 1fr;
+  }
+}

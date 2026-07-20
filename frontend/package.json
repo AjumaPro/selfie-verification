@@ -1,0 +1,123 @@
+{
+  "name": "selfie-verification-ui",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Selfie Verification — Ghana Card KYC face verification",
+  "author": "GLICO",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "dependencies": {
+    "face-api.js": "^0.22.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.4.1",
+    "react-icons": "^5.5.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "react-scripts eject",
+    "download-models": "node download-models.js",
+    "package:download": "npm run build && node package-download.js",
+    "electron:dev": "ELECTRON_START_URL=http://localhost:3000 electron .",
+    "electron:build": "node scripts/electron-build.js --mac --win",
+    "electron:build:mac": "node scripts/electron-build.js --mac",
+    "electron:build:win": "node scripts/electron-build.js --win"
+  },
+  "build": {
+    "appId": "org.glico.selfie-verification",
+    "productName": "Selfie Verification",
+    "copyright": "Copyright © GLICO",
+    "extends": null,
+    "directories": {
+      "output": "dist-desktop",
+      "buildResources": "electron/assets"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/node_modules/**",
+      "!build/**/*.map",
+      "!build/downloads/**"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "asar": true,
+    "npmRebuild": false,
+    "afterPack": "./electron/afterPack.js",
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null,
+      "artifactName": "Selfie-Verification-Mac-${version}.${ext}"
+    },
+    "dmg": {
+      "title": "Selfie Verification",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Selfie-Verification-Windows-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Selfie Verification",
+      "installerHeaderIcon": "electron/assets/icon.png",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@craco/craco": "^7.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

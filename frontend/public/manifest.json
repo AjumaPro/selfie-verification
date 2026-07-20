@@ -1,0 +1,31 @@
+{
+  "short_name": "Selfie Verify",
+  "name": "Selfie Verification",
+  "description": "Verify selfies with face detection and Ghana Card KYC",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#e8f5e9",
+  "theme_color": "#2e7d32",
+  "categories": ["business", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
