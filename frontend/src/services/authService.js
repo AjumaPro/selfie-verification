@@ -15,32 +15,41 @@ const API_BASE = (process.env.REACT_APP_AUTH_API_URL || 'http://localhost:4000')
   ''
 );
 
-function clearAllAuthStorage() {
+function clearTokenStorage() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(USER_KEY);
 }
 
+/** true = stay signed in; false = session only; null = never chosen (default on) */
+export function getRememberPreference() {
+  const v = localStorage.getItem(REMEMBER_KEY);
+  if (v === '1') return true;
+  if (v === '0') return false;
+  return null;
+}
+
 export function isRememberEnabled() {
-  return localStorage.getItem(REMEMBER_KEY) === '1';
+  // Default ON unless the user explicitly opted out
+  return getRememberPreference() !== false;
 }
 
 function setRememberPreference(enabled) {
-  if (enabled) localStorage.setItem(REMEMBER_KEY, '1');
-  else localStorage.removeItem(REMEMBER_KEY);
+  localStorage.setItem(REMEMBER_KEY, enabled ? '1' : '0');
 }
 
 function saveSession(token, user, remember) {
-  clearAllAuthStorage();
+  clearTokenStorage();
   setRememberPreference(Boolean(remember));
   const store = remember ? localStorage : sessionStorage;
   store.setItem(TOKEN_KEY, token);
   store.setItem(USER_KEY, JSON.stringify(user));
 }
 
-function clearSession() {
-  clearAllAuthStorage();
+function clearSession({ clearRemember = false } = {}) {
+  clearTokenStorage();
+  if (clearRemember) localStorage.removeItem(REMEMBER_KEY);
 }
 
 export function getToken() {
@@ -57,6 +66,15 @@ export function getCachedUser() {
   }
 }
 
+class AuthRequestError extends Error {
+  constructor(message, { status = 0, network = false } = {}) {
+    super(message);
+    this.name = 'AuthRequestError';
+    this.status = status;
+    this.network = network;
+  }
+}
+
 async function request(path, { method = 'GET', body, token } = {}) {
   let res;
   try {
@@ -69,8 +87,9 @@ async function request(path, { method = 'GET', body, token } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new Error(
-      'Cannot reach the auth server. Start the API with: cd backend && npm run dev'
+    throw new AuthRequestError(
+      'Cannot reach the auth server. Start the API with: cd backend && npm run dev',
+      { network: true }
     );
   }
 
@@ -82,7 +101,9 @@ async function request(path, { method = 'GET', body, token } = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed (${res.status})`);
+    throw new AuthRequestError(data?.error || `Request failed (${res.status})`, {
+      status: res.status,
+    });
   }
   return data;
 }
@@ -91,19 +112,45 @@ export function getSession() {
   return getCachedUser();
 }
 
+/**
+ * Restore session on app start.
+ * - Remembered tokens live in localStorage and survive reloads.
+ * - Network blips do NOT wipe a remembered session (uses cache).
+ * - Only 401/403 clear the stored session.
+ */
 export async function restoreSession() {
   const token = getToken();
   if (!token) {
-    clearAllAuthStorage();
     return null;
   }
 
+  const remember =
+    Boolean(localStorage.getItem(TOKEN_KEY)) || isRememberEnabled();
+
   try {
     const { user } = await request('/api/auth/me', { token });
-    saveSession(token, user, isRememberEnabled());
+    saveSession(token, user, remember);
     return user;
-  } catch {
-    clearSession();
+  } catch (err) {
+    const status = err?.status || 0;
+    const isAuthReject = status === 401 || status === 403;
+
+    if (isAuthReject) {
+      clearSession();
+      return null;
+    }
+
+    // Network / server error: keep remembered session from cache
+    const cached = getCachedUser();
+    if (cached && remember) {
+      return cached;
+    }
+
+    // Session-only tab: if API unreachable, still allow cached session for this tab
+    if (cached && sessionStorage.getItem(TOKEN_KEY)) {
+      return cached;
+    }
+
     return null;
   }
 }
@@ -173,6 +220,52 @@ export async function deleteUser(id) {
   return request(`/api/auth/users/${id}`, { method: 'DELETE', token });
 }
 
+export async function changeOwnPassword({ currentPassword, newPassword }) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return request('/api/auth/me/password', {
+    method: 'PATCH',
+    token,
+    body: { currentPassword, newPassword },
+  });
+}
+
+export async function updateOwnProfile({ fullName, email, organization }) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  const { user } = await request('/api/auth/me', {
+    method: 'PATCH',
+    token,
+    body: { fullName, email, organization },
+  });
+  // Keep cached profile in sync
+  const remember = Boolean(localStorage.getItem(TOKEN_KEY)) || isRememberEnabled();
+  saveSession(token, user, remember);
+  return user;
+}
+
+export async function resetUserPassword(id, newPassword) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return request(`/api/auth/users/${id}/password`, {
+    method: 'PATCH',
+    token,
+    body: { newPassword },
+  });
+}
+
+export async function updateUser(id, { fullName, email, organization }) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  const { user } = await request(`/api/auth/users/${id}`, {
+    method: 'PATCH',
+    token,
+    body: { fullName, email, organization },
+  });
+  return user;
+}
+
 export function logout() {
-  clearSession();
+  // Keep remember preference so the checkbox stays as the user left it
+  clearSession({ clearRemember: false });
 }

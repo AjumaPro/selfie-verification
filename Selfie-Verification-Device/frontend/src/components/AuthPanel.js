@@ -16,14 +16,13 @@ const emptyRegister = {
  * Login / Registration / Superadmin gate.
  */
 const AuthPanel = () => {
-  const { login, loginSuperAdmin, register, busy, rememberDefault } = useAuth();
+  const { login, loginSuperAdmin, register, busy } = useAuth();
   const [mode, setMode] = useState('login'); // login | register | superadmin
   const [loginForm, setLoginForm] = useState(emptyLogin);
   const [adminForm, setAdminForm] = useState(emptyLogin);
   const [registerForm, setRegisterForm] = useState(emptyRegister);
-  const [rememberMe, setRememberMe] = useState(
-    rememberDefault !== undefined ? rememberDefault : true
-  );
+  // Always default ON so Stay signed in works unless the user turns it off
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
 
@@ -77,17 +76,18 @@ const AuthPanel = () => {
   };
 
   const rememberField = (
-    <label className="auth-remember">
+    <div className="auth-remember">
       <input
+        id="stay-signed-in"
         type="checkbox"
         checked={rememberMe}
         onChange={(e) => setRememberMe(e.target.checked)}
       />
-      <span>
+      <label htmlFor="stay-signed-in">
         <strong>Stay signed in on this device</strong>
         <em>Skip login next time you open the app</em>
-      </span>
-    </label>
+      </label>
+    </div>
   );
 
   const emailPasswordFields = (prefix, form, setForm) => (

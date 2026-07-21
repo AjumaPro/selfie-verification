@@ -198,21 +198,23 @@
   user-select: none;
 }
 
-.auth-remember input {
-  margin-top: 0.2rem;
-  width: 1.05rem;
-  height: 1.05rem;
+.auth-remember input[type='checkbox'] {
+  margin-top: 0.25rem;
+  width: 1.15rem;
+  height: 1.15rem;
   accent-color: #4caf50;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
-.auth-remember span {
+.auth-remember label {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   line-height: 1.35;
   color: #333;
   font-size: 0.92rem;
+  cursor: pointer;
 }
 
 .auth-remember strong {

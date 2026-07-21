@@ -111,6 +111,18 @@
   border-radius: 12px;
 }
 
+.admin-self-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.admin-edit-panel {
+  border-color: #c5cae9;
+  background: #eef0fa;
+}
+
 .admin-create h3 {
   margin: 0 0 0.85rem;
   font-size: 1.05rem;

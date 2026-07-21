@@ -17,14 +17,16 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    authService
-      .restoreSession()
-      .then((next) => {
+
+    (async () => {
+      try {
+        const next = await authService.restoreSession();
         if (!cancelled) setUser(next);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setBooting(false);
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
@@ -55,7 +57,6 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (payload) => {
     setBusy(true);
     try {
-      // Returns pending registration info — does not set session
       return await authService.register(payload);
     } finally {
       setBusy(false);
@@ -65,6 +66,10 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     authService.logout();
     setUser(null);
+  }, []);
+
+  const refreshUser = useCallback((next) => {
+    if (next) setUser(next);
   }, []);
 
   const isSuperAdmin = user?.role === 'superadmin';
@@ -81,8 +86,19 @@ export function AuthProvider({ children }) {
       loginSuperAdmin,
       register,
       logout,
+      refreshUser,
     }),
-    [user, isSuperAdmin, busy, booting, login, loginSuperAdmin, register, logout]
+    [
+      user,
+      isSuperAdmin,
+      busy,
+      booting,
+      login,
+      loginSuperAdmin,
+      register,
+      logout,
+      refreshUser,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

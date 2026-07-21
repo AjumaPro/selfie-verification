@@ -95,8 +95,12 @@ Use the **Admin** tab in the UI (not normal Sign in).
 | `POST` | `/api/auth/login` | — | User login (approved only) |
 | `POST` | `/api/auth/superadmin/login` | — | Superadmin login |
 | `GET` | `/api/auth/me` | Bearer | Current user |
+| `PATCH` | `/api/auth/me` | Bearer | Update own profile |
+| `PATCH` | `/api/auth/me/password` | Bearer | Change own password |
 | `GET` | `/api/auth/users` | Superadmin | List users |
 | `POST` | `/api/auth/users` | Superadmin | Create account |
+| `PATCH` | `/api/auth/users/:id` | Superadmin | Edit user profile |
+| `PATCH` | `/api/auth/users/:id/password` | Superadmin | Reset user password |
 | `PATCH` | `/api/auth/users/:id/status` | Superadmin | `pending` / `approved` / `rejected` |
 | `DELETE` | `/api/auth/users/:id` | Superadmin | Delete user |
 

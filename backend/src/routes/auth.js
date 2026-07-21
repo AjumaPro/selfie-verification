@@ -242,4 +242,151 @@ router.delete('/users/:id', authRequired, requireSuperAdmin, async (req, res) =>
   }
 });
 
+/** Change own password (any signed-in user) */
+router.patch('/me/password', authRequired, async (req, res) => {
+  try {
+    const currentPassword = String(req.body?.currentPassword || '');
+    const newPassword = String(req.body?.newPassword || '');
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    }
+
+    const result = await query(
+      `SELECT id, password_hash FROM users WHERE id = $1`,
+      [req.userId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const ok = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+    if (!ok) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await query(
+      `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`,
+      [req.userId, passwordHash]
+    );
+
+    return res.json({ ok: true, message: 'Password updated.' });
+  } catch (e) {
+    console.error('change password error:', e);
+    return res.status(500).json({ error: 'Could not change password' });
+  }
+});
+
+/** Update own profile (name / email / organization) */
+router.patch('/me', authRequired, async (req, res) => {
+  try {
+    const fullName = String(req.body?.fullName || '').trim();
+    const email = normalizeEmail(req.body?.email);
+    const organization = String(req.body?.organization || '').trim();
+
+    if (fullName.length < 2) {
+      return res.status(400).json({ error: 'Please enter your full name.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const clash = await query(
+      `SELECT id FROM users WHERE email = $1 AND id <> $2`,
+      [email, req.userId]
+    );
+    if (clash.rowCount > 0) {
+      return res.status(409).json({ error: 'That email is already in use.' });
+    }
+
+    const result = await query(
+      `UPDATE users
+       SET full_name = $2, email = $3, organization = $4, updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, email, full_name, organization, role, status, created_at`,
+      [req.userId, fullName, email, organization]
+    );
+
+    return res.json({ user: publicUser(result.rows[0]) });
+  } catch (e) {
+    console.error('update profile error:', e);
+    return res.status(500).json({ error: 'Could not update profile' });
+  }
+});
+
+/** Superadmin resets another user's password */
+router.patch('/users/:id/password', authRequired, requireSuperAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const newPassword = String(req.body?.newPassword || '');
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    }
+
+    const existing = await query(`SELECT id, role FROM users WHERE id = $1`, [id]);
+    if (existing.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await query(
+      `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`,
+      [id, passwordHash]
+    );
+
+    return res.json({ ok: true, message: 'Password reset.' });
+  } catch (e) {
+    console.error('reset password error:', e);
+    return res.status(500).json({ error: 'Could not reset password' });
+  }
+});
+
+/** Superadmin updates another user's profile */
+router.patch('/users/:id', authRequired, requireSuperAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const fullName = String(req.body?.fullName || '').trim();
+    const email = normalizeEmail(req.body?.email);
+    const organization = String(req.body?.organization || '').trim();
+
+    if (fullName.length < 2) {
+      return res.status(400).json({ error: 'Please enter a full name.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const existing = await query(`SELECT id, role FROM users WHERE id = $1`, [id]);
+    if (existing.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const clash = await query(
+      `SELECT id FROM users WHERE email = $1 AND id <> $2`,
+      [email, id]
+    );
+    if (clash.rowCount > 0) {
+      return res.status(409).json({ error: 'That email is already in use.' });
+    }
+
+    const result = await query(
+      `UPDATE users
+       SET full_name = $2, email = $3, organization = $4, updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, email, full_name, organization, role, status, created_at`,
+      [id, fullName, email, organization]
+    );
+
+    return res.json({ user: publicUser(result.rows[0]) });
+  } catch (e) {
+    console.error('update user error:', e);
+    return res.status(500).json({ error: 'Could not update account' });
+  }
+});
+
 module.exports = router;

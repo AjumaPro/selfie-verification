@@ -7,12 +7,19 @@ import {
   FaTimes,
   FaTrash,
   FaUserPlus,
+  FaKey,
+  FaEdit,
+  FaUserCog,
 } from 'react-icons/fa';
 import {
   listUsers,
   createUser,
   setUserStatus,
   deleteUser,
+  changeOwnPassword,
+  updateOwnProfile,
+  resetUserPassword,
+  updateUser,
 } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import './SuperAdminDashboard.css';
@@ -26,7 +33,7 @@ const emptyCreate = {
 };
 
 const SuperAdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -34,6 +41,38 @@ const SuperAdminDashboard = () => {
   const [info, setInfo] = useState('');
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [creating, setCreating] = useState(false);
+
+  const [profileForm, setProfileForm] = useState({
+    fullName: user?.fullName || '',
+    email: user?.email || '',
+    organization: user?.organization || '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const [editUser, setEditUser] = useState(null);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    email: '',
+    organization: '',
+  });
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetPassword, setResetPassword] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        organization: user.organization || '',
+      });
+    }
+  }, [user]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,12 +100,13 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  const runAction = async (id, action) => {
+  const runAction = async (id, action, successMsg) => {
     setBusyId(id);
     setError('');
     setInfo('');
     try {
       await action();
+      if (successMsg) setInfo(successMsg);
       await load();
     } catch (err) {
       setError(err.message || 'Action failed');
@@ -81,10 +121,7 @@ const SuperAdminDashboard = () => {
     setError('');
     setInfo('');
     try {
-      await createUser({
-        ...createForm,
-        role: 'user',
-      });
+      await createUser({ ...createForm, role: 'user' });
       setCreateForm(emptyCreate);
       setInfo('Account created.');
       await load();
@@ -92,6 +129,103 @@ const SuperAdminDashboard = () => {
       setError(err.message || 'Could not create account');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const onSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setError('');
+    setInfo('');
+    try {
+      const next = await updateOwnProfile(profileForm);
+      refreshUser?.(next);
+      setInfo('Your account details were updated.');
+      await load();
+    } catch (err) {
+      setError(err.message || 'Could not update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const onChangePassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await changeOwnPassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setInfo('Your password was changed. Use it next time you sign in.');
+    } catch (err) {
+      setError(err.message || 'Could not change password');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const openEdit = (u) => {
+    setEditUser(u);
+    setEditForm({
+      fullName: u.fullName || '',
+      email: u.email || '',
+      organization: u.organization || '',
+    });
+    setResetTarget(null);
+    setError('');
+    setInfo('');
+  };
+
+  const onSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editUser) return;
+    setBusyId(editUser.id);
+    setError('');
+    setInfo('');
+    try {
+      const next = await updateUser(editUser.id, editForm);
+      if (next.id === user?.id) refreshUser?.(next);
+      setEditUser(null);
+      setInfo('Account updated.');
+      await load();
+    } catch (err) {
+      setError(err.message || 'Could not update account');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetTarget) return;
+    if (resetPassword.length < 6) {
+      setError('New password must be at least 6 characters.');
+      return;
+    }
+    setBusyId(resetTarget.id);
+    setError('');
+    setInfo('');
+    try {
+      await resetUserPassword(resetTarget.id, resetPassword);
+      setInfo(`Password reset for ${resetTarget.email}.`);
+      setResetTarget(null);
+      setResetPassword('');
+    } catch (err) {
+      setError(err.message || 'Could not reset password');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -106,8 +240,8 @@ const SuperAdminDashboard = () => {
             <FaUserShield /> Super Admin
           </h2>
           <p>
-            Signed in as <strong>{user?.email}</strong>. Approve, reject, create, or delete
-            accounts. You also have full access to verification below.
+            Manage your account, create users, approve registrations, and reset passwords.
+            Verification tools are available below.
           </p>
         </div>
         <button
@@ -141,6 +275,90 @@ const SuperAdminDashboard = () => {
 
       {error && <div className="admin-error">{error}</div>}
       {info && <div className="admin-info">{info}</div>}
+
+      <div className="admin-self-grid">
+        <form className="admin-create" onSubmit={onSaveProfile}>
+          <h3>
+            <FaUserCog /> My account
+          </h3>
+          <div className="admin-create-grid">
+            <input
+              className="form-input"
+              placeholder="Full name"
+              value={profileForm.fullName}
+              onChange={(e) =>
+                setProfileForm((f) => ({ ...f, fullName: e.target.value }))
+              }
+              required
+            />
+            <input
+              className="form-input"
+              type="email"
+              placeholder="Email"
+              value={profileForm.email}
+              onChange={(e) => setProfileForm((f) => ({ ...f, email: e.target.value }))}
+              required
+            />
+            <input
+              className="form-input"
+              placeholder="Organization"
+              value={profileForm.organization}
+              onChange={(e) =>
+                setProfileForm((f) => ({ ...f, organization: e.target.value }))
+              }
+            />
+            <button type="submit" className="btn btn-primary" disabled={savingProfile}>
+              {savingProfile ? 'Saving…' : 'Save account'}
+            </button>
+          </div>
+        </form>
+
+        <form className="admin-create" onSubmit={onChangePassword}>
+          <h3>
+            <FaKey /> Change my password
+          </h3>
+          <div className="admin-create-grid">
+            <input
+              className="form-input"
+              type="password"
+              placeholder="Current password"
+              value={passwordForm.currentPassword}
+              onChange={(e) =>
+                setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))
+              }
+              required
+              autoComplete="current-password"
+            />
+            <input
+              className="form-input"
+              type="password"
+              placeholder="New password (min 6)"
+              value={passwordForm.newPassword}
+              onChange={(e) =>
+                setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
+              }
+              minLength={6}
+              required
+              autoComplete="new-password"
+            />
+            <input
+              className="form-input"
+              type="password"
+              placeholder="Confirm new password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) =>
+                setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
+              }
+              minLength={6}
+              required
+              autoComplete="new-password"
+            />
+            <button type="submit" className="btn btn-primary" disabled={savingPassword}>
+              {savingPassword ? 'Updating…' : 'Update password'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       <form className="admin-create" onSubmit={onCreate}>
         <h3>
@@ -193,6 +411,85 @@ const SuperAdminDashboard = () => {
         </div>
       </form>
 
+      {editUser && (
+        <form className="admin-create admin-edit-panel" onSubmit={onSaveEdit}>
+          <h3>
+            <FaEdit /> Edit account — {editUser.email}
+          </h3>
+          <div className="admin-create-grid">
+            <input
+              className="form-input"
+              value={editForm.fullName}
+              onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+              placeholder="Full name"
+              required
+            />
+            <input
+              className="form-input"
+              type="email"
+              value={editForm.email}
+              onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+              placeholder="Email"
+              required
+            />
+            <input
+              className="form-input"
+              value={editForm.organization}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, organization: e.target.value }))
+              }
+              placeholder="Organization"
+            />
+            <button type="submit" className="btn btn-primary" disabled={busyId === editUser.id}>
+              Save changes
+            </button>
+            <button
+              type="button"
+              className="action-btn"
+              onClick={() => setEditUser(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {resetTarget && (
+        <form className="admin-create admin-edit-panel" onSubmit={onResetPassword}>
+          <h3>
+            <FaKey /> Reset password — {resetTarget.email}
+          </h3>
+          <div className="admin-create-grid">
+            <input
+              className="form-input"
+              type="password"
+              placeholder="New password (min 6)"
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              minLength={6}
+              required
+            />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={busyId === resetTarget.id}
+            >
+              Set new password
+            </button>
+            <button
+              type="button"
+              className="action-btn"
+              onClick={() => {
+                setResetTarget(null);
+                setResetPassword('');
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
       {loading ? (
         <p className="admin-loading">Loading users…</p>
       ) : (
@@ -230,14 +527,41 @@ const SuperAdminDashboard = () => {
                     <td>{formatDate(u.createdAt)}</td>
                     <td>
                       <div className="admin-actions">
+                        <button
+                          type="button"
+                          className="action-btn"
+                          title="Edit"
+                          disabled={busy}
+                          onClick={() => openEdit(u)}
+                        >
+                          <FaEdit /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="action-btn"
+                          title="Reset password"
+                          disabled={busy}
+                          onClick={() => {
+                            setResetTarget(u);
+                            setResetPassword('');
+                            setEditUser(null);
+                            setError('');
+                            setInfo('');
+                          }}
+                        >
+                          <FaKey /> Password
+                        </button>
                         {!isAdmin && u.status !== 'approved' && (
                           <button
                             type="button"
                             className="action-btn approve"
-                            title="Approve"
                             disabled={busy}
                             onClick={() =>
-                              runAction(u.id, () => setUserStatus(u.id, 'approved'))
+                              runAction(
+                                u.id,
+                                () => setUserStatus(u.id, 'approved'),
+                                'Account approved.'
+                              )
                             }
                           >
                             <FaCheck /> Approve
@@ -247,10 +571,13 @@ const SuperAdminDashboard = () => {
                           <button
                             type="button"
                             className="action-btn reject"
-                            title="Reject"
                             disabled={busy}
                             onClick={() =>
-                              runAction(u.id, () => setUserStatus(u.id, 'rejected'))
+                              runAction(
+                                u.id,
+                                () => setUserStatus(u.id, 'rejected'),
+                                'Account rejected.'
+                              )
                             }
                           >
                             <FaTimes /> Reject
@@ -260,7 +587,6 @@ const SuperAdminDashboard = () => {
                           <button
                             type="button"
                             className="action-btn delete"
-                            title="Delete"
                             disabled={busy}
                             onClick={() => {
                               if (
@@ -268,14 +594,13 @@ const SuperAdminDashboard = () => {
                                   `Delete account for ${u.email}? This cannot be undone.`
                                 )
                               ) {
-                                runAction(u.id, () => deleteUser(u.id));
+                                runAction(u.id, () => deleteUser(u.id), 'Account deleted.');
                               }
                             }}
                           >
                             <FaTrash /> Delete
                           </button>
                         )}
-                        {isAdmin && <span className="admin-actions-muted">—</span>}
                       </div>
                     </td>
                   </tr>
