@@ -121,15 +121,17 @@ function App() {
           <div className="config-banner" role="alert">
             <strong>API not fully configured.</strong>
             <p>
-              Verify Selfie needs credentials in <code>frontend/.env</code>.
+              Verify Selfie needs KYC credentials baked into the UI build.
               Missing: <code>{missingConfig.join(', ') || 'unknown'}</code>
             </p>
             <p>
-              Set the missing values, then restart the dev server (<code>npm start</code>).
+              On DigitalOcean, set <code>REACT_APP_*</code> as{' '}
+              <strong>Build Time</strong> (or use <code>frontend/.env.production</code>), then{' '}
+              <strong>Force Rebuild and Deploy</strong>. Locally use <code>frontend/.env</code> and{' '}
+              <code>npm start</code>.
             </p>
           </div>
         )}
-
         <InstallOnDevice />
         <SelfieVerification />
       </div>
