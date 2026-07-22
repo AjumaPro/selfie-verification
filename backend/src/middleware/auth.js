@@ -2,12 +2,14 @@ const jwt = require('jsonwebtoken');
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret === 'change-me-to-a-long-random-secret') {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET must be set in production');
-    }
+  const invalid =
+    !secret ||
+    secret === 'change-me-to-a-long-random-secret' ||
+    /REPLACE_WITH/i.test(secret);
+  if (invalid && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production');
   }
-  return secret || 'dev-only-secret';
+  return invalid ? 'dev-only-secret' : secret;
 }
 
 function signToken(user) {

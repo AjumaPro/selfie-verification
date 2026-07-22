@@ -111,6 +111,23 @@ router.post('/superadmin/login', async (req, res) => {
     return await loginWithRoleCheck(req, res, { requireRole: 'superadmin' });
   } catch (e) {
     console.error('superadmin login error:', e);
+    const dbDown =
+      e?.code === 'ECONNREFUSED' ||
+      e?.code === 'ETIMEDOUT' ||
+      e?.code === 'ENOTFOUND' ||
+      e?.code === '57P01' ||
+      /database|connect|ssl|timeout/i.test(String(e?.message || ''));
+    if (dbDown) {
+      return res.status(503).json({
+        error:
+          'Database unavailable. On DigitalOcean, bind DATABASE_URL to ${db.DATABASE_URL} and redeploy.',
+      });
+    }
+    if (/JWT_SECRET/i.test(String(e?.message || ''))) {
+      return res.status(500).json({
+        error: 'Server misconfigured: set JWT_SECRET in App Platform env vars.',
+      });
+    }
     return res.status(500).json({ error: 'Superadmin sign in failed. Please try again.' });
   }
 });

@@ -5,9 +5,17 @@ const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const { query } = require('./db/pool');
+const { getJwtSecret } = require('./middleware/auth');
 
 const app = express();
 const port = Number(process.env.PORT) || 4000;
+
+function assertProductionSecrets() {
+  if (process.env.NODE_ENV !== 'production') return;
+  // Fail at boot (not first login) if JWT is missing / still a placeholder
+  getJwtSecret();
+}
 
 const allowedOrigins = String(process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
@@ -37,8 +45,19 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'selfie-verification-api' });
+app.get('/health', async (_req, res) => {
+  try {
+    await query('SELECT 1 AS ok');
+    return res.json({ ok: true, service: 'selfie-verification-api', database: 'up' });
+  } catch (err) {
+    console.error('health check db error:', err.message);
+    return res.status(503).json({
+      ok: false,
+      service: 'selfie-verification-api',
+      database: 'down',
+      error: 'Database unavailable',
+    });
+  }
 });
 
 app.use('/api/auth', authRoutes);
@@ -75,6 +94,13 @@ app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: err.message || 'Server error' });
 });
+
+try {
+  assertProductionSecrets();
+} catch (err) {
+  console.error(err.message);
+  process.exit(1);
+}
 
 app.listen(port, () => {
   console.log(`Selfie Verification listening on http://localhost:${port}`);
