@@ -242,3 +242,10 @@ npm run electron:build      # Mac + Win installers
 ## License / ownership
 
 Internal GLICO application. Copyright © GLICO.
+
+
+
+# Superadmin seed (created/updated on npm run db:migrate)
+SUPERADMIN_EMAIL=superadmin@glico.local
+SUPERADMIN_PASSWORD=SuperAdmin@123
+SUPERADMIN_NAME=Super Admin

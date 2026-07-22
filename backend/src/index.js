@@ -26,6 +26,10 @@ app.use(
       if (/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/i.test(origin)) {
         return cb(null, true);
       }
+      // DigitalOcean App Platform
+      if (/^https?:\/\/([\w-]+\.)*ondigitalocean\.app$/i.test(origin)) {
+        return cb(null, true);
+      }
       console.warn('CORS blocked origin:', origin);
       return cb(null, false);
     },

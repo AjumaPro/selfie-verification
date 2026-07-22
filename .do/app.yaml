@@ -1,0 +1,82 @@
+name: selfie-verification
+region: nyc
+
+# One public URL: UI at / and auth API at /api + /health
+# Set secrets in the DigitalOcean dashboard (DATABASE_URL, JWT_SECRET, merchant keys, etc.)
+
+services:
+  - name: api
+    github:
+      repo: AjumaPro/selfie-verification
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    run_command: npm run start:prod
+    health_check:
+      http_path: /health
+    routes:
+      - path: /api
+      - path: /health
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+      - key: JWT_EXPIRES_IN
+        value: 7d
+        scope: RUN_TIME
+      - key: CORS_ORIGIN
+        value: "*"
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPERADMIN_EMAIL
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPERADMIN_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPERADMIN_NAME
+        value: Super Admin
+        scope: RUN_TIME
+
+static_sites:
+  - name: web
+    github:
+      repo: AjumaPro/selfie-verification
+      branch: main
+      deploy_on_push: true
+    source_dir: frontend
+    build_command: npm ci && node download-models.js && npm run build
+    output_dir: build
+    index_document: index.html
+    catchall_document: index.html
+    routes:
+      - path: /
+    envs:
+      # Empty = same-origin (/api on this app's domain)
+      - key: REACT_APP_AUTH_API_URL
+        value: ""
+        scope: BUILD_TIME
+      - key: REACT_APP_API_BASE_URL
+        value: https://selfie.imsgh.org:2035/skyface
+        scope: BUILD_TIME
+      - key: REACT_APP_DEFAULT_CENTER
+        value: BRANCHLESS
+        scope: BUILD_TIME
+      - key: REACT_APP_DEFAULT_USER_ID
+        scope: BUILD_TIME
+        type: SECRET
+      - key: REACT_APP_DEFAULT_MERCHANT_KEY
+        scope: BUILD_TIME
+        type: SECRET

@@ -10,10 +10,15 @@ const TOKEN_KEY = 'selfie_auth_token_v1';
 const USER_KEY = 'selfie_auth_user_v1';
 const REMEMBER_KEY = 'selfie_auth_remember_v1';
 
-const API_BASE = (process.env.REACT_APP_AUTH_API_URL || 'http://localhost:4000').replace(
-  /\/$/,
-  ''
-);
+/** Empty string = same origin (DigitalOcean: UI + /api on one domain). */
+function resolveApiBase() {
+  const raw = process.env.REACT_APP_AUTH_API_URL;
+  if (raw === '' || raw === '/' || raw === 'same-origin') return '';
+  if (raw == null) return 'http://localhost:4000';
+  return String(raw).replace(/\/$/, '');
+}
+
+const API_BASE = resolveApiBase();
 
 function clearTokenStorage() {
   localStorage.removeItem(TOKEN_KEY);
