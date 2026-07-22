@@ -1,10 +1,12 @@
 /* eslint-disable no-restricted-globals -- `self` is the Service Worker global */
-/* Selfie Verification — offline shell cache for installable PWA */
-const CACHE_NAME = 'selfie-verify-v1';
+/* GLICO Platform — offline shell cache for installable PWA */
+const CACHE_NAME = 'glico-platform-v2';
 const PRECACHE = [
   './',
   './index.html',
   './manifest.json',
+  './Glico.png',
+  './favicon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];

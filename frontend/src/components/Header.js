@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaShieldAlt, FaSignOutAlt, FaUser, FaUserShield } from 'react-icons/fa';
+import { FaSignOutAlt, FaUser, FaUserShield } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
@@ -10,19 +10,21 @@ const Header = () => {
     <header className={`header ${isSuperAdmin ? 'header-admin' : ''}`}>
       <div className="header-content">
         <div className="header-main">
-          <h1>
-            {isSuperAdmin ? (
-              <FaUserShield className="header-icon admin" />
-            ) : (
-              <FaShieldAlt className="header-icon" />
-            )}
-            {isSuperAdmin ? 'Selfie Verification Admin' : 'Selfie Verification'}
-          </h1>
-          <p>
-            {isSuperAdmin
-              ? 'Superadmin control panel'
-              : 'Face Detection & Selfie Verification'}
-          </p>
+          <div className="header-brand">
+            <img
+              src={`${process.env.PUBLIC_URL}/Glico.png`}
+              alt="GLICO"
+              className="header-logo"
+            />
+            <div className="header-brand-text">
+              <h1>GLICO Platform{isSuperAdmin ? ' Admin' : ''}</h1>
+              <p>
+                {isSuperAdmin
+                  ? 'Superadmin control panel'
+                  : 'Identity verification & KYC'}
+              </p>
+            </div>
+          </div>
         </div>
 
         {isAuthenticated && user && (

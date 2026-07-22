@@ -265,7 +265,7 @@ const InstallOnDevice = () => {
                         : 'Download the Mac .dmg'}
                     </li>
                     <li>Run the installer (Windows) or drag to Applications (Mac).</li>
-                    <li>Launch <strong>Selfie Verification</strong> from your apps list.</li>
+                    <li>Launch <strong>GLICO Platform</strong> from your apps list.</li>
                   </ol>
                 </article>
 

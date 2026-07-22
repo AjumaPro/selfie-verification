@@ -4,7 +4,7 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   margin-bottom: 1.5rem;
   overflow: hidden;
-  border: 1px solid #e8f5e9;
+  border: 1px solid #eaf6fc;
 }
 
 .install-device-header {
@@ -15,7 +15,7 @@
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border: none;
-  background: linear-gradient(135deg, #e8f5e9 0%, #fff 70%);
+  background: #eaf6fc;
   cursor: pointer;
   text-align: left;
 }
@@ -28,7 +28,7 @@
 
 .install-device-icon {
   font-size: 1.6rem;
-  color: #2e7d32;
+  color: #103078;
   margin-top: 0.15rem;
   flex-shrink: 0;
 }
@@ -36,7 +36,7 @@
 .install-device-title h2 {
   margin: 0 0 0.25rem;
   font-size: 1.2rem;
-  color: #1b5e20;
+  color: #103078;
 }
 
 .install-device-title p {
@@ -47,7 +47,7 @@
 
 .install-device-chevron {
   font-size: 1.4rem;
-  color: #2e7d32;
+  color: #103078;
   font-weight: 600;
   line-height: 1;
 }
@@ -70,8 +70,8 @@
 }
 
 .install-action-card {
-  background: #f7faf7;
-  border: 1px solid #c8e6c9;
+  background: #f5f7fb;
+  border: 1px solid #c5d0e8;
   border-radius: 12px;
   padding: 1.1rem 1.15rem;
 }
@@ -79,7 +79,7 @@
 .install-action-card h3 {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
-  color: #1b5e20;
+  color: #103078;
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -93,8 +93,7 @@
 }
 
 .install-primary-btn.secondary-action {
-  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
-  box-shadow: 0 4px 14px rgba(13, 71, 161, 0.28);
+  background: #48a8e8;
 }
 
 .install-action-card .install-primary-btn {
@@ -111,8 +110,7 @@
 }
 
 .install-primary-btn.mac-btn {
-  background: linear-gradient(135deg, #546e7a 0%, #37474f 100%);
-  box-shadow: 0 4px 14px rgba(55, 71, 79, 0.28);
+  background: #48a8e8;
 }
 
 a.install-primary-btn {
@@ -179,11 +177,15 @@ a.install-primary-btn.is-disabled {
   padding: 0.45rem 0.75rem;
   border: none;
   border-radius: 8px;
-  background: #1976d2;
+  background: #48a8e8;
   color: #fff;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
+}
+
+.install-copy-btn:hover {
+  background: #1a7ab8;
 }
 
 .install-sw-status {
@@ -210,7 +212,7 @@ a.install-primary-btn.is-disabled {
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 .install-primary-btn {
@@ -218,12 +220,11 @@ a.install-primary-btn.is-disabled {
   margin-bottom: 1.25rem;
   font-size: 1rem;
   color: #fff;
-  background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
-  box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
+  background: #d03038;
 }
 
 .install-primary-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+  background: #a8242c;
 }
 
 .install-primary-btn:disabled,
@@ -236,9 +237,13 @@ a.install-primary-btn.is-disabled {
   margin-top: 0.75rem;
   padding: 0.55rem 1rem;
   font-size: 0.9rem;
-  color: #1b5e20;
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
+  color: #fff;
+  background: #48a8e8;
+  border: none;
+}
+
+.install-secondary-btn:hover:not(:disabled) {
+  background: #1a7ab8;
 }
 
 .install-steps {
@@ -255,8 +260,8 @@ a.install-primary-btn.is-disabled {
 }
 
 .install-step.highlight {
-  border-color: #81c784;
-  background: #f1f8f1;
+  border-color: #7bc4ef;
+  background: #eaf6fc;
 }
 
 .install-step-badge {
@@ -265,7 +270,7 @@ a.install-primary-btn.is-disabled {
   gap: 0.4rem;
   margin-bottom: 0.65rem;
   font-weight: 700;
-  color: #2e7d32;
+  color: #103078;
   font-size: 0.95rem;
 }
 
@@ -283,7 +288,7 @@ a.install-primary-btn.is-disabled {
 
 .inline-ico {
   vertical-align: -0.1em;
-  color: #2e7d32;
+  color: #103078;
 }
 
 .install-note {
@@ -304,8 +309,8 @@ a.install-primary-btn.is-disabled {
 }
 
 .install-status.success {
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: #eaf6fc;
+  color: #103078;
 }
 
 .install-status.success svg {

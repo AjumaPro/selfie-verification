@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaSignInAlt, FaUserPlus, FaShieldAlt, FaUserShield } from 'react-icons/fa';
+import { FaSignInAlt, FaUserPlus, FaUserShield } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import './AuthPanel.css';
 
@@ -125,11 +125,12 @@ const AuthPanel = () => {
       aria-labelledby="auth-heading"
     >
       <div className="auth-hero">
-        {mode === 'superadmin' ? (
-          <FaUserShield className="auth-hero-icon admin" aria-hidden />
-        ) : (
-          <FaShieldAlt className="auth-hero-icon" aria-hidden />
-        )}
+        <img
+          src={`${process.env.PUBLIC_URL}/Glico.png`}
+          alt="GLICO"
+          className="auth-hero-logo"
+        />
+        <p className="auth-brand-label">GLICO Platform</p>
         <h2 id="auth-heading">
           {mode === 'superadmin' ? 'Super Admin' : 'Welcome'}
         </h2>

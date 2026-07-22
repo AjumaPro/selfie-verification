@@ -83,7 +83,7 @@
 .face-oval {
   width: min(55%, 280px);
   aspect-ratio: 3 / 4;
-  border: 3px solid rgba(76, 175, 80, 0.95);
+  border: 3px solid rgba(208, 48, 56, 0.95);
   border-radius: 50%;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
 }
@@ -123,22 +123,21 @@
 }
 
 .camera-controls .btn-primary {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  background: #d03038;
   color: white;
 }
 
 .camera-controls .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  background: #a8242c;
 }
 
 .camera-controls .btn-secondary {
-  background: #c8e6c9;
-  color: #2e7d32;
+  background: #48a8e8;
+  color: white;
 }
 
 .camera-controls .btn-secondary:hover {
-  background: #a5d6a7;
+  background: #1a7ab8;
 }
 
 .capture-button {
@@ -146,20 +145,19 @@
   height: 70px;
   border-radius: 50%;
   border: 4px solid white;
-  background: #4caf50;
+  background: #d03038;
   color: white;
   font-size: 1.8rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  
   transition: all 0.3s ease;
 }
 
 .capture-button:hover:not(:disabled) {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+  background: #a8242c;
 }
 
 .capture-button:disabled {
@@ -196,13 +194,12 @@
 }
 
 .camera-error .btn-primary {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  background: #d03038;
   color: white;
 }
 
 .camera-error .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  background: #a8242c;
 }
 
 @media (max-width: 768px) {

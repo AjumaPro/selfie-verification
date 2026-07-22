@@ -4,14 +4,29 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* GLICO logo palette */
+  --glico-red: #d03038;
+  --glico-red-dark: #a8242c;
+  --glico-sky: #48a8e8;
+  --glico-sky-dark: #1a7ab8;
+  --glico-navy: #103078;
+  --glico-red-soft: #fceeef;
+  --glico-sky-soft: #eaf6fc;
+  --glico-navy-soft: #e8ecf5;
+  --glico-border: #c5d0e8;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: white;
+  background: #ffffff;
+  background-attachment: fixed;
   min-height: 100vh;
+  color: #222;
 }
 
 code {

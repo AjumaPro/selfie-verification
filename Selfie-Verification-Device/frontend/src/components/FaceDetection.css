@@ -36,13 +36,13 @@
 }
 
 .mode-option:hover {
-  border-color: #81c784;
+  border-color: #7bc4ef;
 }
 
 .mode-option.active {
-  border-color: #2e7d32;
-  background: #f1f8f1;
-  box-shadow: 0 0 0 1px #2e7d32;
+  border-color: #103078;
+  background: #eaf6fc;
+  box-shadow: 0 0 0 1px #103078;
 }
 
 .form-row {
@@ -82,8 +82,8 @@
 .image-info-success {
   margin-top: 0.75rem;
   padding: 0.65rem 0.9rem;
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: #eaf6fc;
+  color: #103078;
   border-radius: 8px;
   font-size: 0.9rem;
 }
@@ -116,13 +116,12 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  background: #d03038;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  background: #a8242c;
 }
 
 .btn-primary:disabled {
@@ -131,12 +130,12 @@
 }
 
 .btn-secondary {
-  background: #c8e6c9;
-  color: #2e7d32;
+  background: #48a8e8;
+  color: white;
 }
 
 .btn-secondary:hover {
-  background: #a5d6a7;
+  background: #1a7ab8;
 }
 
 @media (max-width: 700px) {

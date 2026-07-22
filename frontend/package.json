@@ -2,7 +2,7 @@
   "name": "selfie-verification-ui",
   "version": "2.0.0",
   "private": true,
-  "description": "Selfie Verification — Ghana Card KYC face verification",
+  "description": "GLICO Platform — identity verification and Ghana Card KYC",
   "author": "GLICO",
   "main": "electron/main.js",
   "homepage": "./",
@@ -30,7 +30,7 @@
   },
   "build": {
     "appId": "org.glico.selfie-verification",
-    "productName": "Selfie Verification",
+    "productName": "GLICO Platform",
     "copyright": "Copyright © GLICO",
     "extends": null,
     "directories": {
@@ -63,7 +63,7 @@
       "artifactName": "Selfie-Verification-Mac-${version}.${ext}"
     },
     "dmg": {
-      "title": "Selfie Verification",
+      "title": "GLICO Platform",
       "contents": [
         {
           "x": 130,
@@ -93,7 +93,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Selfie Verification",
+      "shortcutName": "GLICO Platform",
       "installerHeaderIcon": "electron/assets/icon.png",
       "deleteAppDataOnUninstall": false
     }

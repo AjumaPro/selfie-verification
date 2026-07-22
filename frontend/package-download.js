@@ -33,10 +33,10 @@ function ensureBuild() {
 }
 
 function writeInstallGuide(dest) {
-  const guide = `Selfie Verification — Install Guide
+  const guide = `GLICO Platform — Install Guide
 =====================================
 
-This ZIP contains the app UI (web interface).
+This ZIP contains the GLICO Platform UI (web interface).
 
 LAPTOP (Windows / Mac / Linux)
 ------------------------------

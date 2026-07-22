@@ -2,8 +2,8 @@
   background: white;
   padding: 1.5rem 1rem;
   color: #333;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 10px rgba(16, 48, 120, 0.08);
+  border-bottom: 3px solid #d03038;
 }
 
 .header-content {
@@ -22,29 +22,35 @@
   min-width: 220px;
 }
 
-.header-main h1 {
-  font-size: 2rem;
-  margin: 0 0 0.35rem;
-  font-weight: 700;
-  color: #333;
+.header-brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.header-icon {
-  color: #4caf50;
-  font-size: 1.75rem;
+.header-logo {
+  height: 48px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
   flex-shrink: 0;
+  display: block;
 }
 
-.header-icon.admin,
+.header-brand-text h1 {
+  font-size: 1.55rem;
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+  color: #103078;
+  letter-spacing: 0.01em;
+}
+
 .header-user-icon.admin {
-  color: #283593;
+  color: #103078;
 }
 
 .header-admin {
-  border-bottom-color: #c5cae9;
+  border-bottom-color: #c5d0e8;
 }
 
 .header-role-pill {
@@ -52,8 +58,8 @@
   margin-left: 0.45rem;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
-  background: #e8eaf6;
-  color: #1a237e;
+  background: #e8ecf5;
+  color: #103078;
   font-size: 0.7rem;
   font-weight: 700;
   vertical-align: middle;
@@ -61,9 +67,9 @@
   letter-spacing: 0.03em;
 }
 
-.header-main p {
+.header-brand-text p {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   color: #666;
 }
 
@@ -79,13 +85,13 @@
   align-items: center;
   gap: 0.65rem;
   padding: 0.5rem 0.85rem;
-  background: #f7faf7;
-  border: 1px solid #c8e6c9;
+  background: #f5f7fb;
+  border: 1px solid #c5d0e8;
   border-radius: 10px;
 }
 
 .header-user-icon {
-  color: #4caf50;
+  color: #d03038;
   font-size: 1.1rem;
 }
 
@@ -97,7 +103,7 @@
 
 .header-user-name {
   font-weight: 700;
-  color: #1b5e20;
+  color: #103078;
   font-size: 0.95rem;
 }
 
@@ -111,19 +117,18 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.55rem 0.95rem;
-  border: 1px solid #c8e6c9;
+  border: none;
   border-radius: 8px;
-  background: white;
-  color: #2e7d32;
+  background: #48a8e8;
+  color: white;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .header-logout:hover {
-  background: #e8f5e9;
-  border-color: #4caf50;
+  background: #1a7ab8;
 }
 
 @media (max-width: 768px) {
@@ -132,13 +137,22 @@
     width: 100%;
   }
 
-  .header-main h1 {
-    font-size: 1.65rem;
+  .header-brand {
     justify-content: center;
+    flex-wrap: wrap;
   }
 
-  .header-main p {
-    font-size: 0.95rem;
+  .header-logo {
+    height: 40px;
+    max-width: 150px;
+  }
+
+  .header-brand-text h1 {
+    font-size: 1.35rem;
+  }
+
+  .header-brand-text p {
+    font-size: 0.88rem;
   }
 
   .header-user {

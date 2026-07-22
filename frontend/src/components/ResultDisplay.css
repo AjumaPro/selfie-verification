@@ -71,9 +71,9 @@
 }
 
 .status-badge.success {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 2px solid #4caf50;
+  background: #eaf6fc;
+  color: #103078;
+  border: 2px solid #d03038;
 }
 
 .status-badge.error {
@@ -113,7 +113,7 @@
 }
 
 .score-value {
-  color: #4caf50;
+  color: #d03038;
   font-weight: 700;
 }
 

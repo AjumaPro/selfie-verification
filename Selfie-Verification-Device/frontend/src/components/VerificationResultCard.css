@@ -7,13 +7,13 @@
 }
 
 .vrc-card.vrc-success {
-  border-color: #a5d6a7;
-  background: linear-gradient(180deg, #f1f8f1 0%, #fff 48px);
+  border-color: #b3dbf5;
+  background: #eaf6fc;
 }
 
 .vrc-card.vrc-error {
   border-color: #ef9a9a;
-  background: linear-gradient(180deg, #fdf2f2 0%, #fff 48px);
+  background: #fdf2f2;
 }
 
 .vrc-toolbar {
@@ -33,20 +33,23 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  background: #d03038;
   color: #fff;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 .vrc-download-btn.secondary {
-  background: #e8f5e9;
-  color: #1b5e20;
-  border: 1px solid #a5d6a7;
+  background: #48a8e8;
+  color: #fff;
+  border: none;
 }
 
 .vrc-download-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+  background: #a8242c;
+}
+
+.vrc-download-btn.secondary:hover:not(:disabled) {
+  background: #1a7ab8;
 }
 
 .vrc-download-btn:disabled {
@@ -94,7 +97,7 @@
 }
 
 .vrc-success .vrc-status-icon {
-  color: #2e7d32;
+  color: #103078;
   font-size: 1.75rem;
   margin-top: 0.15rem;
 }
@@ -113,7 +116,7 @@
 
 .vrc-section h4 {
   margin: 0 0 0.85rem;
-  color: #2e7d32;
+  color: #103078;
   font-size: 1rem;
 }
 

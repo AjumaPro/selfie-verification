@@ -5,7 +5,7 @@ import './ResultDisplay.css';
 const ResultDisplay = ({ result, imagePreview, referencePreview, type }) => {
   const renderScoreBar = (label, value, maxValue = 1.0) => {
     const percentage = (value / maxValue) * 100;
-    const color = percentage >= 70 ? '#4caf50' : percentage >= 40 ? '#ff9800' : '#f44336';
+    const color = percentage >= 70 ? '#48a8e8' : percentage >= 40 ? '#ff9800' : '#d03038';
     
     return (
       <div className="score-item">

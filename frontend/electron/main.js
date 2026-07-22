@@ -9,8 +9,8 @@ function createWindow() {
     height: 860,
     minWidth: 900,
     minHeight: 640,
-    title: 'Selfie Verification',
-    backgroundColor: '#e8f5e9',
+    title: 'GLICO Platform',
+    backgroundColor: '#ffffff',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

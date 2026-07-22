@@ -1,4 +1,4 @@
-Selfie Verification — Mac install (unsigned build)
+GLICO Platform — Mac install (unsigned build)
 
 SIZE: The new installer is much smaller (~80–120 MB). If your DMG is still
 ~400–500 MB, delete it and download again (hard refresh the download page).
@@ -8,18 +8,18 @@ This build is not signed with an Apple Developer ID, so macOS blocks it by
 default. That is expected — not a corrupt file.
 
 Option A (easiest)
-1. Open the .dmg and drag “Selfie Verification” to Applications.
+1. Open the .dmg and drag “GLICO Platform” to Applications.
 2. In Finder → Applications, Control-click (right-click) the app → Open.
 3. Click Open in the dialog (only appears the first time).
 
 Option B (System Settings)
 1. Try to open the app once (it will be blocked).
 2. Open System Settings → Privacy & Security.
-3. Scroll to the message about Selfie Verification → click Open Anyway.
+3. Scroll to the message about GLICO Platform → click Open Anyway.
 
 Option C (Terminal — clears Safari quarantine flag)
-  xattr -cr "/Applications/Selfie Verification.app"
-  open "/Applications/Selfie Verification.app"
+  xattr -cr "/Applications/GLICO Platform.app"
+  open "/Applications/GLICO Platform.app"
 
 Prefer ZIP? Download Selfie-Verification-Mac.zip, unzip, then use Option A/C
 on the .app (do not leave it in Downloads if quarantine keeps blocking).

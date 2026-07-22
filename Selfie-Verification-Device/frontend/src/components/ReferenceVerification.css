@@ -53,13 +53,12 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  background: #d03038;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  background: #a8242c;
 }
 
 .btn-primary:disabled {
@@ -68,12 +67,12 @@
 }
 
 .btn-secondary {
-  background: #c8e6c9;
-  color: #2e7d32;
+  background: #48a8e8;
+  color: white;
 }
 
 .btn-secondary:hover {
-  background: #a5d6a7;
+  background: #1a7ab8;
 }
 
 @media (max-width: 768px) {

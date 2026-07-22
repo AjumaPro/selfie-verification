@@ -1,12 +1,12 @@
 {
-  "short_name": "Selfie Verify",
-  "name": "Selfie Verification",
-  "description": "Verify selfies with face detection and Ghana Card KYC",
+  "short_name": "GLICO",
+  "name": "GLICO Platform",
+  "description": "GLICO Platform — identity verification and Ghana Card KYC",
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#e8f5e9",
-  "theme_color": "#2e7d32",
+  "background_color": "#ffffff",
+  "theme_color": "#103078",
   "categories": ["business", "utilities"],
   "icons": [
     {

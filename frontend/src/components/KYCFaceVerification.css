@@ -29,9 +29,9 @@
 
 .toggle-config-btn {
   padding: 0.5rem 1rem;
-  background: #c8e6c9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
+  background: #c5d0e8;
+  color: #103078;
+  border: 1px solid #b3dbf5;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
@@ -40,15 +40,15 @@
 }
 
 .toggle-config-btn:hover {
-  background: #a5d6a7;
+  background: #b3dbf5;
 }
 
 .auto-verify-badge {
   padding: 0.75rem 1rem;
-  background: #e8f5e9;
-  border: 1px solid #4caf50;
+  background: #eaf6fc;
+  border: 1px solid #d03038;
   border-radius: 8px;
-  color: #2e7d32;
+  color: #103078;
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
   display: flex;
@@ -58,7 +58,7 @@
 }
 
 .auto-verify-badge svg {
-  color: #4caf50;
+  color: #d03038;
 }
 
 .form-group {
@@ -85,7 +85,7 @@
 
 .label-note {
   font-weight: 400;
-  color: #4caf50;
+  color: #d03038;
   font-size: 0.85rem;
 }
 
@@ -116,7 +116,7 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #4caf50;
+  border-color: #d03038;
 }
 
 .verification-result {
@@ -139,9 +139,9 @@
 }
 
 .result-status.success {
-  background: #e8f5e9;
-  border-color: #4caf50;
-  color: #2e7d32;
+  background: #eaf6fc;
+  border-color: #d03038;
+  color: #103078;
 }
 
 .result-status.error {
@@ -214,7 +214,7 @@
   font-size: 1.2rem;
   font-weight: 600;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #4caf50;
+  border-bottom: 2px solid #d03038;
 }
 
 .detail-section {
@@ -230,11 +230,11 @@
   margin: 0 0 1rem 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #4caf50;
+  color: #d03038;
 }
 
 .detail-value.verified {
-  color: #2e7d32;
+  color: #103078;
   font-weight: 600;
 }
 
@@ -244,7 +244,7 @@
 }
 
 .detail-value.success {
-  color: #2e7d32;
+  color: #103078;
   font-weight: 600;
 }
 
@@ -341,9 +341,9 @@ details[open] .raw-data-toggle::before {
 .image-info-success {
   margin-top: 1rem;
   padding: 0.75rem;
-  background: #e8f5e9;
+  background: #eaf6fc;
   border-radius: 8px;
-  color: #2e7d32;
+  color: #103078;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -352,7 +352,7 @@ details[open] .raw-data-toggle::before {
 
 .inline-icon {
   font-size: 1rem;
-  color: #4caf50;
+  color: #d03038;
 }
 
 @media (max-width: 768px) {
