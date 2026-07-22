@@ -7,6 +7,7 @@
   "main": "electron/main.js",
   "homepage": "./",
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "face-api.js": "^0.22.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
@@ -116,7 +117,6 @@
     ]
   },
   "devDependencies": {
-    "@craco/craco": "^7.1.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8"
   }
