@@ -1,0 +1,11 @@
+{
+  "name": "selfie-verification",
+  "private": true,
+  "description": "Monorepo root — apps are in backend/ and frontend/. See DEPLOY-DIGITALOCEAN.md",
+  "scripts": {
+    "api": "npm --prefix backend run dev",
+    "api:start": "npm --prefix backend run start:prod",
+    "web": "npm --prefix frontend start",
+    "web:build": "npm --prefix frontend run build"
+  }
+}

@@ -1,8 +1,11 @@
+# DigitalOcean App Platform — monorepo
+# UI at /  ·  API at /api and /health
+#
+# Create via: Apps → Create App → upload this file as App Spec
+# OR: GitHub source with Source Directory set per component (see DEPLOY-DIGITALOCEAN.md)
+
 name: selfie-verification
 region: nyc
-
-# One public URL: UI at / and auth API at /api + /health
-# Set secrets in the DigitalOcean dashboard (DATABASE_URL, JWT_SECRET, merchant keys, etc.)
 
 services:
   - name: api
@@ -15,6 +18,7 @@ services:
     instance_count: 1
     instance_size_slug: basic-xxs
     http_port: 8080
+    build_command: npm ci
     run_command: npm run start:prod
     health_check:
       http_path: /health
@@ -24,31 +28,27 @@ services:
     envs:
       - key: NODE_ENV
         value: production
-        scope: RUN_TIME
       - key: PORT
         value: "8080"
-        scope: RUN_TIME
       - key: JWT_EXPIRES_IN
         value: 7d
-        scope: RUN_TIME
       - key: CORS_ORIGIN
         value: "*"
-        scope: RUN_TIME
-      - key: DATABASE_URL
-        scope: RUN_TIME
-        type: SECRET
-      - key: JWT_SECRET
-        scope: RUN_TIME
-        type: SECRET
-      - key: SUPERADMIN_EMAIL
-        scope: RUN_TIME
-        type: SECRET
-      - key: SUPERADMIN_PASSWORD
-        scope: RUN_TIME
-        type: SECRET
       - key: SUPERADMIN_NAME
         value: Super Admin
-        scope: RUN_TIME
+      # Set these in the DO dashboard (Settings → App-Level / Component env):
+      - key: DATABASE_URL
+        type: SECRET
+        value: REPLACE_WITH_NEON_DATABASE_URL
+      - key: JWT_SECRET
+        type: SECRET
+        value: REPLACE_WITH_LONG_RANDOM_SECRET
+      - key: SUPERADMIN_EMAIL
+        type: SECRET
+        value: superadmin@glico.local
+      - key: SUPERADMIN_PASSWORD
+        type: SECRET
+        value: REPLACE_WITH_STRONG_PASSWORD
 
 static_sites:
   - name: web
@@ -57,6 +57,7 @@ static_sites:
       branch: main
       deploy_on_push: true
     source_dir: frontend
+    environment_slug: node-js
     build_command: npm ci && node download-models.js && npm run build
     output_dir: build
     index_document: index.html
@@ -64,19 +65,20 @@ static_sites:
     routes:
       - path: /
     envs:
-      # Empty = same-origin (/api on this app's domain)
       - key: REACT_APP_AUTH_API_URL
+        scope: BUILD_TIME
         value: ""
-        scope: BUILD_TIME
       - key: REACT_APP_API_BASE_URL
+        scope: BUILD_TIME
         value: https://selfie.imsgh.org:2035/skyface
-        scope: BUILD_TIME
       - key: REACT_APP_DEFAULT_CENTER
-        value: BRANCHLESS
         scope: BUILD_TIME
+        value: BRANCHLESS
       - key: REACT_APP_DEFAULT_USER_ID
         scope: BUILD_TIME
         type: SECRET
+        value: REPLACE_WITH_KYC_USER_ID
       - key: REACT_APP_DEFAULT_MERCHANT_KEY
         scope: BUILD_TIME
         type: SECRET
+        value: REPLACE_WITH_KYC_MERCHANT_KEY

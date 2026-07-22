@@ -254,10 +254,10 @@ Repo: `https://github.com/AjumaPro/selfie-verification`
 
 ### 2. Create the app
 
-1. Open [Create App on DigitalOcean](https://cloud.digitalocean.com/apps/new) → connect **GitHub** → `AjumaPro/selfie-verification` → branch `main`.
-2. Use resources from `.do/app.yaml`, or add manually:
-   - **Web Service** `backend`: run `npm run start:prod`, HTTP port `8080`, routes `/api` and `/health`
-   - **Static Site** `frontend`: build `npm ci && node download-models.js && npm run build`, output `build`, route `/`
+> **“No components detected”?** The repo is a monorepo — set Source Directory to `backend` or `frontend`, or upload `.do/app.yaml`. Full steps: [DEPLOY-DIGITALOCEAN.md](./DEPLOY-DIGITALOCEAN.md).
+
+1. Open [Create App on DigitalOcean](https://cloud.digitalocean.com/apps/new).
+2. Prefer **upload App Spec** → [`.do/app.yaml`](./.do/app.yaml), **or** GitHub → repo `AjumaPro/selfie-verification` → branch `main` → Source Directory **`backend`** (then add resource with Source Directory **`frontend`**).
 3. Set secrets / env vars:
 
 | Key | Component | Notes |
