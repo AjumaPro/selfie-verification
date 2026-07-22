@@ -1,11 +1,15 @@
 {
   "name": "selfie-verification",
   "private": true,
-  "description": "Monorepo root — apps are in backend/ and frontend/. See DEPLOY-DIGITALOCEAN.md",
+  "description": "Monorepo root. Prefer source_dir backend/ or frontend/ on DigitalOcean. Root start launches the API.",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "api": "npm --prefix backend run dev",
-    "api:start": "npm --prefix backend run start:prod",
-    "web": "npm --prefix frontend start",
-    "web:build": "npm --prefix frontend run build"
+    "postinstall": "npm ci --prefix backend --omit=dev",
+    "start": "npm run start:prod --prefix backend",
+    "api": "npm run dev --prefix backend",
+    "web": "npm start --prefix frontend",
+    "web:build": "npm run build --prefix frontend"
   }
 }

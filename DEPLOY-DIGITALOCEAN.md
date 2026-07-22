@@ -64,6 +64,11 @@ If the UI still fails detection, create **two apps**:
 
 ---
 
-## Permissions
+If the build log says **“This app may not specify any way to start a node process”**, DigitalOcean built the **repo root**. Fix:
 
-Ensure DigitalOcean’s GitHub app can read **`AjumaPro/selfie-verification`** (private repos need access granted).
+1. App → component → **Settings** → **Source Directory** = `backend`
+2. **Run Command** = `npm run start:prod`
+3. **HTTP Port** = `8080`
+4. Redeploy
+
+Or rely on the root `Procfile` / `"start"` script (launches the API from `backend/`).

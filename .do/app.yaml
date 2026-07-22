@@ -28,27 +28,39 @@ services:
     envs:
       - key: NODE_ENV
         value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+        scope: BUILD_TIME
       - key: PORT
         value: "8080"
+        scope: RUN_TIME
       - key: JWT_EXPIRES_IN
         value: 7d
+        scope: RUN_TIME
       - key: CORS_ORIGIN
         value: "*"
+        scope: RUN_TIME
       - key: SUPERADMIN_NAME
         value: Super Admin
+        scope: RUN_TIME
       # Set these in the DO dashboard (Settings → App-Level / Component env):
       - key: DATABASE_URL
         type: SECRET
         value: REPLACE_WITH_NEON_DATABASE_URL
+        scope: RUN_TIME
       - key: JWT_SECRET
         type: SECRET
         value: REPLACE_WITH_LONG_RANDOM_SECRET
+        scope: RUN_TIME
       - key: SUPERADMIN_EMAIL
         type: SECRET
         value: superadmin@glico.local
+        scope: RUN_TIME
       - key: SUPERADMIN_PASSWORD
         type: SECRET
         value: REPLACE_WITH_STRONG_PASSWORD
+        scope: RUN_TIME
 
 static_sites:
   - name: web
