@@ -72,11 +72,10 @@ services:
       - key: REACT_APP_DEFAULT_CENTER
         value: BRANCHLESS
         scope: BUILD_TIME
+      # Plain (not SECRET) — CRA bakes these into the public JS bundle
       - key: REACT_APP_DEFAULT_USER_ID
-        type: SECRET
-        value: REPLACE_WITH_KYC_USER_ID
+        value: string
         scope: BUILD_TIME
       - key: REACT_APP_DEFAULT_MERCHANT_KEY
-        type: SECRET
-        value: REPLACE_WITH_KYC_MERCHANT_KEY
+        value: 52053cd0-7d6c-4147-9e08-ef80bf3b2696
         scope: BUILD_TIME
