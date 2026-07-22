@@ -73,7 +73,7 @@ API: **http://localhost:4000**
 | `PORT` | Default `4000` |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Token signing secret |
-| `JWT_EXPIRES_IN` | e.g. `7d` |
+| `JWT_EXPIRES_IN` | e.g. `30d` (Stay signed in) |
 | `CORS_ORIGIN` | e.g. `http://localhost:3000,http://localhost:3001` |
 | `SUPERADMIN_EMAIL` | Seeded superadmin email |
 | `SUPERADMIN_PASSWORD` | Seeded superadmin password |

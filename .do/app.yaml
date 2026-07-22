@@ -39,7 +39,7 @@ services:
         value: postgres
         scope: RUN_TIME
       - key: JWT_EXPIRES_IN
-        value: 7d
+        value: 30d
         scope: RUN_TIME
       - key: CORS_ORIGIN
         value: "*"
