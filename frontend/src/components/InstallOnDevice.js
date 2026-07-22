@@ -72,10 +72,16 @@ const checkUrl = async (url) => {
     }
     if (looksLikeHtml(type, sample)) return false;
 
-    const rangeTotal = (res.headers.get('content-range') || '').split('/')[1];
-    const len = Number(res.headers.get('content-length') || rangeTotal || 0);
-    // Reject CRA HTML fallbacks that are tiny; allow large installers / zips
-    if (len > 0 && len < 10_000) return false;
+    // For 206 Partial Content, Content-Length is the *chunk* size (e.g. 1024),
+    // not the file size — use Content-Range total instead.
+    const rangeTotal = Number(
+      String(res.headers.get('content-range') || '').split('/')[1] || 0
+    );
+    const contentLen = Number(res.headers.get('content-length') || 0);
+    const fileSize = rangeTotal > 0 ? rangeTotal : contentLen;
+
+    // Reject SPA HTML fallbacks that are tiny; keep real installers/zips
+    if (fileSize > 0 && fileSize < 10_000) return false;
     return true;
   } catch {
     return false;
