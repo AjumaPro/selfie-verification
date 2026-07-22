@@ -1,8 +1,15 @@
-# Single-service deploy (API + UI). Fixes "Cannot GET /" on DigitalOcean.
+# Single-service deploy (API + UI) with DigitalOcean Managed Postgres.
 # UI is built into backend/public during `npm run build`, then Express serves it.
 
 name: selfie-verification
 region: nyc
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    # Dev database is included with App Platform; upgrade in DO console if needed
+    production: false
 
 services:
   - name: web
@@ -10,7 +17,6 @@ services:
       repo: AjumaPro/selfie-verification
       branch: main
       deploy_on_push: true
-    # Entire monorepo (root package.json builds UI + starts API)
     source_dir: /
     environment_slug: node-js
     instance_count: 1
@@ -38,6 +44,11 @@ services:
       - key: SUPERADMIN_NAME
         value: Super Admin
         scope: RUN_TIME
+      # Bound to DigitalOcean Managed Postgres (component name: db)
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_TIME
+        type: SECRET
       - key: REACT_APP_AUTH_API_URL
         value: ""
         scope: BUILD_TIME
@@ -47,10 +58,6 @@ services:
       - key: REACT_APP_DEFAULT_CENTER
         value: BRANCHLESS
         scope: BUILD_TIME
-      - key: DATABASE_URL
-        type: SECRET
-        value: REPLACE_WITH_NEON_DATABASE_URL
-        scope: RUN_TIME
       - key: JWT_SECRET
         type: SECRET
         value: REPLACE_WITH_LONG_RANDOM_SECRET

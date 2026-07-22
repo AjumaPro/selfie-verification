@@ -22,6 +22,7 @@ function buildPoolConfig(url) {
     /neon\.tech/i.test(url) ||
     /digitalocean\.com/i.test(url) ||
     /ondigitalocean\.com/i.test(url) ||
+    /db\.ondigitalocean\.com/i.test(url) ||
     process.env.NODE_ENV === 'production';
 
   if (needsSsl && !/uselibpqcompat=/i.test(connectionStringOut)) {

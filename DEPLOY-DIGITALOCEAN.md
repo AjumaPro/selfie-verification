@@ -1,74 +1,61 @@
-# DigitalOcean — fix “No components detected”
+# DigitalOcean deploy (App Platform + Managed Postgres)
 
-This is a **monorepo**. There is **no** `package.json` at the repo root, so App Platform cannot autodetect from `/`.
+## Current setup (recommended)
 
-Apps live in:
+One **web** service serves API + UI. Postgres is a **DigitalOcean managed database** named `db`, bound as:
 
-| Folder | Role |
-|--------|------|
-| `backend/` | Node API (`package.json` + Dockerfile) |
-| `frontend/` | React UI (`package.json` + Dockerfile) |
+```text
+DATABASE_URL=${db.DATABASE_URL}
+```
 
----
+Defined in [`.do/app.yaml`](./.do/app.yaml).
 
-## Option A — Recommended: upload App Spec
+### Attach Postgres to an existing app (Control Panel)
 
-1. DigitalOcean → **Apps** → **Create App**
-2. Choose **GitHub** is optional; easier: use **App Spec** / “Upload app spec” / “Edit YAML”
-3. Upload or paste: [`.do/app.yaml`](./.do/app.yaml)
-4. Replace every `REPLACE_WITH_…` env value (Database URL, JWT secret, superadmin password, KYC keys)
-5. Create resources → Deploy
+1. Open your app → **Resources** → **Add Resource** → **Database**
+2. Choose **PostgreSQL** (Dev DB is fine to start; upgrade later)
+3. Name it **`db`** (must match the app spec), or note the name
+4. App → **Settings** → your **web** component → **Environment Variables**
+5. Set:
 
----
+   | Key | Value |
+   |-----|--------|
+   | `DATABASE_URL` | `${db.DATABASE_URL}` |
 
-## Option B — GitHub UI (manual source directories)
+   If you named the database something else (e.g. `postgres-db`), use `${postgres-db.DATABASE_URL}`.
 
-1. **Create App** → GitHub → `AjumaPro/selfie-verification` → branch `main`
-2. On the detect screen, set **Source Directory** to:
+6. Remove any old Neon `DATABASE_URL` value.
+7. **Save** → **Deploy**. On boot, `npm start` runs migrations against DO Postgres.
 
-   ```text
-   backend
-   ```
+### Create / update from App Spec
 
-   (not blank / not `/`)
-
-3. Confirm it detects a **Node.js** web service. Set:
-   - HTTP port: `8080`
-   - Run command: `npm run start:prod`
-   - Routes: `/api` and `/health` (or edit after create)
-4. Click **Add Resource** → **Detect from Source Code** again
-5. Set **Source Directory** to:
-
-   ```text
-   frontend
-   ```
-
-6. Choose **Static Site**. Build command:
-
-   ```text
-   npm ci && node download-models.js && npm run build
-   ```
-
-   Output directory: `build`
-7. Add env vars (see README “Deploy to DigitalOcean”), then deploy.
+1. Apps → your app → **Settings** → **App Spec** → Edit
+2. Paste/upload [`.do/app.yaml`](./.do/app.yaml)
+3. Replace `REPLACE_WITH_…` secrets (`JWT_SECRET`, superadmin, KYC keys)
+4. Keep `DATABASE_URL: ${db.DATABASE_URL}` (do **not** paste a Neon URL)
+5. Save → redeploy
 
 ---
 
-## Option C — Two separate apps
+## “No components detected”
 
-If the UI still fails detection, create **two apps**:
+This is a monorepo. Prefer the **root** single-service setup in `.do/app.yaml` (`source_dir: /` with `npm run build` + `npm start`).
 
-1. App 1 — Source Directory `backend`
-2. App 2 — Source Directory `frontend`, with  
-   `REACT_APP_AUTH_API_URL=https://YOUR-API-APP.ondigitalocean.app`
+Or set Source Directory explicitly to `backend` / `frontend` (see older multi-component notes in git history).
 
 ---
 
-If the build log says **“This app may not specify any way to start a node process”**, DigitalOcean built the **repo root**. Fix:
+## “Cannot GET /”
 
-1. App → component → **Settings** → **Source Directory** = `backend`
-2. **Run Command** = `npm run start:prod`
-3. **HTTP Port** = `8080`
-4. Redeploy
+Root deploy must run **`npm run build`** (copies UI into `backend/public`) before **`npm start`**.
 
-Or rely on the root `Procfile` / `"start"` script (launches the API from `backend/`).
+---
+
+## Local vs DigitalOcean DB
+
+| Environment | `DATABASE_URL` |
+|-------------|----------------|
+| Local | Neon or local Postgres in `backend/.env` |
+| DigitalOcean | `${db.DATABASE_URL}` from managed Postgres |
+
+SSL for DO Postgres is handled in `backend/src/db/pool.js`.

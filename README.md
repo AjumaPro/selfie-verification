@@ -48,7 +48,7 @@ IMAGE recognition/
 ## Prerequisites
 
 - **Node.js** 18+
-- **PostgreSQL** (local or hosted — this project uses Neon)
+- **PostgreSQL** (local, Neon, or **DigitalOcean Managed Postgres** in production)
 - npm
 
 ---
@@ -246,7 +246,7 @@ This repo includes `.do/app.yaml` for **App Platform**:
 - **web** — static React build (`frontend/`)
 - **api** — Express auth API (`backend/`) on `/api` and `/health`
 - Auth uses **same origin** (`REACT_APP_AUTH_API_URL` empty), so the browser calls `/api/...` on your app URL
-- Postgres stays on **Neon** (or any Postgres) via `DATABASE_URL`
+- Production uses **DigitalOcean Managed Postgres** via `DATABASE_URL=${db.DATABASE_URL}` (see `.do/app.yaml`)
 
 ### 1. Push to GitHub
 
@@ -262,7 +262,7 @@ Repo: `https://github.com/AjumaPro/selfie-verification`
 
 | Key | Component | Notes |
 |-----|-----------|--------|
-| `DATABASE_URL` | api | Neon (or DO Postgres) URL |
+| `DATABASE_URL` | web | `${db.DATABASE_URL}` (DigitalOcean Postgres) — do not paste Neon |
 | `JWT_SECRET` | api | Long random string |
 | `SUPERADMIN_EMAIL` | api | Admin login email |
 | `SUPERADMIN_PASSWORD` | api | Strong password |
