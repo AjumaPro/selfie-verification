@@ -48,7 +48,7 @@ IMAGE recognition/
 ## Prerequisites
 
 - **Node.js** 18+
-- **PostgreSQL** (local, Neon, or **DigitalOcean Managed Postgres** in production)
+- **PostgreSQL** (**DigitalOcean Managed Postgres**)
 - npm
 
 ---
@@ -262,7 +262,7 @@ Repo: `https://github.com/AjumaPro/selfie-verification`
 
 | Key | Component | Notes |
 |-----|-----------|--------|
-| `DATABASE_URL` | web | `${db.DATABASE_URL}` (DigitalOcean Postgres) — do not paste Neon |
+| `DATABASE_URL` | web | `${db.DATABASE_URL}` (DigitalOcean Managed Postgres) |
 | `JWT_SECRET` | api | Long random string |
 | `SUPERADMIN_EMAIL` | api | Admin login email |
 | `SUPERADMIN_PASSWORD` | api | Strong password |

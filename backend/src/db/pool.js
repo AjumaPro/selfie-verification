@@ -6,7 +6,7 @@ if (!connectionString) {
 }
 
 /**
- * Managed Postgres (Neon, DigitalOcean, etc.) often presents certs Node does not trust.
+ * Managed Postgres (DigitalOcean, etc.) often presents certs Node does not trust.
  * Newer `pg` also maps sslmode=require → verify-full, which causes:
  *   "self-signed certificate in certificate chain"
  * Use libpq-compatible require + rejectUnauthorized: false unless explicitly strict.
@@ -19,7 +19,6 @@ function buildPoolConfig(url) {
   let connectionStringOut = url;
   const needsSsl =
     /sslmode=/i.test(url) ||
-    /neon\.tech/i.test(url) ||
     /digitalocean\.com/i.test(url) ||
     /ondigitalocean\.com/i.test(url) ||
     /db\.ondigitalocean\.com/i.test(url) ||

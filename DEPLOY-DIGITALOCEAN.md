@@ -24,7 +24,6 @@ Defined in [`.do/app.yaml`](./.do/app.yaml).
 
    If you named the database something else (e.g. `postgres-db`), use `${postgres-db.DATABASE_URL}`.
 
-6. Remove any old Neon `DATABASE_URL` value.
 7. **Save** → **Deploy**. On boot, `npm start` runs migrations against DO Postgres.
 
 ### Create / update from App Spec
@@ -32,7 +31,7 @@ Defined in [`.do/app.yaml`](./.do/app.yaml).
 1. Apps → your app → **Settings** → **App Spec** → Edit
 2. Paste/upload [`.do/app.yaml`](./.do/app.yaml)
 3. Replace `REPLACE_WITH_…` secrets (`JWT_SECRET`, superadmin, KYC keys)
-4. Keep `DATABASE_URL: ${db.DATABASE_URL}` (do **not** paste a Neon URL)
+4. Keep `DATABASE_URL: ${db.DATABASE_URL}`
 5. Save → redeploy
 
 ---
@@ -55,7 +54,7 @@ Root deploy must run **`npm run build`** (copies UI into `backend/public`) befor
 
 | Environment | `DATABASE_URL` |
 |-------------|----------------|
-| Local | Neon or local Postgres in `backend/.env` |
+| Local | DigitalOcean Postgres URL in `backend/.env` |
 | DigitalOcean | `${db.DATABASE_URL}` from managed Postgres |
 
 SSL for DO Postgres is handled in `backend/src/db/pool.js`.
