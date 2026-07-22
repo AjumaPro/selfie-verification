@@ -231,11 +231,10 @@ const InstallOnDevice = () => {
                     available.dmg === false ||
                     available.macZip === false) && (
                     <p className="install-note">
-                      Desktop .exe / .dmg are <strong>not hosted on the web app</strong> (files are
-                      large and built on a Mac/Windows machine). On a developer computer run{' '}
-                      <code>cd frontend && npm run electron:build</code>, then refresh this page
-                      locally. On the hosted site, use <strong>Install via browser</strong> or the
-                      UI ZIP instead.
+                      Desktop installers are published with each deploy from GitHub Release{' '}
+                      <code>desktop-v2.0.0</code>. If a button stays disabled, wait for the latest
+                      DigitalOcean build to finish, then hard-refresh. Locally, files under{' '}
+                      <code>frontend/public/downloads/</code> are used when present.
                     </p>
                   )}
                   <p className="install-note">
