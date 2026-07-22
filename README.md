@@ -239,13 +239,53 @@ npm run electron:build      # Mac + Win installers
 
 ---
 
+## Deploy to DigitalOcean (App Platform)
+
+This repo includes `.do/app.yaml` for **App Platform**:
+
+- **web** — static React build (`frontend/`)
+- **api** — Express auth API (`backend/`) on `/api` and `/health`
+- Auth uses **same origin** (`REACT_APP_AUTH_API_URL` empty), so the browser calls `/api/...` on your app URL
+- Postgres stays on **Neon** (or any Postgres) via `DATABASE_URL`
+
+### 1. Push to GitHub
+
+Repo: `https://github.com/AjumaPro/selfie-verification`
+
+### 2. Create the app
+
+1. Open [Create App on DigitalOcean](https://cloud.digitalocean.com/apps/new) → connect **GitHub** → `AjumaPro/selfie-verification` → branch `main`.
+2. Use resources from `.do/app.yaml`, or add manually:
+   - **Web Service** `backend`: run `npm run start:prod`, HTTP port `8080`, routes `/api` and `/health`
+   - **Static Site** `frontend`: build `npm ci && node download-models.js && npm run build`, output `build`, route `/`
+3. Set secrets / env vars:
+
+| Key | Component | Notes |
+|-----|-----------|--------|
+| `DATABASE_URL` | api | Neon (or DO Postgres) URL |
+| `JWT_SECRET` | api | Long random string |
+| `SUPERADMIN_EMAIL` | api | Admin login email |
+| `SUPERADMIN_PASSWORD` | api | Strong password |
+| `SUPERADMIN_NAME` | api | optional |
+| `CORS_ORIGIN` | api | `*` or your app URL |
+| `REACT_APP_DEFAULT_USER_ID` | web (build-time) | KYC API user id |
+| `REACT_APP_DEFAULT_MERCHANT_KEY` | web (build-time) | KYC merchant key |
+| `REACT_APP_AUTH_API_URL` | web (build-time) | leave **empty** for same-origin |
+
+4. Deploy → open `https://….ondigitalocean.app` → **Admin** tab with your superadmin credentials.
+
+### Docker (optional Droplet)
+
+```bash
+docker build -t selfie-api ./backend
+docker run -p 8080:8080 --env-file backend/.env selfie-api
+
+docker build -t selfie-web ./frontend
+docker run -p 80:80 selfie-web
+```
+
+---
+
 ## License / ownership
 
 Internal GLICO application. Copyright © GLICO.
-
-
-
-# Superadmin seed (created/updated on npm run db:migrate)
-SUPERADMIN_EMAIL=superadmin@glico.local
-SUPERADMIN_PASSWORD=SuperAdmin@123
-SUPERADMIN_NAME=Super Admin
