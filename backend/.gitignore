@@ -3,3 +3,7 @@ node_modules/
 *.log
 .DS_Store
 public/
+data/
+*.db
+*.db-*
+

@@ -1,6 +1,6 @@
-# Single-service deploy (API + UI) with App Platform Postgres (dev DB for now).
+# Single-service deploy (API + UI) + App Platform Postgres.
 # UI is built into backend/public during `npm run build`, then Express serves it.
-# Dev DB is reachable only from this app (not from your laptop).
+# Production uses Postgres only (DB_CLIENT is never sqlite here).
 
 name: selfie-verification
 region: nyc
@@ -9,7 +9,6 @@ databases:
   - name: db
     engine: PG
     version: "16"
-    # App Platform development database (upgrade later via Convert to Managed Database)
     production: false
 
 services:
@@ -36,6 +35,9 @@ services:
       - key: PORT
         value: "8080"
         scope: RUN_TIME
+      - key: DB_CLIENT
+        value: postgres
+        scope: RUN_TIME
       - key: JWT_EXPIRES_IN
         value: 7d
         scope: RUN_TIME
@@ -45,15 +47,13 @@ services:
       - key: SUPERADMIN_NAME
         value: Super Admin
         scope: RUN_TIME
-      # Bound to App Platform Postgres component `db` (dev DB for now)
       - key: DATABASE_URL
         value: ${db.DATABASE_URL}
         scope: RUN_TIME
         type: SECRET
-      # Must be a real secret (not REPLACE_WITH_…) or the app will refuse to start
       - key: JWT_SECRET
         type: SECRET
-        value: glico-selfie-dev-jwt-change-me-later
+        value: glico-selfie-prod-jwt-change-me-in-console
         scope: RUN_TIME
       - key: SUPERADMIN_EMAIL
         type: SECRET

@@ -1,17 +1,24 @@
 # Selfie Verification API
 
-Node.js + Express + PostgreSQL auth backend. See the root [README.md](../README.md) for the full project guide.
+Node.js + Express auth backend. **SQLite** for local/device; **PostgreSQL** on DigitalOcean.
 
-## Quick start
+## Quick start (local / device)
 
 ```bash
 cp .env.example .env
+# .env already uses DB_CLIENT=sqlite by default
 npm install
 npm run db:migrate
 npm run dev
 ```
 
+Data file: `backend/data/auth.db` (gitignored).
+
 Base URL: `http://localhost:4000`
+
+## Production (DigitalOcean)
+
+Set `DATABASE_URL` (Postgres). Do **not** set `DB_CLIENT=sqlite`. Migrations run on start.
 
 ## Endpoints
 

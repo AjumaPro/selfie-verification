@@ -1,9 +1,7 @@
 const { Pool } = require('pg');
+const { resolveDbConfig } = require('./config');
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error('DATABASE_URL is not set. Copy backend/.env.example to backend/.env');
-}
+const config = resolveDbConfig();
 
 /**
  * Managed Postgres (DigitalOcean, etc.) often presents certs Node does not trust.
@@ -11,7 +9,7 @@ if (!connectionString) {
  *   "self-signed certificate in certificate chain"
  * Use libpq-compatible require + rejectUnauthorized: false unless explicitly strict.
  */
-function buildPoolConfig(url) {
+function buildPostgresPoolConfig(url) {
   const strict =
     String(process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || '').toLowerCase() ===
     'true';
@@ -40,13 +38,21 @@ function buildPoolConfig(url) {
   };
 }
 
-const pool = new Pool(buildPoolConfig(connectionString));
+let pool;
 
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL pool error:', err);
-});
+if (config.engine === 'sqlite') {
+  const { createSqlitePool } = require('./sqlite');
+  pool = createSqlitePool(config.sqlitePath);
+} else {
+  pool = new Pool(buildPostgresPoolConfig(config.connectionString));
+  pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL pool error:', err);
+  });
+  console.log('PostgreSQL pool ready');
+}
 
 module.exports = {
+  engine: config.engine,
   pool,
   query: (text, params) => pool.query(text, params),
 };

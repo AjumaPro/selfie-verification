@@ -5,7 +5,7 @@ const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
-const { query } = require('./db/pool');
+const { query, engine } = require('./db/pool');
 const { getJwtSecret } = require('./middleware/auth');
 
 const app = express();
@@ -48,13 +48,19 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/health', async (_req, res) => {
   try {
     await query('SELECT 1 AS ok');
-    return res.json({ ok: true, service: 'selfie-verification-api', database: 'up' });
+    return res.json({
+      ok: true,
+      service: 'selfie-verification-api',
+      database: 'up',
+      engine,
+    });
   } catch (err) {
     console.error('health check db error:', err.message);
     return res.status(503).json({
       ok: false,
       service: 'selfie-verification-api',
       database: 'down',
+      engine,
       error: 'Database unavailable',
     });
   }

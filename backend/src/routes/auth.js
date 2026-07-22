@@ -102,6 +102,19 @@ router.post('/login', async (req, res) => {
     return await loginWithRoleCheck(req, res);
   } catch (e) {
     console.error('login error:', e);
+    const dbDown =
+      e?.code === 'ECONNREFUSED' ||
+      e?.code === 'ETIMEDOUT' ||
+      e?.code === 'ENOTFOUND' ||
+      e?.code === '57P01' ||
+      /database|connect|ssl|timeout/i.test(String(e?.message || ''));
+    if (dbDown) {
+      const localHint =
+        process.env.NODE_ENV !== 'production'
+          ? ' Local: open DigitalOcean → Database → Settings → Trusted Sources and add your public IP, then retry.'
+          : ' On App Platform: bind DATABASE_URL to ${db.DATABASE_URL} and redeploy.';
+      return res.status(503).json({ error: `Database unavailable.${localHint}` });
+    }
     return res.status(500).json({ error: 'Sign in failed. Please try again.' });
   }
 });
@@ -118,9 +131,12 @@ router.post('/superadmin/login', async (req, res) => {
       e?.code === '57P01' ||
       /database|connect|ssl|timeout/i.test(String(e?.message || ''));
     if (dbDown) {
+      const localHint =
+        process.env.NODE_ENV !== 'production'
+          ? ' Local: open DigitalOcean → Database → Settings → Trusted Sources and add your public IP, then retry.'
+          : ' On App Platform: bind DATABASE_URL to ${db.DATABASE_URL} and redeploy.';
       return res.status(503).json({
-        error:
-          'Database unavailable. On DigitalOcean, bind DATABASE_URL to ${db.DATABASE_URL} and redeploy.',
+        error: `Database unavailable.${localHint}`,
       });
     }
     if (/JWT_SECRET/i.test(String(e?.message || ''))) {
