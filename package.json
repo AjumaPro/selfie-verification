@@ -1,15 +1,15 @@
 {
   "name": "selfie-verification",
   "private": true,
-  "description": "Monorepo root. Prefer source_dir backend/ or frontend/ on DigitalOcean. Root start launches the API.",
+  "description": "Monorepo root — builds UI into backend/public and starts the API (DigitalOcean single service).",
   "engines": {
     "node": "20.x"
   },
   "scripts": {
     "postinstall": "npm ci --prefix backend --omit=dev",
+    "build": "npm ci --prefix frontend && node frontend/download-models.js && REACT_APP_AUTH_API_URL= npm run build --prefix frontend && node scripts/copy-web-to-api.js",
     "start": "npm run start:prod --prefix backend",
     "api": "npm run dev --prefix backend",
-    "web": "npm start --prefix frontend",
-    "web:build": "npm run build --prefix frontend"
+    "web": "npm start --prefix frontend"
   }
 }
