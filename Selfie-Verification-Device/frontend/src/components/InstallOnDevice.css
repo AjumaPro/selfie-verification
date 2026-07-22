@@ -119,8 +119,17 @@ a.install-primary-btn {
 }
 
 a.install-primary-btn.is-disabled {
-  opacity: 0.55;
+  opacity: 0.65;
   pointer-events: none;
+  background: #94a3b8 !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+button.install-primary-btn:disabled {
+  opacity: 0.65;
+  background: #94a3b8;
+  cursor: not-allowed;
 }
 
 .install-action-card code,

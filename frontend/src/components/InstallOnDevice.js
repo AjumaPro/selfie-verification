@@ -168,22 +168,34 @@ const InstallOnDevice = () => {
                   <div className="desktop-btn-row">
                     <a
                       className={`install-primary-btn ${available.exe === false ? 'is-disabled' : ''}`}
-                      href={EXE_URL}
-                      download="Selfie-Verification-Windows.exe"
+                      href={available.exe ? EXE_URL : undefined}
+                      download={available.exe ? 'Selfie-Verification-Windows.exe' : undefined}
+                      onClick={(e) => {
+                        if (available.exe === false) e.preventDefault();
+                      }}
+                      aria-disabled={available.exe === false}
                     >
                       <FaWindows /> Download for Windows (.exe)
                     </a>
                     <a
                       className={`install-primary-btn mac-btn ${available.dmg === false ? 'is-disabled' : ''}`}
-                      href={DMG_URL}
-                      download="Selfie-Verification-Mac.dmg"
+                      href={available.dmg ? DMG_URL : undefined}
+                      download={available.dmg ? 'Selfie-Verification-Mac.dmg' : undefined}
+                      onClick={(e) => {
+                        if (available.dmg === false) e.preventDefault();
+                      }}
+                      aria-disabled={available.dmg === false}
                     >
                       <FaApple /> Download for Mac (.dmg)
                     </a>
                     <a
                       className={`install-primary-btn mac-btn ${available.macZip === false ? 'is-disabled' : ''}`}
-                      href={MAC_ZIP_URL}
-                      download="Selfie-Verification-Mac.zip"
+                      href={available.macZip ? MAC_ZIP_URL : undefined}
+                      download={available.macZip ? 'Selfie-Verification-Mac.zip' : undefined}
+                      onClick={(e) => {
+                        if (available.macZip === false) e.preventDefault();
+                      }}
+                      aria-disabled={available.macZip === false}
                     >
                       <FaApple /> Mac app (.zip)
                     </a>
@@ -192,17 +204,19 @@ const InstallOnDevice = () => {
                     available.dmg === false ||
                     available.macZip === false) && (
                     <p className="install-note">
-                      If a download fails, run <code>npm run electron:build</code> then refresh.
+                      Desktop .exe / .dmg are <strong>not hosted on the web app</strong> (files are
+                      large and built on a Mac/Windows machine). On a developer computer run{' '}
+                      <code>cd frontend && npm run electron:build</code>, then refresh this page
+                      locally. On the hosted site, use <strong>Install via browser</strong> or the
+                      UI ZIP instead.
                     </p>
                   )}
                   <p className="install-note">
                     <strong>Windows:</strong> run the .exe. If SmartScreen appears, click{' '}
                     <em>More info</em> → <strong>Run anyway</strong>.
                     <br />
-                    <strong>Mac:</strong> new builds are ~80–120&nbsp;MB (not 500&nbsp;MB). Open the
-                    .dmg → drag to Applications. If you see “developer cannot be verified”, that is
-                    expected for unsigned builds — in Finder{' '}
-                    <strong>Control‑click the app → Open → Open</strong>, or use{' '}
+                    <strong>Mac:</strong> open the .dmg → drag to Applications. If “developer cannot
+                    be verified”, Control‑click the app → <strong>Open</strong>, or use{' '}
                     <em>System Settings → Privacy &amp; Security → Open Anyway</em>.{' '}
                     <a href={MAC_HELP_URL} download="MAC-INSTALL.txt">
                       Full Mac steps
@@ -223,10 +237,13 @@ const InstallOnDevice = () => {
                     disabled={available.zip === false}
                   >
                     <FaDownload />
-                    {available.zip === false ? 'ZIP not ready' : 'Download UI (ZIP)'}
+                    {available.zip === false
+                      ? 'ZIP not ready (redeploy build)'
+                      : available.zip == null
+                        ? 'Checking ZIP…'
+                        : 'Download UI (ZIP)'}
                   </button>
                 </div>
-
                 <div className="install-action-card">
                   <h3>
                     <FaDownload /> Install in browser

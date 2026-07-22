@@ -7,9 +7,12 @@
   },
   "scripts": {
     "postinstall": "npm ci --prefix backend --omit=dev",
-    "build": "npm ci --prefix frontend --include=dev && node frontend/download-models.js && node scripts/write-frontend-env.js && npm run build --prefix frontend && node scripts/copy-web-to-api.js",
+    "build": "npm ci --prefix frontend --include=dev && node frontend/download-models.js && node scripts/write-frontend-env.js && npm run build --prefix frontend && node scripts/make-ui-zip.js && node scripts/copy-web-to-api.js",
     "start": "npm run start:prod --prefix backend",
     "api": "npm run dev --prefix backend",
     "web": "npm start --prefix frontend"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1"
   }
 }
