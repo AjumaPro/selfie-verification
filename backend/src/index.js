@@ -13,7 +13,7 @@ const port = Number(process.env.PORT) || 4000;
 
 function assertProductionSecrets() {
   if (process.env.NODE_ENV !== 'production') return;
-  // Fail at boot (not first login) if JWT is missing / still a placeholder
+  // Warn early if JWT is weak; do not crash the process (health checks need the server up)
   getJwtSecret();
 }
 

@@ -53,7 +53,7 @@ services:
         type: SECRET
       - key: JWT_SECRET
         type: SECRET
-        value: glico-selfie-prod-jwt-change-me-in-console
+        value: glico-selfie-prod-jwt-8f3a2c91-do-app-platform
         scope: RUN_TIME
       - key: SUPERADMIN_EMAIL
         type: SECRET

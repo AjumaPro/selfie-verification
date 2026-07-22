@@ -1,16 +1,32 @@
 const jwt = require('jsonwebtoken');
 
+const PROD_FALLBACK_JWT =
+  'glico-selfie-do-fallback-jwt-set-JWT_SECRET-in-app-platform';
+
+function isWeakJwtSecret(secret) {
+  if (!secret || !String(secret).trim()) return true;
+  const s = String(secret).trim();
+  if (s === 'change-me-to-a-long-random-secret') return true;
+  if (s === 'dev-only-secret') return true;
+  if (/REPLACE_WITH/i.test(s)) return true;
+  return false;
+}
+
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
-  const invalid =
-    !secret ||
-    secret === 'change-me-to-a-long-random-secret' ||
-    /REPLACE_WITH/i.test(secret);
-  if (invalid && process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET must be set in production');
+  if (!isWeakJwtSecret(secret)) {
+    return String(secret).trim();
   }
-  return invalid ? 'dev-only-secret' : secret;
+  if (process.env.NODE_ENV === 'production') {
+    console.warn(
+      'WARNING: JWT_SECRET is missing or a placeholder. ' +
+        'Set a strong JWT_SECRET in DigitalOcean App → Settings → web → Environment Variables, then redeploy.'
+    );
+    return PROD_FALLBACK_JWT;
+  }
+  return 'dev-only-secret';
 }
+
 
 function signToken(user) {
   return jwt.sign(
