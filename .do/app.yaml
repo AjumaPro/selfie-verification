@@ -1,5 +1,6 @@
-# Single-service deploy (API + UI) with DigitalOcean Managed Postgres.
+# Single-service deploy (API + UI) with App Platform Postgres (dev DB for now).
 # UI is built into backend/public during `npm run build`, then Express serves it.
+# Dev DB is reachable only from this app (not from your laptop).
 
 name: selfie-verification
 region: nyc
@@ -8,7 +9,7 @@ databases:
   - name: db
     engine: PG
     version: "16"
-    # Dev database is included with App Platform; upgrade in DO console if needed
+    # App Platform development database (upgrade later via Convert to Managed Database)
     production: false
 
 services:
@@ -44,11 +45,24 @@ services:
       - key: SUPERADMIN_NAME
         value: Super Admin
         scope: RUN_TIME
-      # Bound to DigitalOcean Managed Postgres (component name: db)
+      # Bound to App Platform Postgres component `db` (dev DB for now)
       - key: DATABASE_URL
         value: ${db.DATABASE_URL}
         scope: RUN_TIME
         type: SECRET
+      # Must be a real secret (not REPLACE_WITH_…) or the app will refuse to start
+      - key: JWT_SECRET
+        type: SECRET
+        value: glico-selfie-dev-jwt-change-me-later
+        scope: RUN_TIME
+      - key: SUPERADMIN_EMAIL
+        type: SECRET
+        value: superadmin@glico.local
+        scope: RUN_TIME
+      - key: SUPERADMIN_PASSWORD
+        type: SECRET
+        value: SuperAdmin@123
+        scope: RUN_TIME
       - key: REACT_APP_AUTH_API_URL
         value: ""
         scope: BUILD_TIME
@@ -58,18 +72,6 @@ services:
       - key: REACT_APP_DEFAULT_CENTER
         value: BRANCHLESS
         scope: BUILD_TIME
-      - key: JWT_SECRET
-        type: SECRET
-        value: REPLACE_WITH_LONG_RANDOM_SECRET
-        scope: RUN_TIME
-      - key: SUPERADMIN_EMAIL
-        type: SECRET
-        value: superadmin@glico.local
-        scope: RUN_TIME
-      - key: SUPERADMIN_PASSWORD
-        type: SECRET
-        value: REPLACE_WITH_STRONG_PASSWORD
-        scope: RUN_TIME
       - key: REACT_APP_DEFAULT_USER_ID
         type: SECRET
         value: REPLACE_WITH_KYC_USER_ID

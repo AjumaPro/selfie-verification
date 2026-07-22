@@ -52,9 +52,10 @@ Root deploy must run **`npm run build`** (copies UI into `backend/public`) befor
 
 ## Local vs DigitalOcean DB
 
-| Environment | `DATABASE_URL` |
+| Environment | Database |
 |-------------|----------------|
-| Local | DigitalOcean Postgres URL in `backend/.env` |
-| DigitalOcean | `${db.DATABASE_URL}` from managed Postgres |
+| App Platform **dev** DB | Only the live app can connect — no Trusted Sources / laptop access |
+| Local UI while using dev DB | Set `REACT_APP_AUTH_API_URL` to your `.ondigitalocean.app` URL (do not run local API against the DO URL) |
+| Managed DB (later) | Network Access → add your IP; then local `DATABASE_URL` works |
 
 SSL for DO Postgres is handled in `backend/src/db/pool.js`.
