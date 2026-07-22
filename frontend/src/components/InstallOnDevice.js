@@ -12,7 +12,9 @@ import {
 } from 'react-icons/fa';
 import './InstallOnDevice.css';
 
-const BASE = process.env.PUBLIC_URL || '';
+/** CRA `homepage: "./"` sets PUBLIC_URL to "." which breaks absolute download paths */
+const rawPublic = process.env.PUBLIC_URL || '';
+const BASE = rawPublic === '.' || rawPublic === './' ? '' : rawPublic.replace(/\/$/, '');
 const ZIP_URL = `${BASE}/downloads/selfie-verification-ui.zip`;
 const DMG_URL = `${BASE}/downloads/Selfie-Verification-Mac.dmg`;
 const MAC_ZIP_URL = `${BASE}/downloads/Selfie-Verification-Mac.zip`;
@@ -40,15 +42,40 @@ const getPlatform = () => {
   };
 };
 
+const looksLikeHtml = (type, buf) => {
+  const t = (type || '').toLowerCase();
+  if (t.includes('text/html')) return true;
+  if (!buf || buf.byteLength < 15) return false;
+  const head = new TextDecoder().decode(buf.slice(0, 64)).trim().toLowerCase();
+  return head.startsWith('<!doctype') || head.startsWith('<html');
+};
+
+/** HEAD is unreliable on CRA / some hosts — probe with a tiny ranged GET */
 const checkUrl = async (url) => {
   try {
-    const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
-    if (!res.ok) return false;
-    // CRA may return index.html (200) for missing files — reject HTML fallbacks
-    const type = (res.headers.get('content-type') || '').toLowerCase();
-    if (type.includes('text/html')) return false;
-    const len = Number(res.headers.get('content-length') || 0);
-    if (len > 0 && len < 10_000) return false; // too small to be an installer
+    let res = await fetch(url, {
+      method: 'GET',
+      headers: { Range: 'bytes=0-1023' },
+      cache: 'no-store',
+    });
+    if (!res.ok && res.status !== 206) {
+      res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+    }
+    if (!res.ok && res.status !== 206) return false;
+
+    const type = res.headers.get('content-type') || '';
+    let sample = null;
+    try {
+      sample = await res.arrayBuffer();
+    } catch {
+      sample = null;
+    }
+    if (looksLikeHtml(type, sample)) return false;
+
+    const rangeTotal = (res.headers.get('content-range') || '').split('/')[1];
+    const len = Number(res.headers.get('content-length') || rangeTotal || 0);
+    // Reject CRA HTML fallbacks that are tiny; allow large installers / zips
+    if (len > 0 && len < 10_000) return false;
     return true;
   } catch {
     return false;
