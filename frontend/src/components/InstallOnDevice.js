@@ -15,10 +15,29 @@ import './InstallOnDevice.css';
 /** CRA `homepage: "./"` sets PUBLIC_URL to "." which breaks absolute download paths */
 const rawPublic = process.env.PUBLIC_URL || '';
 const BASE = rawPublic === '.' || rawPublic === './' ? '' : rawPublic.replace(/\/$/, '');
-const ZIP_URL = `${BASE}/downloads/selfie-verification-ui.zip`;
-const DMG_URL = `${BASE}/downloads/Selfie-Verification-Mac.dmg`;
-const MAC_ZIP_URL = `${BASE}/downloads/Selfie-Verification-Mac.zip`;
-const EXE_URL = `${BASE}/downloads/Selfie-Verification-Windows.exe`;
+
+/** GitHub Release assets — reliable on DigitalOcean (files not kept in git) */
+const GH_RELEASE_BASE =
+  process.env.REACT_APP_DESKTOP_DOWNLOAD_BASE ||
+  'https://github.com/AjumaPro/selfie-verification/releases/download/desktop-v2.0.0';
+
+const isBrowserLocal = () => {
+  if (typeof window === 'undefined') return true;
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+};
+
+/** Prefer local /downloads when developing; use GitHub Release on hosted apps */
+const downloadsRoot = () =>
+  isBrowserLocal() ? `${BASE}/downloads` : GH_RELEASE_BASE;
+
+const ZIP_URL = () =>
+  isBrowserLocal()
+    ? `${BASE}/downloads/selfie-verification-ui.zip`
+    : `${GH_RELEASE_BASE}/selfie-verification-ui.zip`;
+const DMG_URL = () => `${downloadsRoot()}/Selfie-Verification-Mac.dmg`;
+const MAC_ZIP_URL = () => `${downloadsRoot()}/Selfie-Verification-Mac.zip`;
+const EXE_URL = () => `${downloadsRoot()}/Selfie-Verification-Windows.exe`;
 const MAC_HELP_URL = `${BASE}/downloads/MAC-INSTALL.txt`;
 
 const getPlatform = () => {
@@ -113,17 +132,28 @@ const InstallOnDevice = () => {
   const [platform] = useState(() => getPlatform());
   const [open, setOpen] = useState(true);
 
+  const zipUrl = ZIP_URL();
+  const dmgUrl = DMG_URL();
+  const macZipUrl = MAC_ZIP_URL();
+  const exeUrl = EXE_URL();
+  const usingRemoteDownloads = !isBrowserLocal();
+
   useEffect(() => {
     if (platform.isStandalone) setInstalled(true);
 
-    Promise.all([
-      checkUrl(ZIP_URL),
-      checkUrl(DMG_URL),
-      checkUrl(MAC_ZIP_URL),
-      checkUrl(EXE_URL),
-    ]).then(([zip, dmg, macZip, exe]) =>
-      setAvailable({ zip, dmg, macZip, exe })
-    );
+    // Hosted (DigitalOcean): use GitHub Release URLs — always enabled (no CORS probe)
+    if (usingRemoteDownloads) {
+      setAvailable({ zip: true, dmg: true, macZip: true, exe: true });
+    } else {
+      Promise.all([
+        checkUrl(zipUrl),
+        checkUrl(dmgUrl),
+        checkUrl(macZipUrl),
+        checkUrl(exeUrl),
+      ]).then(([zip, dmg, macZip, exe]) =>
+        setAvailable({ zip, dmg, macZip, exe })
+      );
+    }
 
     const onBeforeInstall = (e) => {
       e.preventDefault();
@@ -140,7 +170,7 @@ const InstallOnDevice = () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
       window.removeEventListener('appinstalled', onInstalled);
     };
-  }, [platform.isStandalone]);
+  }, [platform.isStandalone, usingRemoteDownloads, zipUrl, dmgUrl, macZipUrl, exeUrl]);
 
   const handleInstallClick = useCallback(async () => {
     if (!deferredPrompt) {
@@ -201,8 +231,14 @@ const InstallOnDevice = () => {
                   <div className="desktop-btn-row">
                     <a
                       className={`install-primary-btn ${available.exe === false ? 'is-disabled' : ''}`}
-                      href={available.exe ? EXE_URL : undefined}
-                      download={available.exe ? 'Selfie-Verification-Windows.exe' : undefined}
+                      href={available.exe ? exeUrl : undefined}
+                      download={
+                        available.exe && isBrowserLocal()
+                          ? 'Selfie-Verification-Windows.exe'
+                          : undefined
+                      }
+                      target={usingRemoteDownloads ? '_blank' : undefined}
+                      rel={usingRemoteDownloads ? 'noopener noreferrer' : undefined}
                       onClick={(e) => {
                         if (available.exe === false) e.preventDefault();
                       }}
@@ -212,8 +248,14 @@ const InstallOnDevice = () => {
                     </a>
                     <a
                       className={`install-primary-btn mac-btn ${available.dmg === false ? 'is-disabled' : ''}`}
-                      href={available.dmg ? DMG_URL : undefined}
-                      download={available.dmg ? 'Selfie-Verification-Mac.dmg' : undefined}
+                      href={available.dmg ? dmgUrl : undefined}
+                      download={
+                        available.dmg && isBrowserLocal()
+                          ? 'Selfie-Verification-Mac.dmg'
+                          : undefined
+                      }
+                      target={usingRemoteDownloads ? '_blank' : undefined}
+                      rel={usingRemoteDownloads ? 'noopener noreferrer' : undefined}
                       onClick={(e) => {
                         if (available.dmg === false) e.preventDefault();
                       }}
@@ -223,8 +265,14 @@ const InstallOnDevice = () => {
                     </a>
                     <a
                       className={`install-primary-btn mac-btn ${available.macZip === false ? 'is-disabled' : ''}`}
-                      href={available.macZip ? MAC_ZIP_URL : undefined}
-                      download={available.macZip ? 'Selfie-Verification-Mac.zip' : undefined}
+                      href={available.macZip ? macZipUrl : undefined}
+                      download={
+                        available.macZip && isBrowserLocal()
+                          ? 'Selfie-Verification-Mac.zip'
+                          : undefined
+                      }
+                      target={usingRemoteDownloads ? '_blank' : undefined}
+                      rel={usingRemoteDownloads ? 'noopener noreferrer' : undefined}
                       onClick={(e) => {
                         if (available.macZip === false) e.preventDefault();
                       }}
@@ -233,14 +281,19 @@ const InstallOnDevice = () => {
                       <FaApple /> Mac app (.zip)
                     </a>
                   </div>
-                  {(available.exe === false ||
-                    available.dmg === false ||
-                    available.macZip === false) && (
+                  {usingRemoteDownloads && (
                     <p className="install-note">
-                      Desktop installers are published with each deploy from GitHub Release{' '}
-                      <code>desktop-v2.0.0</code>. If a button stays disabled, wait for the latest
-                      DigitalOcean build to finish, then hard-refresh. Locally, files under{' '}
-                      <code>frontend/public/downloads/</code> are used when present.
+                      Desktop installers download from the public GitHub release{' '}
+                      <code>desktop-v2.0.0</code> (same files used for DigitalOcean).
+                    </p>
+                  )}
+                  {!usingRemoteDownloads &&
+                    (available.exe === false ||
+                      available.dmg === false ||
+                      available.macZip === false) && (
+                    <p className="install-note">
+                      Missing local installers in <code>frontend/public/downloads/</code>. Run{' '}
+                      <code>npm run electron:build</code> or place the files there.
                     </p>
                   )}
                   <p className="install-note">
@@ -265,18 +318,23 @@ const InstallOnDevice = () => {
                   <button
                     type="button"
                     className="install-primary-btn secondary-action"
-                    onClick={() => downloadFile(ZIP_URL, 'selfie-verification-ui.zip')}
+                    onClick={() => {
+                      if (usingRemoteDownloads) {
+                        window.open(zipUrl, '_blank', 'noopener,noreferrer');
+                      } else {
+                        downloadFile(zipUrl, 'selfie-verification-ui.zip');
+                      }
+                    }}
                     disabled={available.zip === false}
                   >
                     <FaDownload />
                     {available.zip === false
-                      ? 'ZIP not ready (redeploy build)'
+                      ? 'ZIP not ready'
                       : available.zip == null
                         ? 'Checking ZIP…'
                         : 'Download UI (ZIP)'}
                   </button>
-                </div>
-                <div className="install-action-card">
+                </div>                <div className="install-action-card">
                   <h3>
                     <FaDownload /> Install in browser
                   </h3>

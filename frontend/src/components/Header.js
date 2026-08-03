@@ -1,34 +1,82 @@
 import React from 'react';
-import { FaSignOutAlt, FaUser, FaUserShield } from 'react-icons/fa';
+import {
+  FaSignOutAlt,
+  FaUser,
+  FaUserShield,
+  FaThLarge,
+  FaIdCard,
+  FaVideo,
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
-const Header = () => {
+const appLabels = {
+  hub: {
+    title: 'GLICO Platform',
+    subtitle: 'Applications home',
+  },
+  recognition: {
+    title: 'Image Recognition',
+    subtitle: 'Identity verification & KYC',
+  },
+  meetings: {
+    title: 'Meetings',
+    subtitle: 'Schedule & session log',
+  },
+};
+
+const Header = ({ activeApp = 'hub', onBackToApps }) => {
   const { user, isAuthenticated, isSuperAdmin, logout } = useAuth();
+  const labels = appLabels[activeApp] || appLabels.hub;
+  const title =
+    activeApp === 'hub' && isSuperAdmin
+      ? 'GLICO Platform Admin'
+      : labels.title;
+  const subtitle =
+    activeApp === 'hub' && isSuperAdmin
+      ? 'Superadmin control panel'
+      : labels.subtitle;
 
   return (
-    <header className={`header ${isSuperAdmin ? 'header-admin' : ''}`}>
+    <header
+      className={`header ${isSuperAdmin ? 'header-admin' : ''} ${
+        activeApp !== 'hub' ? 'header-in-app' : ''
+      }`}
+    >
       <div className="header-content">
         <div className="header-main">
           <div className="header-brand">
             <img
-              src={`${process.env.PUBLIC_URL}/Glico.png`}
+              src={`${process.env.PUBLIC_URL === '.' || process.env.PUBLIC_URL === './' ? '' : process.env.PUBLIC_URL || ''}/Glico.png`}
               alt="GLICO"
               className="header-logo"
             />
             <div className="header-brand-text">
-              <h1>GLICO Platform{isSuperAdmin ? ' Admin' : ''}</h1>
-              <p>
-                {isSuperAdmin
-                  ? 'Superadmin control panel'
-                  : 'Identity verification & KYC'}
-              </p>
+              <h1>
+                {activeApp === 'recognition' && (
+                  <FaIdCard className="header-app-mark" aria-hidden />
+                )}
+                {activeApp === 'meetings' && (
+                  <FaVideo className="header-app-mark" aria-hidden />
+                )}
+                {title}
+              </h1>
+              <p>{subtitle}</p>
             </div>
           </div>
         </div>
 
         {isAuthenticated && user && (
           <div className="header-user">
+            {onBackToApps && (
+              <button
+                type="button"
+                className="header-apps-btn"
+                onClick={onBackToApps}
+              >
+                <FaThLarge /> All apps
+              </button>
+            )}
             <div className="header-user-info">
               {isSuperAdmin ? (
                 <FaUserShield className="header-user-icon admin" aria-hidden />
@@ -38,7 +86,9 @@ const Header = () => {
               <div>
                 <span className="header-user-name">
                   {user.fullName}
-                  {isSuperAdmin && <span className="header-role-pill">Super Admin</span>}
+                  {isSuperAdmin && (
+                    <span className="header-role-pill">Super Admin</span>
+                  )}
                 </span>
                 <span className="header-user-email">{user.email}</span>
               </div>

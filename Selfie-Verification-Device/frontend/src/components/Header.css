@@ -80,6 +80,39 @@
   flex-wrap: wrap;
 }
 
+.header-apps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--glico-border, #c5d0e8);
+  background: var(--glico-navy-soft, #e8ecf5);
+  color: var(--glico-navy, #103078);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  font-weight: 650;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.header-apps-btn:hover {
+  background: #dfe6f5;
+}
+
+.header-app-mark {
+  margin-right: 0.4rem;
+  font-size: 0.85em;
+  vertical-align: -0.05em;
+  opacity: 0.9;
+}
+
+.header-in-app .header-brand-text h1 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
 .header-user-info {
   display: flex;
   align-items: center;

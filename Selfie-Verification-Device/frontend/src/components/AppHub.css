@@ -1,0 +1,128 @@
+.app-hub {
+  margin-bottom: 2rem;
+}
+
+.app-hub-intro {
+  margin-bottom: 1.75rem;
+  max-width: 40rem;
+}
+
+.app-hub-intro h2 {
+  color: var(--glico-navy, #103078);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.app-hub-intro p {
+  color: #445;
+  line-height: 1.5;
+  font-size: 1.05rem;
+}
+
+.app-hub-admin-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--glico-navy, #103078);
+}
+
+.app-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 720px) {
+  .app-hub-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.app-hub-card {
+  text-align: left;
+  border: 1px solid var(--glico-border, #c5d0e8);
+  border-radius: 16px;
+  padding: 1.5rem 1.4rem 1.35rem;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.96) 0%, rgba(232, 236, 245, 0.55) 100%);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font: inherit;
+  color: inherit;
+}
+
+.app-hub-card:hover,
+.app-hub-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(16, 48, 120, 0.12);
+  border-color: var(--glico-sky, #48a8e8);
+  outline: none;
+}
+
+.app-hub-card-verify:hover,
+.app-hub-card-verify:focus-visible {
+  border-color: var(--glico-red, #d03038);
+}
+
+.app-hub-card-meetings:hover,
+.app-hub-card-meetings:focus-visible {
+  border-color: var(--glico-sky, #48a8e8);
+}
+
+.app-hub-card-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: white;
+  background: var(--glico-navy, #103078);
+}
+
+.app-hub-card-verify .app-hub-card-icon {
+  background: linear-gradient(135deg, #d03038, #a8242c);
+}
+
+.app-hub-card-meetings .app-hub-card-icon {
+  background: linear-gradient(135deg, #48a8e8, #103078);
+}
+
+.app-hub-card h3 {
+  color: var(--glico-navy, #103078);
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.app-hub-card p {
+  margin: 0;
+  color: #4a5568;
+  line-height: 1.45;
+  flex: 1;
+}
+
+.app-hub-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 650;
+  color: var(--glico-navy, #103078);
+  font-size: 0.95rem;
+}
+
+.app-hub-card-verify .app-hub-card-cta {
+  color: var(--glico-red, #d03038);
+}
+
+.app-hub-card-meetings .app-hub-card-cta {
+  color: var(--glico-sky-dark, #1a7ab8);
+}
