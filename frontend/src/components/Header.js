@@ -66,7 +66,7 @@ const Header = ({ activeApp = 'hub', onBackToApps }) => {
           </div>
         </div>
 
-        {isAuthenticated && user && (
+        {(onBackToApps || (isAuthenticated && user)) && (
           <div className="header-user">
             {onBackToApps && (
               <button
@@ -77,25 +77,29 @@ const Header = ({ activeApp = 'hub', onBackToApps }) => {
                 <FaThLarge /> All apps
               </button>
             )}
-            <div className="header-user-info">
-              {isSuperAdmin ? (
-                <FaUserShield className="header-user-icon admin" aria-hidden />
-              ) : (
-                <FaUser className="header-user-icon" aria-hidden />
-              )}
-              <div>
-                <span className="header-user-name">
-                  {user.fullName}
-                  {isSuperAdmin && (
-                    <span className="header-role-pill">Super Admin</span>
+            {isAuthenticated && user && (
+              <>
+                <div className="header-user-info">
+                  {isSuperAdmin ? (
+                    <FaUserShield className="header-user-icon admin" aria-hidden />
+                  ) : (
+                    <FaUser className="header-user-icon" aria-hidden />
                   )}
-                </span>
-                <span className="header-user-email">{user.email}</span>
-              </div>
-            </div>
-            <button type="button" className="header-logout" onClick={logout}>
-              <FaSignOutAlt /> Sign out
-            </button>
+                  <div>
+                    <span className="header-user-name">
+                      {user.fullName}
+                      {isSuperAdmin && (
+                        <span className="header-role-pill">Super Admin</span>
+                      )}
+                    </span>
+                    <span className="header-user-email">{user.email}</span>
+                  </div>
+                </div>
+                <button type="button" className="header-logout" onClick={logout}>
+                  <FaSignOutAlt /> Sign out
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

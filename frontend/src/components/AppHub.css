@@ -40,6 +40,39 @@
   .app-hub-grid {
     grid-template-columns: 1fr;
   }
+
+  .app-hub-intro h2 {
+    font-size: 1.4rem;
+  }
+
+  .app-hub-intro p {
+    font-size: 0.95rem;
+  }
+
+  .app-hub-card {
+    min-height: 0;
+    padding: 1.15rem 1.1rem 1.1rem;
+    /* Better tap reliability on iOS nested controls */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-hub-card:hover {
+    transform: none;
+  }
+
+  .app-hub-card:active {
+    transform: scale(0.99);
+  }
+
+  .app-hub-card-icon {
+    width: 2.65rem;
+    height: 2.65rem;
+    font-size: 1.2rem;
+  }
+
+  .app-hub-card h3 {
+    font-size: 1.15rem;
+  }
 }
 
 .app-hub-card {
@@ -117,6 +150,19 @@
   font-weight: 650;
   color: var(--glico-navy, #103078);
   font-size: 0.95rem;
+}
+
+.app-hub-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #6b7280;
+}
+
+.app-hub-card-meta.open {
+  color: var(--glico-sky-dark, #1a7ab8);
 }
 
 .app-hub-card-verify .app-hub-card-cta {

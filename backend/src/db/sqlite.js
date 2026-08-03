@@ -17,7 +17,8 @@ function createSqlitePool(sqlitePath) {
   }
 
   function adaptSql(text) {
-    return String(text).replace(/\bNOW\(\)/gi, "datetime('now')");
+    // Parentheses required for function defaults in SQLite
+    return String(text).replace(/\bNOW\(\)/gi, "(datetime('now'))");
   }
 
   function toSqlite(text, params = []) {

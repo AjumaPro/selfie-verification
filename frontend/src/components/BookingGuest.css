@@ -1,0 +1,272 @@
+.booking-guest-page {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #f4f7fc 0%, #eaf6fc 45%, #f8fafc 100%);
+}
+
+.booking-guest-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(100deg, #103078 0%, #1a508a 100%);
+  color: #fff;
+}
+
+.booking-guest-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.booking-guest-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.booking-guest-header p {
+  margin: 0.2rem 0 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.booking-guest-main {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.booking-guest-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(16, 48, 120, 0.1);
+  padding: 1.1rem 1.15rem;
+  box-shadow: 0 8px 24px rgba(16, 48, 120, 0.06);
+}
+
+.booking-guest-card h2 {
+  margin: 0 0 0.35rem;
+  color: #103078;
+  font-size: 1.25rem;
+}
+
+.booking-guest-card h3 {
+  margin: 0 0 0.75rem;
+  color: #103078;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.booking-guest-meta {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #445;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.booking-guest-desc {
+  margin: 0.65rem 0 0;
+  padding-top: 0.65rem;
+  border-top: 1px dashed #c5d0e8;
+  color: #445;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.booking-guest-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #334;
+}
+
+.booking-guest-slots {
+  margin-bottom: 0.9rem;
+}
+
+.booking-guest-slots-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #334;
+  margin-bottom: 0.4rem;
+}
+
+.booking-guest-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: 0.4rem;
+}
+
+.booking-slot-btn {
+  border: 1px solid rgba(16, 48, 120, 0.18);
+  background: #f7fafc;
+  color: #103078;
+  border-radius: 8px;
+  padding: 0.45rem 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font: inherit;
+}
+
+.booking-slot-btn:hover {
+  background: #e8f0fa;
+}
+
+.booking-slot-btn.selected {
+  background: #103078;
+  color: #fff;
+  border-color: #103078;
+}
+
+.booking-guest-hint {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85rem;
+  color: #667;
+}
+
+.booking-guest-error {
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #fceeef;
+  color: #a8242c;
+  font-size: 0.88rem;
+}
+
+.booking-guest-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.booking-guest-success-icon {
+  font-size: 2rem;
+  color: #1a7a40;
+  margin-bottom: 0.35rem;
+}
+
+.booking-guest-receipt {
+  margin: 0.85rem 0;
+}
+
+.booking-guest-receipt div {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.booking-guest-receipt dt {
+  color: #667;
+  font-weight: 600;
+}
+
+.booking-guest-receipt dd {
+  margin: 0;
+  color: #234;
+}
+
+.booking-guest-map {
+  width: 100%;
+  height: 160px;
+  border: 0;
+  border-radius: 10px;
+}
+
+.booking-guest-map-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.booking-guest-map-head h3 {
+  margin: 0;
+}
+
+.booking-guest-map-link {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #1a7ab8;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+@media (max-width: 640px) {
+  .booking-guest-page {
+    min-height: 100dvh;
+  }
+
+  .booking-guest-header {
+    padding: 0.9rem 1rem;
+    padding-top: max(0.9rem, env(safe-area-inset-top, 0px));
+    gap: 0.75rem;
+  }
+
+  .booking-guest-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .booking-guest-header h1 {
+    font-size: 1.05rem;
+  }
+
+  .booking-guest-main {
+    padding: 0.85rem 0.75rem max(2rem, env(safe-area-inset-bottom, 1rem));
+  }
+
+  .booking-guest-card {
+    padding: 1rem 0.9rem;
+  }
+
+  .booking-guest-slot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .booking-slot-btn {
+    min-height: 2.75rem;
+    font-size: 0.9rem;
+    padding: 0.55rem 0.25rem;
+  }
+
+  .booking-guest-field input,
+  .booking-guest-field select,
+  .booking-guest-field .form-input {
+    min-height: 2.85rem;
+    font-size: 16px;
+  }
+
+  .booking-guest-submit {
+    min-height: 3rem;
+    position: sticky;
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .booking-guest-receipt div {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .booking-guest-map {
+    height: 180px;
+  }
+}

@@ -1,0 +1,156 @@
+.booking-host {
+  margin-top: 0.5rem;
+}
+
+.booking-host-head {
+  margin-bottom: 1rem;
+}
+
+.booking-host-head h3 {
+  margin: 0.2rem 0 0.35rem;
+  color: var(--glico-navy, #103078);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.15rem;
+}
+
+.booking-host-head p {
+  margin: 0;
+  color: #556;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 36rem;
+}
+
+.booking-host-toast {
+  margin-top: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: #e6f6ec;
+  color: #1a7a40;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.booking-host-form {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+  background: #fff;
+  margin-bottom: 1rem;
+}
+
+.booking-weekdays {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.booking-weekdays-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #334;
+  margin-bottom: 0.35rem;
+}
+
+.booking-weekdays-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.booking-day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 48, 120, 0.15);
+  background: #f6f9fc;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.booking-day-chip input {
+  accent-color: var(--glico-navy, #103078);
+}
+
+.booking-host-error {
+  margin: 0.5rem 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #fceeef;
+  color: #a8242c;
+  font-size: 0.85rem;
+}
+
+.booking-host-actions {
+  margin-top: 0.75rem;
+}
+
+.booking-host-share {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+  background: linear-gradient(165deg, #f7fafc 0%, #eef4fa 100%);
+  margin-bottom: 1rem;
+}
+
+.booking-host-share h4 {
+  margin: 0 0 0.55rem;
+  color: var(--glico-navy, #103078);
+}
+
+.booking-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--glico-sky-dark, #1a7ab8);
+  white-space: nowrap;
+  padding: 0.4rem 0.5rem;
+}
+
+.booking-host-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #667;
+  line-height: 1.4;
+}
+
+.booking-host-list {
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 720px) {
+  .booking-host-form {
+    padding: 0.85rem;
+  }
+
+  .booking-weekdays-row {
+    gap: 0.4rem;
+  }
+
+  .booking-day-chip {
+    min-height: 2.5rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .booking-host-actions .btn {
+    width: 100%;
+    min-height: 2.85rem;
+  }
+
+  .booking-host-share .meeting-checkin-link-row,
+  .booking-host-share .booking-link-row {
+    flex-direction: column;
+  }
+
+  .booking-open-link {
+    width: 100%;
+    justify-content: center;
+    padding: 0.55rem;
+  }
+}

@@ -21,4 +21,20 @@ module.exports = {
       return webpackConfig;
     },
   },
+  // Proxy API during `npm start` so the browser never needs to talk to :4000
+  // (avoids “API unreachable” when the process dies or localhost IPv6 fails).
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 };

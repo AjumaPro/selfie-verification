@@ -1,25 +1,19 @@
 import React from 'react';
-import { FaIdCard, FaVideo, FaArrowRight, FaShieldAlt } from 'react-icons/fa';
+import { FaIdCard, FaVideo, FaArrowRight, FaLock, FaUnlock } from 'react-icons/fa';
 import './AppHub.css';
 
 /**
- * Post-login landing: choose Image Recognition or Meetings.
+ * Public landing: Meetings opens freely; Image Recognition needs sign-in.
  */
-const AppHub = ({ onSelect, isSuperAdmin }) => {
+const AppHub = ({ onSelect }) => {
   return (
     <section className="app-hub" aria-label="GLICO applications">
       <div className="app-hub-intro">
-        <h2>Choose an application</h2>
+        <h2>GLICO applications</h2>
         <p>
-          Image Recognition for Ghana Card KYC selfie checks, or Meetings for
-          scheduling and managing work sessions. Each app is separate.
+          Choose an app. <strong>Meetings</strong> is open to everyone — no login.
+          <strong> Image Recognition</strong> requires a signed-in account for KYC.
         </p>
-        {isSuperAdmin && (
-          <p className="app-hub-admin-hint">
-            <FaShieldAlt aria-hidden /> Super Admin tools stay available under
-            each application.
-          </p>
-        )}
       </div>
 
       <div className="app-hub-grid">
@@ -33,9 +27,11 @@ const AppHub = ({ onSelect, isSuperAdmin }) => {
           </span>
           <h3>Image Recognition</h3>
           <p>
-            Capture or upload a selfie, verify against Ghana Card KYC, and run
-            face checks.
+            Ghana Card selfie verification and face checks. Sign in required.
           </p>
+          <span className="app-hub-card-meta">
+            <FaLock aria-hidden /> Requires sign-in
+          </span>
           <span className="app-hub-card-cta">
             Open app <FaArrowRight aria-hidden />
           </span>
@@ -52,8 +48,11 @@ const AppHub = ({ onSelect, isSuperAdmin }) => {
           <h3>Meetings</h3>
           <p>
             Plan sessions, set agendas and attendees, and keep a simple meeting
-            log for your team.
+            log — no account needed.
           </p>
+          <span className="app-hub-card-meta open">
+            <FaUnlock aria-hidden /> No login required
+          </span>
           <span className="app-hub-card-cta">
             Open app <FaArrowRight aria-hidden />
           </span>

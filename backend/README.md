@@ -1,24 +1,32 @@
 # Selfie Verification API
 
-Node.js + Express auth backend. **SQLite** for local/device; **PostgreSQL** on DigitalOcean.
+Node.js + Express auth backend. **PostgreSQL** by default (local + DigitalOcean). SQLite only for offline device mode.
 
-## Quick start (local / device)
+## Quick start (Postgres)
 
 ```bash
 cp .env.example .env
-# .env already uses DB_CLIENT=sqlite by default
+# Set DATABASE_URL and DB_CLIENT=postgres
 npm install
 npm run db:migrate
 npm run dev
+# or from monorepo root: npm run api
 ```
 
-Data file: `backend/data/auth.db` (gitignored).
+Base URL: `http://localhost:4000` — `/health` should report `"engine":"postgres"`.
 
-Base URL: `http://localhost:4000`
+### Offline device only (SQLite)
+
+```bash
+# in .env:
+DB_CLIENT=sqlite
+SQLITE_PATH=./data/auth.db
+# leave DATABASE_URL unset
+```
 
 ## Production (DigitalOcean)
 
-Set `DATABASE_URL` (Postgres). Do **not** set `DB_CLIENT=sqlite`. Migrations run on start.
+Set `DATABASE_URL` (Postgres) and `DB_CLIENT=postgres`. Migrations run on start.
 
 ## Endpoints
 

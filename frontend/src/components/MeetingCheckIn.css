@@ -1,0 +1,538 @@
+.meeting-checkin {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--glico-border, #c5d0e8);
+}
+
+.meeting-checkin-grid {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(220px, 1.2fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 720px) {
+  .meeting-checkin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.meeting-checkin h4 {
+  margin: 0 0 0.45rem;
+  color: var(--glico-navy, #103078);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.meeting-checkin-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  color: #667;
+  line-height: 1.4;
+}
+
+.meeting-checkin-enable {
+  margin-bottom: 0.65rem;
+}
+
+.meeting-checkin-republish {
+  border: none;
+  background: none;
+  color: var(--glico-sky-dark, #1a7ab8);
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.65rem;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.meeting-checkin-error {
+  background: var(--glico-red-soft, #fceeef);
+  color: var(--glico-red-dark, #a8242c);
+  border-left: 3px solid var(--glico-red, #d03038);
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  margin-bottom: 0.65rem;
+  font-size: 0.85rem;
+}
+
+.meeting-checkin-qr {
+  width: 200px;
+  height: 200px;
+  display: block;
+  margin: 0 0 0.55rem;
+  border: 1px solid var(--glico-border, #c5d0e8);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.meeting-checkin-qr-wrap {
+  margin: 0.5rem 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.meeting-checkin-download-qr {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(16, 48, 120, 0.2);
+  background: linear-gradient(165deg, #f0f6fc 0%, #e4eef8 100%);
+  color: var(--glico-navy, #103078);
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  font: inherit;
+}
+
+.meeting-checkin-download-qr:hover {
+  background: #dceaf8;
+  border-color: rgba(16, 48, 120, 0.35);
+}
+
+.meeting-checkin-qr-ph {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--glico-border, #c5d0e8);
+  border-radius: 10px;
+  color: #889;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.meeting-checkin-link-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.meeting-checkin-link-row .form-input {
+  flex: 1;
+  font-size: 0.78rem;
+}
+
+.meeting-checkin-copy {
+  border: 1px solid var(--glico-border, #c5d0e8);
+  background: #fff;
+  color: var(--glico-navy, #103078);
+  border-radius: 8px;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: inherit;
+  white-space: nowrap;
+}
+
+.meeting-checkin-map-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.meeting-checkin-map-head a {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--glico-sky-dark, #1a7ab8);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.meeting-checkin-place {
+  margin: 0.35rem 0 0.55rem;
+  font-size: 0.88rem;
+  color: #445;
+  font-weight: 600;
+}
+
+.meeting-checkin-map {
+  width: 100%;
+  min-height: 200px;
+  border: 0;
+  border-radius: 10px;
+  background: #eef2f7;
+}
+
+.meeting-checkin-table-wrap {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--glico-border, #c5d0e8);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+}
+
+.meeting-checkin-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.meeting-checkin-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--glico-navy, #103078);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.meeting-checkin-refresh {
+  border: 1px solid var(--glico-border, #c5d0e8);
+  background: #fff;
+  color: var(--glico-navy, #103078);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+}
+
+.meeting-checkin-refresh .spin {
+  animation: meeting-checkin-spin 0.9s linear infinite;
+}
+
+@keyframes meeting-checkin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.meeting-checkin-empty {
+  margin: 0.4rem 0;
+  font-size: 0.88rem;
+  color: #667;
+}
+
+.meeting-checkin-table-scroll {
+  overflow-x: auto;
+}
+
+.meeting-checkin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.meeting-checkin-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #667;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--glico-border, #c5d0e8);
+  white-space: nowrap;
+}
+
+.meeting-checkin-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e8eef6;
+  color: #334;
+  vertical-align: top;
+}
+
+.meeting-checkin-table td.name {
+  font-weight: 650;
+  color: var(--glico-navy, #103078);
+}
+
+.meeting-checkin-table a {
+  color: var(--glico-sky-dark, #1a7ab8);
+  word-break: break-all;
+}
+
+.meeting-checkin-no-loc {
+  color: #99a;
+  font-size: 0.82rem;
+}
+
+.meeting-checkin-match-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--glico-border, #c5d0e8);
+  background: #f7f9fc;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.meeting-checkin-match-stats .match-ok {
+  color: #1a7a40;
+}
+
+.meeting-checkin-match-stats .match-away {
+  color: #c02830;
+}
+
+.meeting-checkin-match-stats .match-unknown {
+  color: #667;
+}
+
+.meeting-checkin-loc-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.meeting-checkin-loc-badge.match-ok {
+  background: #e6f6ec;
+  color: #1a7a40;
+}
+
+.meeting-checkin-loc-badge.match-away {
+  background: #fceeef;
+  color: #c02830;
+}
+
+.meeting-checkin-loc-badge.match-unknown {
+  background: #eef1f5;
+  color: #556;
+}
+
+.meeting-checkin-table tr.row-away {
+  background: #fff8f8;
+}
+
+.meeting-checkin-venue-pin {
+  margin: 0 0 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334;
+}
+
+.meeting-checkin-hint.warn {
+  color: #b03030;
+  font-weight: 600;
+}
+
+.meeting-checkin-tally strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--glico-navy, #103078);
+  font-size: 0.85rem;
+}
+
+.meeting-checkin-tally ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.meeting-checkin-tally li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  color: #334;
+  padding: 0.2rem 0;
+  border-bottom: 1px dashed #e0e8f0;
+}
+
+.meeting-checkin-tally li span {
+  font-weight: 750;
+  color: var(--glico-navy, #103078);
+}
+
+.meeting-checkin-program {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--glico-border, #c5d0e8);
+  background: #f7f9fc;
+}
+
+.meeting-checkin-program h4 {
+  margin: 0 0 0.4rem;
+}
+
+.meeting-checkin-program-text {
+  margin: 0 0 0.45rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(16, 48, 120, 0.08);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: #334;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.meeting-checkin-program-file {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--glico-sky-dark, #1a7ab8);
+}
+
+.meeting-checkin-remove {
+  border: none;
+  background: var(--glico-red-soft, #fceeef);
+  color: var(--glico-red, #d03038);
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  cursor: pointer;
+  font: inherit;
+}
+
+@media (max-width: 720px) {
+  .meeting-checkin-qr-wrap {
+    align-items: center;
+    width: 100%;
+  }
+
+  .meeting-checkin-qr,
+  .meeting-checkin-qr-ph {
+    width: min(220px, 70vw);
+    height: min(220px, 70vw);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .meeting-checkin-download-qr {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .meeting-checkin-enable {
+    width: 100%;
+    min-height: 2.85rem;
+  }
+
+  .meeting-checkin-link-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meeting-checkin-copy {
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+
+  .meeting-checkin-table-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meeting-checkin-refresh {
+    min-height: 2.6rem;
+    justify-content: center;
+  }
+
+  .meeting-checkin-map {
+    min-height: 180px;
+  }
+
+  /* Attendance: stack rows as cards (no sideways scroll) */
+  .meeting-checkin-table-scroll {
+    overflow-x: visible;
+  }
+
+  .meeting-checkin-table,
+  .meeting-checkin-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .meeting-checkin-table thead {
+    display: none;
+  }
+
+  .meeting-checkin-table tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--glico-border, #c5d0e8);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .meeting-checkin-table tr.row-away {
+    background: #fff8f8;
+    border-color: #f0c4c8;
+  }
+
+  .meeting-checkin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px dashed #e8eef6;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .meeting-checkin-table td:last-child {
+    border-bottom: none;
+    padding-top: 0.55rem;
+  }
+
+  .meeting-checkin-table td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #778;
+    text-align: left;
+    flex-shrink: 0;
+    max-width: 40%;
+  }
+
+  .meeting-checkin-table td.name {
+    font-size: 1rem;
+  }
+
+  .meeting-checkin-table td.meeting-checkin-actions-cell {
+    justify-content: stretch;
+  }
+
+  .meeting-checkin-table td.meeting-checkin-actions-cell::before {
+    display: none;
+  }
+
+  .meeting-checkin-remove {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.45rem;
+  }
+}

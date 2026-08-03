@@ -3,8 +3,8 @@ const fs = require('fs');
 
 /**
  * Resolve DB engine:
- * - production / DigitalOcean: Postgres via DATABASE_URL
- * - local / device: SQLite file (default when DB_CLIENT=sqlite or no DATABASE_URL)
+ * - Postgres when DB_CLIENT=postgres/pg or DATABASE_URL is a Postgres URL (default path)
+ * - SQLite only when explicitly requested (device / offline): DB_CLIENT=sqlite or SQLITE_PATH
  */
 function resolveDbConfig() {
   const client = String(process.env.DB_CLIENT || '').toLowerCase().trim();
@@ -15,10 +15,17 @@ function resolveDbConfig() {
     client === 'sqlite' ||
     client === 'sqlite3' ||
     url.startsWith('sqlite:') ||
-    url.startsWith('file:') ||
-    Boolean(sqlitePathEnv);
+    url.startsWith('file:');
 
-  if (forceSqlite || (!url && process.env.NODE_ENV !== 'production')) {
+  // SQLITE_PATH alone opts into sqlite (device builds), unless postgres was requested.
+  const wantSqlite =
+    forceSqlite ||
+    (Boolean(sqlitePathEnv) &&
+      client !== 'postgres' &&
+      client !== 'pg' &&
+      client !== 'postgresql');
+
+  if (wantSqlite) {
     let filePath = sqlitePathEnv;
     if (!filePath && (url.startsWith('sqlite:') || url.startsWith('file:'))) {
       filePath = url.replace(/^sqlite(3)?:/, '').replace(/^file:/, '');
@@ -35,7 +42,7 @@ function resolveDbConfig() {
 
   if (!url) {
     throw new Error(
-      'DATABASE_URL is not set. For local/device use DB_CLIENT=sqlite, or set a Postgres DATABASE_URL.'
+      'DATABASE_URL is not set. Set a Postgres DATABASE_URL (or DB_CLIENT=sqlite for local device mode).'
     );
   }
 

@@ -1,12 +1,99 @@
 .App {
   min-height: 100vh;
-  padding-bottom: 2rem;
+  min-height: 100dvh;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+  overflow-x: clip;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  width: 100%;
+}
+
+/* App switcher: Home | Image Recognition | Meetings */
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.35rem;
+  padding: 0.4rem;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(16, 48, 120, 0.1);
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(16, 48, 120, 0.05);
+}
+
+.app-nav-btn {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  min-height: 2.75rem;
+  border: none;
+  background: transparent;
+  color: #4a5a74;
+  font-weight: 650;
+  font-size: 0.94rem;
+  padding: 0.72rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.app-nav-btn:hover {
+  background: rgba(234, 246, 252, 0.9);
+  color: var(--glico-navy, #103078);
+}
+
+.app-nav-btn.active {
+  background: #fff;
+  color: var(--glico-navy, #103078);
+  box-shadow: 0 2px 10px rgba(16, 48, 120, 0.1);
+}
+
+.app-nav-btn.active:nth-child(2) {
+  color: var(--glico-red, #d03038);
+}
+
+.app-nav-btn.active:nth-child(3) {
+  color: var(--glico-sky-dark, #1a7ab8);
+}
+
+.app-nav-lock {
+  font-weight: 500;
+  font-size: 0.8em;
+  opacity: 0.75;
+  margin-left: 0.15rem;
+}
+
+.app-nav-open {
+  font-weight: 500;
+  font-size: 0.8em;
+  opacity: 0.75;
+  margin-left: 0.15rem;
+  color: var(--glico-sky-dark, #1a7ab8);
+}
+
+.app-auth-banner {
+  margin-bottom: 1.25rem;
+  max-width: 36rem;
+}
+
+.app-auth-banner h2 {
+  color: var(--glico-navy, #103078);
+  margin-bottom: 0.4rem;
+}
+
+.app-auth-banner p {
+  color: #556;
+  line-height: 1.5;
 }
 
 .tabs {
@@ -208,11 +295,42 @@
 
 @media (max-width: 768px) {
   .container {
-    padding: 1rem 0.5rem;
+    padding: 0.85rem 0.7rem 1.5rem;
+    padding-left: max(0.7rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.7rem, env(safe-area-inset-right, 0px));
+  }
+
+  .app-nav {
+    gap: 0.25rem;
+    padding: 0.3rem;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+  }
+
+  .app-nav-btn {
+    min-width: 0;
+    flex: 1 1 30%;
+    font-size: 0.82rem;
+    padding: 0.65rem 0.35rem;
+    line-height: 1.2;
+  }
+
+  .app-nav-lock,
+  .app-nav-open {
+    display: none;
+  }
+
+  .app-auth-banner {
+    max-width: none;
+  }
+
+  .app-auth-banner h2 {
+    font-size: 1.25rem;
   }
 
   .card {
-    padding: 1.5rem;
+    padding: 1.15rem;
+    border-radius: 12px;
   }
 
   .tabs {
@@ -220,7 +338,28 @@
   }
 
   .tab {
-    padding: 0.6rem 1.2rem;
+    padding: 0.65rem 1rem;
     font-size: 0.9rem;
+    min-height: 2.75rem;
+  }
+
+  .btn {
+    min-height: 2.75rem;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.75rem 1rem;
+  }
+
+  .error-container {
+    padding: 1.5rem 1rem;
+    margin: 0.5rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .app-nav-btn {
+    font-size: 0.75rem;
+    padding: 0.55rem 0.25rem;
   }
 }

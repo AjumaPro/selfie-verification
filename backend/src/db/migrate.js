@@ -5,6 +5,9 @@ const { pool, engine } = require('./pool');
 async function migratePostgres(client) {
   await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
 
+  const { ensureMeetingsSchema } = require('./meetingsSchema');
+  await ensureMeetingsSchema((text, params) => client.query(text, params));
+
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,6 +64,9 @@ async function migratePostgres(client) {
 }
 
 async function migrateSqlite(client) {
+  const { ensureMeetingsSchema } = require('./meetingsSchema');
+  await ensureMeetingsSchema((text, params) => client.query(text, params));
+
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY DEFAULT (gen_uuid()),

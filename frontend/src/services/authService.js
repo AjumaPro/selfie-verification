@@ -10,11 +10,15 @@ const TOKEN_KEY = 'selfie_auth_token_v1';
 const USER_KEY = 'selfie_auth_user_v1';
 const REMEMBER_KEY = 'selfie_auth_remember_v1';
 
-/** Empty string = same origin (DigitalOcean: UI + /api on one domain). */
+/** Empty string = same origin (CRA proxy in dev; DigitalOcean UI+API together). */
 function resolveApiBase() {
   const raw = process.env.REACT_APP_AUTH_API_URL;
   if (raw === '' || raw === '/' || raw === 'same-origin') return '';
-  if (raw == null) return 'http://localhost:4000';
+  if (raw == null) {
+    // Prefer same-origin so `npm start` can proxy /api → :4000
+    if (process.env.NODE_ENV === 'development') return '';
+    return 'http://127.0.0.1:4000';
+  }
   return String(raw).replace(/\/$/, '');
 }
 
