@@ -2,7 +2,7 @@
   "name": "selfie-verification-ui",
   "version": "2.0.0",
   "private": true,
-  "description": "GLICO Platform \u2014 identity verification and Ghana Card KYC",
+  "description": "GLICO Life Platform — identity verification, meetings, and Ghana Card KYC",
   "author": "GLICO",
   "main": "electron/main.js",
   "homepage": "./",
@@ -35,7 +35,7 @@
   },
   "build": {
     "appId": "org.glico.selfie-verification",
-    "productName": "GLICO Platform",
+    "productName": "GLICO Life Platform",
     "copyright": "Copyright \u00a9 GLICO",
     "extends": null,
     "directories": {
@@ -68,7 +68,7 @@
       "artifactName": "Selfie-Verification-Mac-${version}.${ext}"
     },
     "dmg": {
-      "title": "GLICO Platform",
+      "title": "GLICO Life Platform",
       "contents": [
         {
           "x": 130,
@@ -98,7 +98,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "GLICO Platform",
+      "shortcutName": "GLICO Life Platform",
       "installerHeaderIcon": "electron/assets/icon.png",
       "deleteAppDataOnUninstall": false
     },

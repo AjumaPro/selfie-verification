@@ -15,7 +15,8 @@ import {
   mapsOpenUrl,
 } from '../services/meetingsApi';
 import './MeetingJoin.css';
-import { glicoLogoUrl } from '../utils/brandAssets';
+import GlicoLifeLogo from './GlicoLifeLogo';
+import { BRAND } from '../utils/brandAssets';
 
 function isSecureGeoContext() {
   if (typeof window === 'undefined') return false;
@@ -505,14 +506,10 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   return (
     <div className="App meeting-join-page">
       <header className="meeting-join-header">
-        <img
-          src={glicoLogoUrl()}
-          alt="GLICO"
-          className="meeting-join-logo"
-        />
+        <GlicoLifeLogo compact markClassName="meeting-join-logo" />
         <div>
           <h1>Meeting check-in</h1>
-          <p>Allow location and share your details to join the register.</p>
+          <p>{BRAND.name} · share your details to join the register.</p>
         </div>
       </header>
 

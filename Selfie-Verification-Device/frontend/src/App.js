@@ -3,6 +3,7 @@ import './App.css';
 import './components/GlicoBrandBar.css';
 import Header from './components/Header';
 import GlicoBrandBar from './components/GlicoBrandBar';
+import { BRAND } from './utils/brandAssets';
 import AuthPanel from './components/AuthPanel';
 import InstallOnDevice from './components/InstallOnDevice';
 import SelfieVerification from './components/SelfieVerification';
@@ -177,7 +178,7 @@ function App() {
   const shellClass = deviceOnly ? 'App App--device' : 'App';
   const deviceBrand = deviceOnly ? (
     <GlicoBrandBar
-      product="GLICO Platform"
+      product={BRAND.name}
       tagline="Identity · Ghana Card KYC · Windows & Mac"
     />
   ) : null;

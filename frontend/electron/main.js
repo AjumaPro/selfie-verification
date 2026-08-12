@@ -29,7 +29,7 @@ function createWindow() {
     height: 860,
     minWidth: 900,
     minHeight: 640,
-    title: 'GLICO Platform',
+    title: 'GLICO Life Platform',
     backgroundColor: '#103078',
     icon,
     webPreferences: {
@@ -42,7 +42,7 @@ function createWindow() {
   });
 
   win.once('ready-to-show', () => {
-    win.setTitle('GLICO Platform');
+    win.setTitle('GLICO Life Platform');
     win.show();
   });
 

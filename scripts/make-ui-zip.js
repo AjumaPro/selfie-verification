@@ -31,7 +31,7 @@ function copyDir(from, to) {
 function writeInstallGuide(dest) {
   fs.writeFileSync(
     path.join(dest, 'INSTALL.txt'),
-    `GLICO Platform — UI package
+    `GLICO Life Platform — UI package
 ============================
 
 1. Unzip this folder.

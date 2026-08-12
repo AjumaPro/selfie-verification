@@ -1,0 +1,47 @@
+.glico-life-lockup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.glico-life-lockup-mark {
+  height: 40px;
+  width: auto;
+  max-width: 168px;
+  object-fit: contain;
+  display: block;
+}
+
+.glico-life-lockup-life {
+  font-family: 'Sora', 'DM Sans', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--glico-navy, #103078);
+  line-height: 1;
+  margin-bottom: 0.12rem;
+  white-space: nowrap;
+}
+
+.glico-life-lockup.is-compact .glico-life-lockup-mark {
+  height: 32px;
+  max-width: 130px;
+}
+
+.glico-life-lockup.is-compact .glico-life-lockup-life {
+  font-size: 1.05rem;
+  margin-bottom: 0.08rem;
+}
+
+@media (max-width: 640px) {
+  .glico-life-lockup-mark {
+    height: 34px;
+    max-width: 130px;
+  }
+
+  .glico-life-lockup-life {
+    font-size: 1.15rem;
+  }
+}

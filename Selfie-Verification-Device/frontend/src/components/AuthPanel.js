@@ -9,7 +9,8 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { resolveApiBase } from '../config/apiBase';
-import { glicoLogoUrl } from '../utils/brandAssets';
+import { BRAND } from '../utils/brandAssets';
+import GlicoLifeLogo from './GlicoLifeLogo';
 import './AuthPanel.css';
 
 const emptyLogin = { email: '', password: '' };
@@ -170,17 +171,13 @@ const AuthPanel = () => {
       aria-labelledby="auth-heading"
     >
       <div className="auth-hero">
-        <img
-          src={glicoLogoUrl()}
-          alt="GLICO"
-          className="auth-hero-logo"
-        />
+        <GlicoLifeLogo markClassName="auth-hero-logo" />
         <div className="auth-hero-mark" aria-hidden>
           <span className="stripe stripe-red" />
           <span className="stripe stripe-sky" />
           <span className="stripe stripe-navy" />
         </div>
-        <p className="auth-brand-label">GLICO Platform</p>
+        <p className="auth-brand-label">{BRAND.name}</p>
         <h2 id="auth-heading">
           {mode === 'superadmin'
             ? 'Super Admin'

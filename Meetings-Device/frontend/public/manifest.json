@@ -1,7 +1,7 @@
 {
-  "short_name": "Meetings",
-  "name": "GLICO Meetings",
-  "description": "Plan meetings, QR check-in, venue GPS, meals, program schedule, free-slot booking",
+  "short_name": "GLICO Life",
+  "name": "GLICO Life Meetings",
+  "description": "GLICO Life Platform Meetings — schedule, QR check-in, venue GPS, meals, booking",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

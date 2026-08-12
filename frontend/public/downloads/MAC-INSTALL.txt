@@ -1,17 +1,17 @@
-GLICO Platform — Mac install (unsigned build)
+GLICO Life Platform — Mac install (unsigned build)
 
 SIZE: The new installer is much smaller (~80–120 MB). If your DMG is still
 ~400–500 MB, delete it and download again (hard refresh the download page).
 
 INSTALL
 -------
-1. Open the .dmg and drag “GLICO Platform” to Applications.
+1. Open the .dmg and drag “GLICO Life Platform” to Applications.
 2. First open: Control-click (right-click) the app → Open → Open again.
    (Gatekeeper: “developer cannot be verified” is expected for unsigned builds.)
    Or: System Settings → Privacy & Security → Open Anyway.
 3. Optional quarantine clear:
-     xattr -cr "/Applications/GLICO Platform.app"
-     open "/Applications/GLICO Platform.app"
+     xattr -cr "/Applications/GLICO Life Platform.app"
+     open "/Applications/GLICO Life Platform.app"
 
 Prefer ZIP? Download Selfie-Verification-Mac.zip, unzip, then open the .app
 the same way (Control-click → Open).

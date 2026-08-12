@@ -8,12 +8,13 @@ import {
   FaVideo,
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import { glicoLogoUrl } from '../utils/brandAssets';
+import { BRAND } from '../utils/brandAssets';
+import GlicoLifeLogo from './GlicoLifeLogo';
 import './Header.css';
 
 const appLabels = {
   hub: {
-    title: 'GLICO Platform',
+    title: BRAND.name,
     subtitle: 'Applications home',
   },
   recognition: {
@@ -31,7 +32,7 @@ const Header = ({ activeApp = 'hub', onBackToApps, deviceOnly = false }) => {
   const labels = appLabels[activeApp] || appLabels.hub;
   const title =
     activeApp === 'hub' && isSuperAdmin
-      ? 'GLICO Platform Admin'
+      ? BRAND.adminName
       : labels.title;
   const subtitle =
     activeApp === 'hub' && isSuperAdmin
@@ -49,11 +50,7 @@ const Header = ({ activeApp = 'hub', onBackToApps, deviceOnly = false }) => {
       <div className="header-content">
         <div className="header-main">
           <div className="header-brand">
-            <img
-              src={glicoLogoUrl()}
-              alt="GLICO"
-              className="header-logo"
-            />
+            <GlicoLifeLogo markClassName="header-logo" />
             <div className="header-brand-text">
               <h1>
                 {activeApp === 'recognition' && (

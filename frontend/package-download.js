@@ -33,10 +33,10 @@ function ensureBuild() {
 }
 
 function writeInstallGuide(dest) {
-  const guide = `GLICO Platform — Install Guide
+  const guide = `GLICO Life Platform — Install Guide
 =====================================
 
-This ZIP contains the GLICO Platform UI (web interface).
+This ZIP contains the GLICO Life Platform UI (web interface).
 
 LAPTOP (Windows / Mac / Linux)
 ------------------------------

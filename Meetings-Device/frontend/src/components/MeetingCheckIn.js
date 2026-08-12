@@ -124,7 +124,7 @@ function buildFoodSelectionsCsv(meeting, attendance) {
 function buildFoodSelectionsTxt(meeting, attendance) {
   const list = attendance || [];
   const lines = [
-    'GLICO Meetings — Food selections',
+    'GLICO Life Platform — Food selections',
     '================================',
     `Meeting: ${meeting?.title || 'Untitled'}`,
     `Date: ${meeting?.date || '—'}  Time: ${meeting?.time || '—'}`,

@@ -1,4 +1,4 @@
-GLICO Platform — Windows install
+GLICO Life Platform — Windows install
 ================================
 
 File: Selfie-Verification-Windows.exe
@@ -10,7 +10,7 @@ Install
 2. Double-click to run the setup wizard
 3. Choose install folder (optional)
 4. Finish — desktop and Start Menu shortcuts are created
-5. Launch "GLICO Platform"
+5. Launch "GLICO Life Platform"
 
 Windows SmartScreen warning (unsigned build)
 --------------------------------------------

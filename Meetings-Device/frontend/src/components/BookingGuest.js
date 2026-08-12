@@ -12,7 +12,8 @@ import {
   bookSlot,
 } from '../services/bookingApi';
 import { mapsOpenUrl, mapsEmbedUrl } from '../services/meetingsApi';
-import { glicoLogoUrl } from '../utils/brandAssets';
+import GlicoLifeLogo from './GlicoLifeLogo';
+import { BRAND } from '../utils/brandAssets';
 import './BookingGuest.css';
 
 /**
@@ -157,14 +158,10 @@ const BookingGuest = ({ pageId, onClose }) => {
   return (
     <div className="App booking-guest-page">
       <header className="booking-guest-header">
-        <img
-          src={glicoLogoUrl()}
-          alt="GLICO"
-          className="booking-guest-logo"
-        />
+        <GlicoLifeLogo compact markClassName="booking-guest-logo" />
         <div>
           <h1>Book an appointment</h1>
-          <p>Choose a free slot · no account required</p>
+          <p>{BRAND.name} · choose a free slot · no account required</p>
         </div>
       </header>
 

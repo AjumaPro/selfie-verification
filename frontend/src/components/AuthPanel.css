@@ -13,13 +13,18 @@
   margin-bottom: 1.5rem;
 }
 
-.auth-hero-logo {
+.auth-hero-logo,
+.auth-hero .glico-life-lockup-mark {
   display: block;
   height: 52px;
   width: auto;
   max-width: 200px;
-  margin: 0 auto 0.55rem;
   object-fit: contain;
+}
+
+.auth-hero .glico-life-lockup {
+  justify-content: center;
+  margin: 0 auto 0.55rem;
 }
 
 .auth-hero-mark {

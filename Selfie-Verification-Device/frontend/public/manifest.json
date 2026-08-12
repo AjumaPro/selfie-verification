@@ -1,12 +1,12 @@
 {
-  "short_name": "GLICO",
-  "name": "GLICO Platform",
-  "description": "GLICO Platform — identity verification and Ghana Card KYC",
+  "short_name": "GLICO Life",
+  "name": "GLICO Life Platform",
+  "description": "GLICO Life Platform — identity verification, meetings, and Ghana Card KYC",
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#103078",
+  "theme_color": "#d03038",
   "categories": ["business", "utilities"],
   "icons": [
     {

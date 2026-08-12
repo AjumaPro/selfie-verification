@@ -21,13 +21,25 @@
   color: #fff;
 }
 
-.meeting-join-logo {
-  width: 48px;
-  height: 48px;
+.meeting-join-logo,
+.meeting-join-header .glico-life-lockup-mark {
+  height: 40px;
+  max-width: 130px;
   object-fit: contain;
+}
+
+.meeting-join-header .glico-life-lockup {
+  flex-shrink: 0;
   background: #fff;
   border-radius: 10px;
-  padding: 4px;
+  padding: 4px 8px 4px 4px;
+  align-items: center;
+}
+
+.meeting-join-header .glico-life-lockup-life {
+  color: var(--glico-navy, #103078);
+  margin-bottom: 0;
+  font-size: 1.1rem;
 }
 
 .meeting-join-header h1 {

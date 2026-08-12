@@ -395,7 +395,7 @@ function buildMenuDocument(meeting) {
   const m = meeting || {};
   const meal = normalizeMealMenu(m.mealMenu);
   const lines = [
-    'GLICO Meetings — Meal menu',
+    'GLICO Life Platform — Meal menu',
     '==========================',
     `Meeting: ${m.title || 'Untitled'}`,
     `Date: ${m.date || '—'}  Time: ${m.time || '—'}`,

@@ -9,6 +9,7 @@ import {
   FaMobileAlt,
 } from 'react-icons/fa';
 import MeetingsDeviceDownloads from './MeetingsDeviceDownloads';
+import { BRAND } from '../utils/brandAssets';
 import './AppHub.css';
 
 /**
@@ -41,10 +42,10 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
   return (
     <section
       className="app-hub"
-      aria-label={deviceOnly ? 'GLICO device applications' : 'GLICO applications'}
+      aria-label={deviceOnly ? BRAND.deviceAriaLabel : BRAND.hubAriaLabel}
     >
       <div className="app-hub-intro">
-        <h2>{deviceOnly ? 'GLICO on this device' : 'GLICO applications'}</h2>
+        <h2>{deviceOnly ? BRAND.deviceHubTitle : BRAND.hubTitle}</h2>
         <p>
           {deviceOnly ? (
             <>

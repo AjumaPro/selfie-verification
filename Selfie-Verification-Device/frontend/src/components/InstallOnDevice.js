@@ -16,6 +16,7 @@ import {
   resolveDownloadUrl,
   triggerDownload,
 } from '../utils/downloadUtils';
+import { BRAND } from '../utils/brandAssets';
 import './InstallOnDevice.css';
 
 const KYC_FILES = {
@@ -293,7 +294,7 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                     </li>
                     <li>Run the installer (Windows) or drag to Applications (Mac).</li>
                     <li>
-                      Launch <strong>GLICO Platform</strong> from your apps list.
+                      Launch <strong>{BRAND.name}</strong> from your apps list.
                     </li>
                   </ol>
                 </article>
