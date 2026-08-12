@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   FaUsers,
   FaMapMarkerAlt,
@@ -17,44 +17,161 @@ import {
 import './MeetingJoin.css';
 import { glicoLogoUrl } from '../utils/brandAssets';
 
+function isSecureGeoContext() {
+  if (typeof window === 'undefined') return false;
+  if (window.isSecureContext) return true;
+  const h = String(window.location.hostname || '');
+  return h === 'localhost' || h === '127.0.0.1';
+}
+
+function geoErrorMessage(err) {
+  if (err && err.code === 1) {
+    return 'Location permission was denied. In your phone browser: allow Location for this site, turn on Precise Location, then tap Share location again.';
+  }
+  if (err && err.code === 2) {
+    return 'Could not determine your position. Turn on GPS / Location Services, step outdoors if you can, then try again.';
+  }
+  if (err && err.code === 3) {
+    return 'Location timed out. Move outdoors for a clearer GPS signal, then tap Share location again.';
+  }
+  return (
+    err?.message ||
+    'Location access is required to check in. Tap Share location and allow when prompted.'
+  );
+}
+
+/**
+ * Mobile-friendly GPS: watch for a real fix (not a stale/network guess),
+ * accept a good reading early, fall back to coarser location if needed.
+ */
 function requestDeviceLocation() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
+    if (!isSecureGeoContext()) {
       reject(
         new Error(
-          'This device does not support location. Use a phone or browser with GPS / location services.'
+          'Location only works on HTTPS. Open the check-in page from the QR code (https://…), not an insecure http link.'
         )
       );
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        resolve({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          locationAccuracy: pos.coords.accuracy,
-        });
-      },
-      (err) => {
-        let msg =
-          'Location access is required to check in. Please allow location when prompted.';
-        if (err && err.code === 1) {
-          msg =
-            'Location permission was denied. Enable location for this site in your browser settings, then try again.';
-        } else if (err && err.code === 2) {
-          msg =
-            'Could not determine your position. Turn on GPS / Location Services and try again.';
-        } else if (err && err.code === 3) {
-          msg = 'Location request timed out. Try again outdoors or with a stronger signal.';
+    if (!navigator.geolocation) {
+      reject(
+        new Error(
+          'This device does not support location. Use a phone browser with GPS / location services.'
+        )
+      );
+      return;
+    }
+
+    let settled = false;
+    let best = null;
+    let watchId = null;
+    let timerId = null;
+
+    const toLoc = (pos) => ({
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      locationAccuracy: pos.coords.accuracy,
+      timestamp: pos.timestamp || Date.now(),
+    });
+
+    const cleanup = () => {
+      if (watchId != null && navigator.geolocation.clearWatch) {
+        try {
+          navigator.geolocation.clearWatch(watchId);
+        } catch {
+          /* ignore */
         }
-        reject(new Error(msg));
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 25000,
-        maximumAge: 0,
       }
-    );
+      watchId = null;
+      if (timerId) clearTimeout(timerId);
+      timerId = null;
+    };
+
+    const finish = (loc) => {
+      if (settled || !loc) return;
+      settled = true;
+      cleanup();
+      resolve(loc);
+    };
+
+    const fail = (err) => {
+      if (settled) return;
+      if (best) {
+        finish(best);
+        return;
+      }
+      settled = true;
+      cleanup();
+      reject(new Error(geoErrorMessage(err)));
+    };
+
+    const consider = (pos) => {
+      if (!pos?.coords) return;
+      const loc = toLoc(pos);
+      if (
+        !Number.isFinite(loc.latitude) ||
+        !Number.isFinite(loc.longitude)
+      ) {
+        return;
+      }
+      if (
+        !best ||
+        (Number.isFinite(loc.locationAccuracy) &&
+          loc.locationAccuracy < (best.locationAccuracy || 1e9))
+      ) {
+        best = loc;
+      }
+      // Good enough for check-in — stop waiting
+      if (
+        Number.isFinite(loc.locationAccuracy) &&
+        loc.locationAccuracy <= 80
+      ) {
+        finish(loc);
+      }
+    };
+
+    try {
+      watchId = navigator.geolocation.watchPosition(consider, (err) => {
+        // Permission denied is fatal; other errors may still get a later fix
+        if (err && err.code === 1) fail(err);
+      }, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 25000,
+      });
+    } catch (err) {
+      fail(err);
+      return;
+    }
+
+    // Kick Android / some WebViews that respond better to getCurrentPosition
+    try {
+      navigator.geolocation.getCurrentPosition(consider, () => {}, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 20000,
+      });
+    } catch {
+      /* ignore */
+    }
+
+    timerId = setTimeout(() => {
+      if (best) {
+        finish(best);
+        return;
+      }
+      // Last resort: allow a coarser / cached fix so check-in is not stuck
+      navigator.geolocation.getCurrentPosition(
+        (pos) => finish(toLoc(pos)),
+        fail,
+        {
+          enableHighAccuracy: false,
+          maximumAge: 120000,
+          timeout: 12000,
+        }
+      );
+    }, 20000);
   });
 }
 
@@ -77,6 +194,12 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   const [geoError, setGeoError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(null);
+  const capturingRef = useRef(false);
+  const geoRef = useRef(null);
+
+  useEffect(() => {
+    geoRef.current = geo;
+  }, [geo]);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,6 +270,7 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   };
 
   // Auto-tick permissions as the guest fills contact fields (can still untick).
+  // Do NOT auto-call GPS here — mobile browsers block location without a tap.
   useEffect(() => {
     const nameOk = form.fullName.trim().length >= 2;
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
@@ -157,17 +281,17 @@ const MeetingJoin = ({ meetingId, onClose }) => {
       form.email.trim().length > 0 ||
       form.phone.trim().length > 0;
 
-    // Share-details consent once name + email look valid (phone often typed last)
     if (nameOk && emailOk) {
       setConsentDetails(true);
     }
-    // Start location early so GPS is ready by the time they submit
     if (anyFilled || phoneStarted) {
       setConsentLocation(true);
     }
   }, [form.fullName, form.email, form.phone]);
 
   const captureLocation = useCallback(async () => {
+    if (capturingRef.current) return geoRef.current;
+    capturingRef.current = true;
     setGeoError('');
     setGeoLoading(true);
     try {
@@ -176,20 +300,14 @@ const MeetingJoin = ({ meetingId, onClose }) => {
       setConsentLocation(true);
       return loc;
     } catch (err) {
-      setGeo(null);
       setGeoError(err.message || 'Could not get location.');
-      return null;
+      // Keep last good fix if we had one (don’t wipe on a failed refresh)
+      return geoRef.current;
     } finally {
       setGeoLoading(false);
+      capturingRef.current = false;
     }
   }, []);
-
-  // When guest ticks location consent, prompt browser geolocation
-  useEffect(() => {
-    if (!consentLocation || geo || geoLoading) return undefined;
-    captureLocation();
-    return undefined;
-  }, [consentLocation, geo, geoLoading, captureLocation]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -220,14 +338,21 @@ const MeetingJoin = ({ meetingId, onClose }) => {
 
     setSubmitting(true);
     try {
-      let loc = geo;
-      if (!loc) {
-        loc = await captureLocation();
+      const existing = geoRef.current;
+      const age = existing?.timestamp
+        ? Date.now() - existing.timestamp
+        : Infinity;
+      const rough =
+        Number.isFinite(existing?.locationAccuracy) &&
+        existing.locationAccuracy > 150;
+      let loc = existing;
+      if (!loc || rough || age > 60000) {
+        loc = (await captureLocation()) || existing;
       }
       if (!loc) {
         setError(
           geoError ||
-            'Location is required. Allow location access to complete check-in.'
+            'Tap “Share my GPS location”, allow permission, then check in.'
         );
         setSubmitting(false);
         return;
@@ -362,7 +487,7 @@ const MeetingJoin = ({ meetingId, onClose }) => {
               <div className="meeting-join-card meeting-join-map-card">
                 <div className="meeting-join-map-head">
                   <h3>
-                    <FaMapMarkerAlt aria-hidden /> Meeting venue
+                    <FaMapMarkerAlt aria-hidden /> Meeting venue (host pin)
                   </h3>
                   {openMap && (
                     <a
@@ -652,6 +777,9 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                         if (!on) {
                           setGeo(null);
                           setGeoError('');
+                        } else {
+                          // User gesture — required for mobile GPS prompt
+                          captureLocation();
                         }
                       }}
                       required
@@ -663,31 +791,56 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                   </label>
 
                   <div className="meeting-join-geo-status">
+                    {!isSecureGeoContext() && (
+                      <p className="meeting-join-geo-warn" role="alert">
+                        This page is not on HTTPS, so the phone cannot share GPS.
+                        Open the QR check-in link that starts with https://
+                      </p>
+                    )}
                     {geoLoading && (
                       <p className="meeting-join-geo-wait">
-                        <FaLocationArrow aria-hidden /> Waiting for location
-                        permission…
+                        <FaLocationArrow aria-hidden /> Getting GPS…
+                        keep this page open (up to ~20 seconds). Use Precise
+                        Location if your phone asks.
                       </p>
                     )}
                     {geo && !geoLoading && (
-                      <p className="meeting-join-geo-ok">
-                        <FaMapMarkerAlt aria-hidden /> Location ready
-                        {Number.isFinite(geo.locationAccuracy)
-                          ? ` (±${Math.round(geo.locationAccuracy)} m)`
-                          : ''}
-                        {guestMapUrl && (
-                          <>
-                            {' · '}
-                            <a
-                              href={guestMapUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              View on map
-                            </a>
-                          </>
-                        )}
-                      </p>
+                      <div className="meeting-join-geo-ok-block">
+                        <p className="meeting-join-geo-ok">
+                          <FaMapMarkerAlt aria-hidden /> Your GPS ready:{' '}
+                          {Number(geo.latitude).toFixed(5)},{' '}
+                          {Number(geo.longitude).toFixed(5)}
+                          {Number.isFinite(geo.locationAccuracy)
+                            ? ` (±${Math.round(geo.locationAccuracy)} m)`
+                            : ''}
+                          {guestMapUrl && (
+                            <>
+                              {' · '}
+                              <a
+                                href={guestMapUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                View your pin
+                              </a>
+                            </>
+                          )}
+                        </p>
+                        {Number.isFinite(geo.locationAccuracy) &&
+                          geo.locationAccuracy > 150 && (
+                            <p className="meeting-join-geo-warn">
+                              Accuracy is rough. Turn on Precise Location, step
+                              outside, then tap Try GPS again before check-in.
+                            </p>
+                          )}
+                        <button
+                          type="button"
+                          className="meeting-join-retry-geo"
+                          onClick={captureLocation}
+                        >
+                          Refresh GPS
+                        </button>
+                      </div>
                     )}
                     {geoError && (
                       <div className="meeting-join-error" role="alert">
@@ -697,19 +850,25 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                           className="meeting-join-retry-geo"
                           onClick={captureLocation}
                         >
-                          Try location again
+                          Try GPS again
                         </button>
                       </div>
                     )}
                     {consentLocation && !geo && !geoLoading && !geoError && (
-                      <button
-                        type="button"
-                        className="meeting-join-retry-geo"
-                        onClick={captureLocation}
-                      >
-                        Allow location now
-                      </button>
-                    )}
+                        <div className="meeting-join-geo-tap">
+                          <p className="meeting-join-geo-hint">
+                            Tap below so your phone can ask for location
+                            permission (required on mobile).
+                          </p>
+                          <button
+                            type="button"
+                            className="meeting-join-share-geo"
+                            onClick={captureLocation}
+                          >
+                            <FaLocationArrow aria-hidden /> Share my GPS location
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </div>
 
