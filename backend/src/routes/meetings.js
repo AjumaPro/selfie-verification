@@ -131,6 +131,121 @@ function parseLatLngPair(text) {
   return { lat, lng };
 }
 
+/** Parse Google Maps share URLs — prefer place marker (!3d!4d) over camera (@). */
+function parseGoogleMapsPaste(text) {
+  const s = String(text || '').trim();
+  if (!s) return null;
+
+  const direct = parseLatLngPair(s);
+  if (direct) return { lat: direct.lat, lng: direct.lng, label: s, exact: true };
+
+  let placeName = null;
+  const placeMatch = s.match(/\/maps\/place\/([^/@?#+]+)/i);
+  if (placeMatch) {
+    try {
+      placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim();
+    } catch {
+      placeName = placeMatch[1].replace(/\+/g, ' ').trim();
+    }
+  }
+
+  // Prefer place marker coords (actual pin)
+  let m = s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  if (m) {
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng, label: placeName || s, exact: true, source: 'gmaps-3d' };
+    }
+  }
+
+  m = s.match(/!2d(-?\d+(?:\.\d+)?)!3d(-?\d+(?:\.\d+)?)/);
+  if (m) {
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    if (Math.abs(b) <= 90 && Math.abs(a) <= 180) {
+      return { lat: b, lng: a, label: placeName || s, exact: true, source: 'gmaps-2d3d' };
+    }
+  }
+
+  m = s.match(
+    /[?&](?:q|query|destination)=(-?\d+(?:\.\d+)?)(?:%2C|,|\s)+(-?\d+(?:\.\d+)?)/i
+  );
+  if (m) {
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng, label: placeName || s, exact: true, source: 'gmaps-q' };
+    }
+  }
+
+  m = s.match(
+    /[?&](?:ll|center)=(-?\d+(?:\.\d+)?)(?:%2C|,)(-?\d+(?:\.\d+)?)/i
+  );
+  if (m) {
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng, label: placeName || s, exact: false, source: 'gmaps-ll' };
+    }
+  }
+
+  // Camera / viewport — low confidence (often not the venue pin)
+  m = s.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if (m) {
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return {
+        lat,
+        lng,
+        label: placeName || s,
+        exact: false,
+        lowConfidence: true,
+        source: 'gmaps-at',
+      };
+    }
+  }
+
+  m = s.match(/[?&](?:q|query)=([^&]+)/i);
+  if (m) {
+    try {
+      const q = decodeURIComponent(m[1].replace(/\+/g, ' ')).trim();
+      if (q && !parseLatLngPair(q)) return { searchQuery: q };
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (placeName) return { searchQuery: placeName };
+  return null;
+}
+
+function resolveVenueFromStored(row) {
+  let lat = parseCoord(row?.venue_lat);
+  let lng = parseCoord(row?.venue_lng);
+  if (lat != null && lng != null) {
+    return {
+      lat,
+      lng,
+      label: row.google_place || row.location || '',
+    };
+  }
+  const fromPaste = parseGoogleMapsPaste(row?.google_place);
+  if (
+    fromPaste &&
+    Number.isFinite(fromPaste.lat) &&
+    Number.isFinite(fromPaste.lng) &&
+    fromPaste.exact !== false &&
+    !fromPaste.lowConfidence
+  ) {
+    return fromPaste;
+  }
+  const pair = parseLatLngPair(row?.google_place);
+  if (pair) return { ...pair, label: row.google_place || '' };
+  return { lat: null, lng: null, label: row?.google_place || '' };
+}
+
 /**
  * Compare guest GPS to host venue.
  * @returns {{ locationMatch: 'at_venue'|'away'|'unknown', distanceM: number|null }}
@@ -159,11 +274,9 @@ function verifyGuestAtVenue(venueLat, venueLng, guestLat, guestLng, accuracy, ra
 
 function rowToMeeting(row) {
   if (!row) return null;
-  const venueLat = parseCoord(row.venue_lat);
-  const venueLng = parseCoord(row.venue_lng);
-  const fromPlace = parseLatLngPair(row.google_place);
-  const lat = venueLat != null ? venueLat : fromPlace?.lat ?? null;
-  const lng = venueLng != null ? venueLng : fromPlace?.lng ?? null;
+  const venue = resolveVenueFromStored(row);
+  const lat = venue.lat;
+  const lng = venue.lng;
   const radius = Number(row.venue_radius_m);
   const hasVenue = Number.isFinite(lat) && Number.isFinite(lng);
   // Default in-person when flag missing: true if pin exists, else false for pure online
@@ -267,6 +380,157 @@ function isValidPhone(phone) {
 }
 
 /**
+ * Expand short Google Maps share links and extract lat/lng for venue pins.
+ * POST /api/meetings/resolve-maps-link  body: { url, hint? }
+ */
+router.post('/resolve-maps-link', async (req, res) => {
+  try {
+    const url = String(req.body?.url || '').trim();
+    const hint = String(req.body?.hint || '').trim();
+    if (!url) {
+      return res.status(400).json({ error: 'A Google Maps URL is required.' });
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      return res.status(400).json({ error: 'URL must start with http:// or https://.' });
+    }
+    if (!/google\.|goo\.gl|maps\.app|g\.co/i.test(url)) {
+      return res.status(400).json({ error: 'Not a Google Maps link.' });
+    }
+
+    // Follow redirects — short links (maps.app.goo.gl) hide coords until expanded
+    let finalUrl = url;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const upstream = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (compatible; GlicoMeetings/1.0; +https://glico.com)',
+          Accept: 'text/html,application/xhtml+xml',
+        },
+      });
+      clearTimeout(timer);
+      finalUrl = upstream.url || url;
+      // Also scan HTML for @lat,lng / !3d when final URL is still opaque
+      let html = '';
+      try {
+        html = await upstream.text();
+      } catch {
+        html = '';
+      }
+      const fromFinal = parseGoogleMapsPaste(finalUrl);
+      if (fromFinal?.lat != null && fromFinal?.lng != null && fromFinal.exact !== false && !fromFinal.lowConfidence) {
+        return res.json({
+          lat: fromFinal.lat,
+          lng: fromFinal.lng,
+          label: fromFinal.label || fromFinal.searchQuery || '',
+          finalUrl,
+          source: fromFinal.source || 'expanded-url',
+          exact: true,
+        });
+      }
+      if (html) {
+        // Prefer marker patterns in HTML; avoid first random @ match
+        const marker = html.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+        if (marker) {
+          const lat = Number(marker[1]);
+          const lng = Number(marker[2]);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            let label = '';
+            const placeMatch = html.match(/\/maps\/place\/([^/"'?#\\]+)/);
+            if (placeMatch) {
+              try {
+                label = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+              } catch {
+                label = placeMatch[1].replace(/\+/g, ' ');
+              }
+            }
+            return res.json({
+              lat,
+              lng,
+              label: label || '',
+              finalUrl,
+              source: 'expanded-html-marker',
+              exact: true,
+            });
+          }
+        }
+        const fromHtml = parseGoogleMapsPaste(html.slice(0, 200000));
+        if (fromHtml?.lat != null && fromHtml?.lng != null && fromHtml.exact) {
+          return res.json({
+            lat: fromHtml.lat,
+            lng: fromHtml.lng,
+            label: fromHtml.label || '',
+            finalUrl,
+            source: 'expanded-html',
+            exact: true,
+          });
+        }
+        if (fromHtml?.searchQuery) {
+          return res.json({
+            searchQuery: fromHtml.searchQuery,
+            finalUrl,
+            source: 'expanded-query',
+          });
+        }
+        // Low-confidence camera only — let client ask user to confirm
+        if (fromFinal?.lat != null && fromFinal?.lng != null) {
+          return res.json({
+            lat: fromFinal.lat,
+            lng: fromFinal.lng,
+            label: fromFinal.label || '',
+            finalUrl,
+            source: fromFinal.source || 'gmaps-at',
+            exact: false,
+            lowConfidence: true,
+          });
+        }
+      }
+      if (fromFinal?.searchQuery) {
+        return res.json({
+          searchQuery: fromFinal.searchQuery,
+          finalUrl,
+          source: 'expanded-query',
+        });
+      }
+      if (fromFinal?.lat != null && fromFinal?.lng != null) {
+        return res.json({
+          lat: fromFinal.lat,
+          lng: fromFinal.lng,
+          label: fromFinal.label || '',
+          finalUrl,
+          source: fromFinal.source || 'gmaps-at',
+          exact: !!fromFinal.exact,
+          lowConfidence: !!fromFinal.lowConfidence,
+        });
+      }
+    } catch (err) {
+      // Fall through to hint / error
+    }
+
+    if (hint.length >= 2) {
+      return res.json({
+        searchQuery: hint,
+        finalUrl,
+        source: 'hint-fallback',
+      });
+    }
+
+    return res.status(422).json({
+      error:
+        'Could not read a pin from that Google Maps link. Open the place, Share with the red pin visible, or paste coordinates like 5.60, -0.18.',
+      finalUrl,
+    });
+  } catch (err) {
+    console.error('resolve-maps-link', err);
+    return res.status(500).json({ error: 'Could not resolve that Maps link.' });
+  }
+});
+
+/**
  * Publish / update a meeting so QR check-in works on any device.
  * PUT /api/meetings/:id
  */
@@ -288,10 +552,22 @@ router.put('/:id', async (req, res) => {
     let venueLat = parseCoord(body.venueLat ?? body.venue_lat);
     let venueLng = parseCoord(body.venueLng ?? body.venue_lng);
     if (venueLat == null || venueLng == null) {
-      const pair = parseLatLngPair(googlePlace);
-      if (pair) {
-        venueLat = pair.lat;
-        venueLng = pair.lng;
+      const fromPaste = parseGoogleMapsPaste(googlePlace);
+      if (
+        fromPaste &&
+        Number.isFinite(fromPaste.lat) &&
+        Number.isFinite(fromPaste.lng) &&
+        fromPaste.exact !== false &&
+        !fromPaste.lowConfidence
+      ) {
+        venueLat = fromPaste.lat;
+        venueLng = fromPaste.lng;
+      } else {
+        const pair = parseLatLngPair(googlePlace);
+        if (pair) {
+          venueLat = pair.lat;
+          venueLng = pair.lng;
+        }
       }
     }
     if (
@@ -329,11 +605,23 @@ router.put('/:id', async (req, res) => {
       body.is_in_person === '0'
     );
 
-    // In-person meetings require a pinned map location for guest verification
+    // In-person: require plain venue address + map pin coordinates
     if (isInPerson && (venueLat == null || venueLng == null)) {
       return res.status(400).json({
         error:
           'In-person meetings need a map pin. Open Place → Map and choose the venue, or mark the meeting as online only.',
+      });
+    }
+    if (isInPerson && !location) {
+      return res.status(400).json({
+        error:
+          'In-person meetings need a venue address (room, branch, or street), plus a map pin.',
+      });
+    }
+    if (isInPerson && !googlePlace) {
+      return res.status(400).json({
+        error:
+          'In-person meetings need the map address with the pin. Confirm the location in Map.',
       });
     }
 
@@ -462,15 +750,9 @@ router.post('/:id/attendance', async (req, res) => {
 
     const mRow = meeting.rows[0];
     const mealMenu = parseMealMenu(mRow.meal_menu_json);
-    let venueLat = parseCoord(mRow.venue_lat);
-    let venueLng = parseCoord(mRow.venue_lng);
-    if (venueLat == null || venueLng == null) {
-      const pair = parseLatLngPair(mRow.google_place);
-      if (pair) {
-        venueLat = pair.lat;
-        venueLng = pair.lng;
-      }
-    }
+    const venueResolved = resolveVenueFromStored(mRow);
+    let venueLat = venueResolved.lat;
+    let venueLng = venueResolved.lng;
     const venueRadiusM = Number(mRow.venue_radius_m) || 200;
     const fullName = String(req.body?.fullName || '').trim();
     const email = normalizeEmail(req.body?.email);

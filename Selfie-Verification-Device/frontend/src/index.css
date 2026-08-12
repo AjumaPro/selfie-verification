@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sora:wght@600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -17,16 +19,43 @@
   --glico-border: #c5d0e8;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #ffffff;
+  background:
+    radial-gradient(ellipse 90% 55% at 0% -10%, rgba(72, 168, 232, 0.16), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(208, 48, 56, 0.07), transparent 50%),
+    linear-gradient(180deg, #f5f8fc 0%, #eef3f9 45%, #f8fafc 100%);
   background-attachment: fixed;
   min-height: 100vh;
-  color: #222;
+  min-height: 100dvh;
+  color: #1c2a40;
+  overflow-x: hidden;
+}
+
+/* iOS: 16px+ inputs avoid auto-zoom on focus */
+@media (max-width: 768px) {
+  input.form-input,
+  select.form-input,
+  textarea.form-input,
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='date'],
+  input[type='time'],
+  input[type='number'],
+  input[type='search'],
+  input[type='url'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 code {

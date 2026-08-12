@@ -9,6 +9,15 @@
   border-bottom: 3px solid #d03038;
 }
 
+.header-device {
+  border-bottom: none;
+}
+
+.header-device .header-logo {
+  height: 52px;
+  max-width: 200px;
+}
+
 .header-content {
   max-width: 1200px;
   margin: 0 auto;

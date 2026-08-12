@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sora:wght@600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --glico-red: #d03038;
+  --glico-red-dark: #a8242c;
+  --glico-sky: #48a8e8;
+  --glico-sky-dark: #1a7ab8;
+  --glico-navy: #103078;
+  --glico-red-soft: #fceeef;
+  --glico-sky-soft: #eaf6fc;
+  --glico-navy-soft: #e8ecf5;
+  --glico-border: #c5d0e8;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: #1c2a40;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse 90% 55% at 0% -10%, rgba(72, 168, 232, 0.16), transparent 55%),
+    linear-gradient(180deg, #f5f8fc 0%, #eef3f9 45%, #f8fafc 100%);
+  background-attachment: fixed;
+}
+
+@media (max-width: 768px) {
+  input.form-input,
+  select.form-input,
+  textarea.form-input,
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='date'],
+  input[type='time'],
+  input[type='number'],
+  input[type='search'],
+  input[type='url'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+.form-input {
+  border: 1px solid rgba(16, 48, 120, 0.14);
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--glico-sky);
+  box-shadow: 0 0 0 2px rgba(72, 168, 232, 0.16);
+}
+
+.btn {
+  padding: 0.7rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  min-height: 2.75rem;
+}
+
+.btn-primary {
+  background: #d03038;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #a8242c;
+}
+
+.btn-secondary {
+  background: #48a8e8;
+  color: white;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

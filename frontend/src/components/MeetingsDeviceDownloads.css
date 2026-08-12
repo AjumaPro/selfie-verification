@@ -1,0 +1,206 @@
+/* Meetings downloads — equal grid, Glico red / sky / navy */
+
+.meet-device-dl {
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+  background: linear-gradient(165deg, #f7fafc 0%, #eef5fb 100%);
+}
+
+.meet-device-dl.compact {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.7rem;
+}
+
+.meet-device-dl-head {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin-bottom: 0.7rem;
+  color: var(--glico-navy, #103078);
+}
+
+.meet-device-dl-head strong {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.meet-device-dl-head p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #556;
+  font-weight: 500;
+}
+
+/* Equal-width download cards */
+.meet-device-dl-grid {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.meet-device-dl-grid--1 {
+  grid-template-columns: 1fr;
+}
+
+.meet-device-dl-grid--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.meet-device-dl-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.meet-dl-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 3.35rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  color: #fff !important;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.meet-dl-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  opacity: 0.95;
+}
+
+.meet-dl-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.meet-dl-btn-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meet-dl-btn-sub {
+  font-size: 0.7rem;
+  font-weight: 550;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Glico-aligned tones */
+.meet-dl-tone-win {
+  background: var(--glico-navy, #103078);
+  border-color: rgba(16, 48, 120, 0.35);
+}
+
+.meet-dl-tone-mac {
+  background: var(--glico-sky-dark, #1a7ab8);
+  border-color: rgba(26, 122, 184, 0.35);
+}
+
+.meet-dl-tone-web {
+  background: var(--glico-red, #d03038);
+  border-color: rgba(208, 48, 56, 0.35);
+}
+
+.meet-dl-btn:hover:not(:disabled):not(.is-disabled) {
+  filter: brightness(1.08);
+}
+
+.meet-dl-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.meet-dl-btn.is-disabled,
+.meet-dl-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.meet-device-dl-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  justify-content: flex-start;
+}
+
+.meet-dl-link {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--glico-sky-dark, #1a7ab8);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: none;
+}
+
+.meet-dl-link:hover {
+  text-decoration: underline;
+}
+
+.meet-device-dl-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: #667;
+  line-height: 1.4;
+}
+
+.meet-device-dl-note code {
+  font-size: 0.85em;
+  background: rgba(16, 48, 120, 0.06);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+}
+
+.app-hub-card-meetings .meet-device-dl {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.app-hub-meet-dl-stop {
+  width: 100%;
+}
+
+/* Narrow: stack for readability */
+@media (max-width: 560px) {
+  .meet-device-dl-grid--2,
+  .meet-device-dl-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Compact hub/banner: keep two columns when space allows */
+.meet-device-dl.compact .meet-dl-btn {
+  min-height: 3.1rem;
+  padding: 0.5rem 0.55rem;
+}
+
+.meet-device-dl.compact .meet-dl-btn-title {
+  font-size: 0.82rem;
+}
+
+.meet-device-dl.compact .meet-dl-btn-sub {
+  font-size: 0.66rem;
+}

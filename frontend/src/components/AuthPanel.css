@@ -18,8 +18,35 @@
   height: 52px;
   width: auto;
   max-width: 200px;
-  margin: 0 auto 0.75rem;
+  margin: 0 auto 0.55rem;
   object-fit: contain;
+}
+
+.auth-hero-mark {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  height: 8px;
+  margin: 0 auto 0.75rem;
+  max-width: 96px;
+}
+
+.auth-hero-mark .stripe {
+  flex: 1;
+  border-radius: 2px;
+  transform: skewX(-14deg);
+}
+
+.auth-hero-mark .stripe-red {
+  background: var(--glico-red, #d03038);
+}
+
+.auth-hero-mark .stripe-sky {
+  background: var(--glico-sky, #48a8e8);
+}
+
+.auth-hero-mark .stripe-navy {
+  background: var(--glico-navy, #103078);
 }
 
 .auth-brand-label {
@@ -233,6 +260,67 @@
   font-style: normal;
   color: #666;
   font-size: 0.82rem;
+}
+
+.auth-desktop-banner {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 48, 120, 0.15);
+  background: linear-gradient(160deg, #eef5fb 0%, #f7fafc 100%);
+  font-size: 0.85rem;
+  color: #334;
+  line-height: 1.4;
+}
+
+.auth-desktop-banner strong {
+  display: block;
+  color: #103078;
+  margin-bottom: 0.2rem;
+}
+
+.auth-desktop-banner p {
+  margin: 0;
+}
+
+.auth-desktop-banner code {
+  font-size: 0.78em;
+  word-break: break-all;
+  background: rgba(16, 48, 120, 0.06);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+}
+
+.auth-desktop-icon {
+  flex-shrink: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #103078;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.auth-sections-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #103078;
+}
+
+.auth-section-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.86rem;
+  color: #556;
+  line-height: 1.4;
 }
 
 @media (max-width: 480px) {

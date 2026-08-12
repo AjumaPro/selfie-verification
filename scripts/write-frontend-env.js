@@ -14,6 +14,7 @@ const keys = [
   'REACT_APP_DEFAULT_MERCHANT_KEY',
   'REACT_APP_DEFAULT_CENTER',
   'REACT_APP_AUTH_API_URL',
+  'REACT_APP_DESKTOP_AUTH_API_URL',
 ];
 
 const lines = [
@@ -25,8 +26,12 @@ let missing = [];
 for (const key of keys) {
   const raw = process.env[key];
   const value = raw === undefined || raw === null ? '' : String(raw);
-  // AUTH_API_URL may be intentionally empty (same-origin)
-  if (key !== 'REACT_APP_AUTH_API_URL' && !value.trim()) {
+  // AUTH / DESKTOP auth may be intentionally empty
+  if (
+    key !== 'REACT_APP_AUTH_API_URL' &&
+    key !== 'REACT_APP_DESKTOP_AUTH_API_URL' &&
+    !value.trim()
+  ) {
     missing.push(key);
   }
   lines.push(`${key}=${value}`);

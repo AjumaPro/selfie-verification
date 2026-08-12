@@ -81,6 +81,28 @@ function signMacApps() {
 }
 
 try {
+  // Desktop installers = device feature set (web KYC, no Meetings)
+  if (process.env.REACT_APP_DEVICE_APP === undefined) {
+    process.env.REACT_APP_DEVICE_APP = 'true';
+  }
+
+  const auth =
+    String(process.env.REACT_APP_AUTH_API_URL || '').trim() ||
+    String(process.env.REACT_APP_DESKTOP_AUTH_API_URL || '').trim();
+  if (!auth || auth === '/' || auth === 'same-origin') {
+    console.warn(
+      '\n[electron-build] WARNING: REACT_APP_AUTH_API_URL / REACT_APP_DESKTOP_AUTH_API_URL\n' +
+        '  is empty. Packaged Mac/Windows apps (file://) will fall back to http://127.0.0.1:4000.\n' +
+        '  For production installers, set one of those env vars to your DigitalOcean app URL\n' +
+        '  before building so Sign in / Register / Admin work online.\n'
+    );
+  } else {
+    console.log(`[electron-build] Auth API for desktop: ${auth}`);
+  }
+  console.log(
+    `[electron-build] REACT_APP_DEVICE_APP=${process.env.REACT_APP_DEVICE_APP} (Meetings hidden on device builds)`
+  );
+
   parkDownloads();
   run('npm run build');
 

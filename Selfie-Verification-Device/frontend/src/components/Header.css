@@ -1,9 +1,21 @@
 .header {
   background: white;
   padding: 1.5rem 1rem;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
   color: #333;
   box-shadow: 0 2px 10px rgba(16, 48, 120, 0.08);
   border-bottom: 3px solid #d03038;
+}
+
+.header-device {
+  border-bottom: none;
+}
+
+.header-device .header-logo {
+  height: 52px;
+  max-width: 200px;
 }
 
 .header-content {
@@ -181,15 +193,21 @@
   }
 
   .header-brand-text h1 {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
   }
 
   .header-brand-text p {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
   }
 
   .header-user {
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .header-logout {
+    min-height: 2.5rem;
   }
 }

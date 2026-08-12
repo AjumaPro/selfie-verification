@@ -85,6 +85,14 @@ async function ensureMeetingsSchema(query) {
   );
   await tryAddColumn(
     query,
+    `ALTER TABLE meetings ADD COLUMN host_key TEXT NOT NULL DEFAULT ''`
+  );
+  await tryAddColumn(
+    query,
+    `ALTER TABLE meetings ADD COLUMN host_payload_json TEXT NOT NULL DEFAULT '{}'`
+  );
+  await tryAddColumn(
+    query,
     `ALTER TABLE meeting_attendance ADD COLUMN latitude TEXT NOT NULL DEFAULT ''`
   );
   await tryAddColumn(
@@ -132,6 +140,9 @@ async function ensureMeetingsSchema(query) {
   );
   await query(
     `CREATE INDEX IF NOT EXISTS idx_meetings_date ON meetings (meet_date)`
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_meetings_host_key ON meetings (host_key)`
   );
 }
 

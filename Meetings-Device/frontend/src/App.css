@@ -1,0 +1,173 @@
+.meetings-pwa {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(208, 48, 56, 0.07), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(72, 168, 232, 0.12), transparent 50%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%);
+}
+
+.glico-brand-stripes {
+  display: flex;
+  height: 5px;
+  width: 100%;
+}
+
+.glico-brand-stripes .stripe {
+  flex: 1;
+  display: block;
+}
+
+.glico-brand-stripes .stripe-red {
+  background: var(--glico-red, #d03038);
+}
+
+.glico-brand-stripes .stripe-sky {
+  background: var(--glico-sky, #48a8e8);
+}
+
+.glico-brand-stripes .stripe-navy {
+  background: var(--glico-navy, #103078);
+}
+
+.meetings-pwa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  background: #ffffff;
+  color: var(--glico-navy, #103078);
+  border-bottom: 1px solid rgba(16, 48, 120, 0.1);
+  box-shadow: 0 6px 18px rgba(16, 48, 120, 0.06);
+}
+
+.meetings-pwa-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.meetings-pwa-logo {
+  height: 42px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.meetings-pwa-brand h1 {
+  margin: 0;
+  font-family: 'Sora', 'DM Sans', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--glico-navy, #103078);
+}
+
+.meetings-pwa-brand p {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--glico-sky-dark, #1a7ab8);
+}
+
+.meetings-pwa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.meetings-pwa-install {
+  border: none;
+  background: var(--glico-red, #d03038);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  box-shadow: 0 4px 12px rgba(208, 48, 56, 0.25);
+}
+
+.meetings-pwa-install:hover:not(:disabled) {
+  background: var(--glico-red-dark, #a8242c);
+}
+
+.meetings-pwa-install.installed {
+  background: var(--glico-navy, #103078);
+  box-shadow: none;
+  opacity: 0.92;
+  cursor: default;
+}
+
+.meetings-pwa-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.85rem 0.75rem 1.5rem;
+  padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+}
+
+.meetings-pwa-banner {
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+  border-left: 4px solid var(--glico-red, #d03038);
+  background: #fff;
+  font-size: 0.88rem;
+  color: #445;
+  line-height: 1.45;
+}
+
+.meetings-pwa-banner strong {
+  color: var(--glico-navy, #103078);
+}
+
+.meetings-pwa-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.meetings-pwa-chip {
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #eaf6fc;
+  color: #0b5f8a;
+  border: 1px solid rgba(26, 122, 184, 0.2);
+}
+
+@media (max-width: 640px) {
+  .meetings-pwa-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meetings-pwa-install {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .meetings-pwa-logo {
+    height: 34px;
+    max-width: 130px;
+  }
+}

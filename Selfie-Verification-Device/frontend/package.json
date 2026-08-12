@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "face-api.js": "^0.22.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

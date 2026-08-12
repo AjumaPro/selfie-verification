@@ -1,27 +1,39 @@
-# Selfie Verification — Device Install version
+# Selfie Verification — Device build
 
-Standalone copy of the streamlined selfie verification app.
+On-device package (PWA / local / desktop parity): **same web features as production except Meetings**.
 
-## What’s included
+## Included (matches web)
 
-- **Verify Selfie** (Ghana Card + face → KYC API)
-- **Install on your device** (PWA — Android / iPhone / desktop)
-- Image crop to **640×480 PNG under 1MB**
-- Save results as **PDF** or **image**
+- Authentication: **Sign in · Register · Super Admin**
+- Stay signed in on this device
+- Image Recognition / Ghana Card KYC / face-api
+- Super Admin dashboard
+- Install helpers (PWA / desktop download links)
+- Results PDF & image export
+- Mobile-friendly UI
+
+## Not included
+
+- **Meetings** (host, QR check-in, booking, map venue) — use the **website** for that
 
 ## Setup
 
 ```bash
 cd frontend
 npm install
-npm run download-models   # optional but recommended
+npm run download-models
+# Point auth at API (remote DO or local Postgres API):
+# REACT_APP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
 npm start
 ```
 
-Open http://localhost:3000
+## Windows / Mac installers
 
-Configure API credentials in `frontend/.env` (see `ENV_TEMPLATE.txt`).
+Built from the main monorepo `frontend/` with Electron (device mode hides Meetings automatically):
 
-## Note
-
-This folder is separate from `IMAGE recognition`. Changes here do not update the original project unless you copy them back.
+```bash
+cd frontend
+export REACT_APP_DEVICE_APP=true
+export REACT_APP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
+npm run electron:build
+```

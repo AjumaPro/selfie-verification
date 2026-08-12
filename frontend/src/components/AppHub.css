@@ -36,8 +36,47 @@
   gap: 1.25rem;
 }
 
+.app-hub-grid-single {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-hub-card-info {
+  cursor: default;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    rgba(232, 244, 252, 0.7) 100%
+  );
+  border-color: rgba(26, 122, 184, 0.25);
+}
+
+.app-hub-card-info:hover,
+.app-hub-card-info:focus-visible {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(26, 122, 184, 0.25);
+}
+
+.app-hub-card-info .app-hub-card-icon {
+  background: linear-gradient(135deg, #1a7ab8, #103078);
+}
+
+.app-hub-feature-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #4a5568;
+  line-height: 1.5;
+  font-size: 0.92rem;
+  flex: 1;
+}
+
+.app-hub-feature-list li {
+  margin-bottom: 0.25rem;
+}
+
 @media (max-width: 720px) {
-  .app-hub-grid {
+  .app-hub-grid,
+  .app-hub-grid-single {
     grid-template-columns: 1fr;
   }
 
@@ -171,4 +210,71 @@
 
 .app-hub-card-meetings .app-hub-card-cta {
   color: var(--glico-sky-dark, #1a7ab8);
+}
+
+/* Meetings column: open + Win/Mac downloads */
+.app-hub-card-meetings-panel {
+  cursor: default;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.app-hub-card-meetings-panel:hover,
+.app-hub-card-meetings-panel:focus-within {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(16, 48, 120, 0.12);
+  border-color: var(--glico-sky, #48a8e8);
+}
+
+.app-hub-card-open-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 1.35rem 1.35rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.app-hub-card-open-meetings p {
+  flex: 0;
+}
+
+.app-hub-meet-dl-stop {
+  padding: 0 1rem 1.1rem;
+}
+
+.app-hub-device-note {
+  margin-top: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #445;
+  line-height: 1.45;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: #eef5fb;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+}
+
+.meetings-header-downloads {
+  margin-top: 0.85rem;
+  max-width: 36rem;
+}
+
+.meetings-header-downloads .meet-device-dl {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.meetings-header-downloads .meet-device-dl-head p,
+.meetings-header-downloads .meet-device-dl-note {
+  color: #445;
 }

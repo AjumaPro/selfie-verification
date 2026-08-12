@@ -1,0 +1,12 @@
+# Meetings-Device PWA
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/dist-desktop/
+frontend/.env
+frontend/.env.local
+.DS_Store
+*.log
+*.exe
+*.dmg
+*.blockmap

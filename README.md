@@ -149,22 +149,36 @@ Keep the backend running on `:4000` or login will fail.
 
 ---
 
-## 3. Device copy
+## 3. Device packages
 
-A parallel UI lives under `Selfie-Verification-Device/` (and optionally the sibling Desktop folder). Point its `.env` at the same auth API:
+### KYC device (`Selfie-Verification-Device/`)
 
+Web **Image Recognition** features **without Meetings**. See that folder’s README.
+
+### Meetings PWA (`Meetings-Device/`)
+
+Installable **Meetings-only** mobile/desktop PWA — full Meetings parity (plan, QR, venue GPS, meals, booking), **no** Image Recognition.
+
+```bash
+# API (monorepo root)
+npm run api
+
+cd Meetings-Device/frontend
+npm install
+npm start                 # http://localhost:3002
 ```
-REACT_APP_AUTH_API_URL=http://localhost:4000
-```
 
-Often run on **http://localhost:3001**.
+Point production builds at your hosted API with `REACT_APP_AUTH_API_URL`.
 
 ---
 
-## 4. Desktop installers (Electron)
+## 4. Desktop installers (Electron — Windows & Mac)
 
 ```bash
 cd frontend
+# Point desktop apps at your live auth API (required for packaged installers):
+# export REACT_APP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
+# or: export REACT_APP_DESKTOP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
 npm run electron:build        # Mac + Windows
 npm run electron:build:mac    # Mac .dmg + .zip
 npm run electron:build:win    # Windows .exe
@@ -176,7 +190,19 @@ Artifacts are copied to `frontend/public/downloads/`:
 - `Selfie-Verification-Mac.dmg`
 - `Selfie-Verification-Mac.zip`
 - `selfie-verification-ui.zip`
-- `MAC-INSTALL.txt` / `WINDOWS-INSTALL.txt`
+- `MAC-INSTALL.txt` / `WINDOWS-INSTALL.txt` (include **Authentication** steps)
+
+**Authentication on desktop (same as web, device feature set)**
+
+| Section | Who | Purpose |
+|---------|-----|---------|
+| **Sign in** | Approved staff | Image Recognition / KYC |
+| **Register** | New users | Creates **pending** account until superadmin approves |
+| **Admin** | Superadmin only | Approve/manage users |
+
+- Desktop / device builds include **web KYC features only** — **no Meetings** (Meetings stays on the website).
+- Enable **Stay signed in on this device** so the next app launch skips login.
+- Packaged Electron apps load from `file://` and **must** be built with an absolute API URL (`REACT_APP_AUTH_API_URL` or `REACT_APP_DESKTOP_AUTH_API_URL`); electron build sets `REACT_APP_DEVICE_APP=true` so Meetings is hidden.
 
 **Note:** Builds are unsigned. macOS Gatekeeper / Windows SmartScreen will warn — use **Open Anyway** / **Run anyway**, or Control-click → Open on Mac.
 

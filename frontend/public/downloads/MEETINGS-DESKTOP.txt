@@ -1,0 +1,18 @@
+GLICO Meetings — Windows / Mac desktop
+=====================================
+
+Files (place in frontend/public/downloads after build):
+  Glico-Meetings-Windows.exe
+  Glico-Meetings-Mac.dmg
+  Glico-Meetings-Mac.zip
+
+Build:
+  cd Meetings-Device/frontend && npm install
+  # optional: set API for packaged app
+  # export REACT_APP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
+  node scripts/electron-build-meetings.js --mac --win
+
+Or from monorepo frontend/:
+  npm run electron:build:meetings
+
+The Home → Meetings column shows these installers when files exist.

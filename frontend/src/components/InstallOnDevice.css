@@ -118,7 +118,8 @@ a.install-primary-btn {
   box-sizing: border-box;
 }
 
-a.install-primary-btn.is-disabled {
+a.install-primary-btn.is-disabled,
+button.install-primary-btn.is-disabled {
   opacity: 0.65;
   pointer-events: none;
   background: #94a3b8 !important;

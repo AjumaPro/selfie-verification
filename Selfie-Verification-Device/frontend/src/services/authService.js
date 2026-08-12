@@ -6,17 +6,11 @@
  * "Stay signed in": token in localStorage → auto-login on later opens.
  */
 
+import { resolveApiBase } from '../config/apiBase';
+
 const TOKEN_KEY = 'selfie_auth_token_v1';
 const USER_KEY = 'selfie_auth_user_v1';
 const REMEMBER_KEY = 'selfie_auth_remember_v1';
-
-/** Empty string = same origin (DigitalOcean: UI + /api on one domain). */
-function resolveApiBase() {
-  const raw = process.env.REACT_APP_AUTH_API_URL;
-  if (raw === '' || raw === '/' || raw === 'same-origin') return '';
-  if (raw == null) return 'http://localhost:4000';
-  return String(raw).replace(/\/$/, '');
-}
 
 const API_BASE = resolveApiBase();
 
@@ -93,7 +87,9 @@ async function request(path, { method = 'GET', body, token } = {}) {
     });
   } catch {
     throw new AuthRequestError(
-      'Cannot reach the auth server. Start the API with: cd backend && npm run dev',
+      API_BASE
+        ? `Cannot reach the auth server at ${API_BASE}. For Mac/Windows apps, ensure you are online and this API URL is correct. Locally start the API with: npm run api`
+        : 'Cannot reach the auth server. Start the API with: npm run api (or set REACT_APP_AUTH_API_URL / REACT_APP_DESKTOP_AUTH_API_URL for the desktop build).',
       { network: true }
     );
   }

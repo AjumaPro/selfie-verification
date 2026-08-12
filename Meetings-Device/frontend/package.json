@@ -1,0 +1,94 @@
+{
+  "name": "glico-meetings-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GLICO Meetings \u2014 installable PWA (full meetings features, no Image Recognition)",
+  "author": "GLICO",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "dependencies": {
+    "@craco/craco": "^7.1.0",
+    "leaflet": "^1.9.4",
+    "qrcode": "^1.5.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "scripts": {
+    "sync": "node scripts/sync-from-web.js",
+    "prestart": "node scripts/sync-from-web.js",
+    "prebuild": "node scripts/sync-from-web.js",
+    "start": "PORT=3002 craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "electron:build": "node scripts/electron-build-meetings.js --mac --win",
+    "electron:build:win": "node scripts/electron-build-meetings.js --win",
+    "electron:build:mac": "node scripts/electron-build-meetings.js --mac"
+  },
+  "build": {
+    "appId": "org.glico.meetings",
+    "productName": "GLICO Meetings",
+    "copyright": "Copyright \u00a9 GLICO",
+    "extends": null,
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/node_modules/**",
+      "!build/**/*.map"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "asar": true,
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null,
+      "artifactName": "Glico-Meetings-Mac-${version}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Glico-Meetings-Windows.exe"
+    },
+    "icon": "electron/assets/icon.png"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

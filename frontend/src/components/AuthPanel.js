@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { FaSignInAlt, FaUserPlus, FaUserShield } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import {
+  FaSignInAlt,
+  FaUserPlus,
+  FaUserShield,
+  FaDesktop,
+  FaWindows,
+  FaApple,
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { resolveApiBase } from '../config/apiBase';
+import { glicoLogoUrl } from '../utils/brandAssets';
 import './AuthPanel.css';
 
 const emptyLogin = { email: '', password: '' };
@@ -12,8 +21,23 @@ const emptyRegister = {
   confirmPassword: '',
 };
 
+function detectDesktopShell() {
+  if (typeof window === 'undefined') return { desktop: false, platform: '' };
+  const ua = navigator.userAgent || '';
+  const file = window.location.protocol === 'file:';
+  const electron =
+    file ||
+    /Electron/i.test(ua) ||
+    (document.body && document.body.dataset.desktopApp === 'true');
+  if (!electron) return { desktop: false, platform: '' };
+  if (/Windows/i.test(ua)) return { desktop: true, platform: 'windows' };
+  if (/Mac/i.test(ua)) return { desktop: true, platform: 'mac' };
+  return { desktop: true, platform: 'desktop' };
+}
+
 /**
- * Login / Registration / Superadmin gate.
+ * Authentication sections: Sign in · Register · Super Admin.
+ * Shown for Image Recognition on web and for Windows/Mac Electron installs.
  */
 const AuthPanel = () => {
   const { login, loginSuperAdmin, register, busy } = useAuth();
@@ -21,10 +45,18 @@ const AuthPanel = () => {
   const [loginForm, setLoginForm] = useState(emptyLogin);
   const [adminForm, setAdminForm] = useState(emptyLogin);
   const [registerForm, setRegisterForm] = useState(emptyRegister);
-  // Always default ON so Stay signed in works unless the user turns it off
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [shell, setShell] = useState(() => detectDesktopShell());
+
+  useEffect(() => {
+    // Preload may set data-desktop-app after first paint
+    const t = window.setTimeout(() => setShell(detectDesktopShell()), 50);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const apiHint = resolveApiBase();
 
   const switchMode = (next) => {
     setMode(next);
@@ -85,7 +117,11 @@ const AuthPanel = () => {
       />
       <label htmlFor="stay-signed-in">
         <strong>Stay signed in on this device</strong>
-        <em>Skip login next time you open the app</em>
+        <em>
+          {shell.desktop
+            ? 'Recommended for Mac / Windows desktop — skip login next launch'
+            : 'Skip login next time you open the app'}
+        </em>
       </label>
     </div>
   );
@@ -119,6 +155,15 @@ const AuthPanel = () => {
     </>
   );
 
+  const platformIcon =
+    shell.platform === 'windows' ? (
+      <FaWindows aria-hidden />
+    ) : shell.platform === 'mac' ? (
+      <FaApple aria-hidden />
+    ) : (
+      <FaDesktop aria-hidden />
+    );
+
   return (
     <section
       className={`auth-panel ${mode === 'superadmin' ? 'auth-panel-admin' : ''}`}
@@ -126,24 +171,59 @@ const AuthPanel = () => {
     >
       <div className="auth-hero">
         <img
-          src={`${process.env.PUBLIC_URL}/Glico.png`}
+          src={glicoLogoUrl()}
           alt="GLICO"
           className="auth-hero-logo"
         />
+        <div className="auth-hero-mark" aria-hidden>
+          <span className="stripe stripe-red" />
+          <span className="stripe stripe-sky" />
+          <span className="stripe stripe-navy" />
+        </div>
         <p className="auth-brand-label">GLICO Platform</p>
         <h2 id="auth-heading">
-          {mode === 'superadmin' ? 'Super Admin' : 'Welcome'}
+          {mode === 'superadmin'
+            ? 'Super Admin'
+            : mode === 'register'
+              ? 'Create account'
+              : 'Sign in'}
         </h2>
         <p>
           {mode === 'superadmin'
-            ? 'Sign in with a superadmin account to manage users and use all features.'
+            ? 'Administrator access — approve users and manage the platform.'
             : mode === 'register'
-              ? 'Create an account. A superadmin must approve it before you can sign in.'
-              : 'Sign in on first use. Choose Stay signed in for automatic login afterwards.'}
+              ? 'Request access. A superadmin must approve you before Image Recognition works.'
+              : 'Use your approved account for Image Recognition and Ghana Card KYC.'}
         </p>
       </div>
 
-      <div className="auth-tabs auth-tabs-3" role="tablist">
+      {shell.desktop && (
+        <div className="auth-desktop-banner" role="status">
+          <span className="auth-desktop-icon">{platformIcon}</span>
+          <div>
+            <strong>
+              {shell.platform === 'windows'
+                ? 'Windows desktop app'
+                : shell.platform === 'mac'
+                  ? 'Mac desktop app'
+                  : 'Desktop app'}
+            </strong>
+            <p>
+              Authentication uses the same GLICO accounts as the website. Choose a
+              section below — Sign in, Register, or Admin.
+              {apiHint ? (
+                <>
+                  {' '}
+                  Auth server: <code>{apiHint}</code>
+                </>
+              ) : null}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <h3 className="auth-sections-label">Authentication</h3>
+      <div className="auth-tabs auth-tabs-3" role="tablist" aria-label="Authentication sections">
         <button
           type="button"
           role="tab"
@@ -186,6 +266,9 @@ const AuthPanel = () => {
 
       {mode === 'login' && (
         <form className="auth-form" onSubmit={onLogin} noValidate>
+          <p className="auth-section-hint">
+            Section: <strong>Sign in</strong> — approved users only
+          </p>
           {emailPasswordFields('login', loginForm, setLoginForm)}
           {rememberField}
           <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
@@ -202,6 +285,9 @@ const AuthPanel = () => {
 
       {mode === 'superadmin' && (
         <form className="auth-form" onSubmit={onSuperAdminLogin} noValidate>
+          <p className="auth-section-hint">
+            Section: <strong>Admin</strong> — superadmin credentials only (not regular staff login)
+          </p>
           {emailPasswordFields('admin', adminForm, setAdminForm)}
           {rememberField}
           <button
@@ -216,6 +302,9 @@ const AuthPanel = () => {
 
       {mode === 'register' && (
         <form className="auth-form" onSubmit={onRegister} noValidate>
+          <p className="auth-section-hint">
+            Section: <strong>Register</strong> — account stays pending until a superadmin approves it
+          </p>
           <div className="form-group full-width">
             <label htmlFor="reg-name">Full name</label>
             <input

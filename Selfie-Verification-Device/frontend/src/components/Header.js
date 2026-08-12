@@ -8,6 +8,7 @@ import {
   FaVideo,
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { glicoLogoUrl } from '../utils/brandAssets';
 import './Header.css';
 
 const appLabels = {
@@ -25,7 +26,7 @@ const appLabels = {
   },
 };
 
-const Header = ({ activeApp = 'hub', onBackToApps }) => {
+const Header = ({ activeApp = 'hub', onBackToApps, deviceOnly = false }) => {
   const { user, isAuthenticated, isSuperAdmin, logout } = useAuth();
   const labels = appLabels[activeApp] || appLabels.hub;
   const title =
@@ -35,19 +36,21 @@ const Header = ({ activeApp = 'hub', onBackToApps }) => {
   const subtitle =
     activeApp === 'hub' && isSuperAdmin
       ? 'Superadmin control panel'
-      : labels.subtitle;
+      : deviceOnly && activeApp === 'hub'
+        ? 'Desktop · Ghana Card KYC'
+        : labels.subtitle;
 
   return (
     <header
       className={`header ${isSuperAdmin ? 'header-admin' : ''} ${
         activeApp !== 'hub' ? 'header-in-app' : ''
-      }`}
+      } ${deviceOnly ? 'header-device' : ''}`}
     >
       <div className="header-content">
         <div className="header-main">
           <div className="header-brand">
             <img
-              src={`${process.env.PUBLIC_URL === '.' || process.env.PUBLIC_URL === './' ? '' : process.env.PUBLIC_URL || ''}/Glico.png`}
+              src={glicoLogoUrl()}
               alt="GLICO"
               className="header-logo"
             />
@@ -66,7 +69,7 @@ const Header = ({ activeApp = 'hub', onBackToApps }) => {
           </div>
         </div>
 
-        {isAuthenticated && user && (
+        {(onBackToApps || (isAuthenticated && user)) && (
           <div className="header-user">
             {onBackToApps && (
               <button
@@ -77,25 +80,29 @@ const Header = ({ activeApp = 'hub', onBackToApps }) => {
                 <FaThLarge /> All apps
               </button>
             )}
-            <div className="header-user-info">
-              {isSuperAdmin ? (
-                <FaUserShield className="header-user-icon admin" aria-hidden />
-              ) : (
-                <FaUser className="header-user-icon" aria-hidden />
-              )}
-              <div>
-                <span className="header-user-name">
-                  {user.fullName}
-                  {isSuperAdmin && (
-                    <span className="header-role-pill">Super Admin</span>
+            {isAuthenticated && user && (
+              <>
+                <div className="header-user-info">
+                  {isSuperAdmin ? (
+                    <FaUserShield className="header-user-icon admin" aria-hidden />
+                  ) : (
+                    <FaUser className="header-user-icon" aria-hidden />
                   )}
-                </span>
-                <span className="header-user-email">{user.email}</span>
-              </div>
-            </div>
-            <button type="button" className="header-logout" onClick={logout}>
-              <FaSignOutAlt /> Sign out
-            </button>
+                  <div>
+                    <span className="header-user-name">
+                      {user.fullName}
+                      {isSuperAdmin && (
+                        <span className="header-role-pill">Super Admin</span>
+                      )}
+                    </span>
+                    <span className="header-user-email">{user.email}</span>
+                  </div>
+                </div>
+                <button type="button" className="header-logout" onClick={logout}>
+                  <FaSignOutAlt /> Sign out
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

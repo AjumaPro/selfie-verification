@@ -6,7 +6,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#103078",
+  "theme_color": "#d03038",
   "categories": ["business", "utilities"],
   "icons": [
     {
