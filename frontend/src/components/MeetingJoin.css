@@ -321,6 +321,34 @@
   margin-top: 0.35rem;
 }
 
+.meeting-join-browser-banner {
+  margin: 0.5rem 0 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #f0c36d;
+  background: #fff8e8;
+  color: #5c3d00;
+}
+
+.meeting-join-browser-banner p {
+  margin: 0 0 0.55rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.meeting-join-browser-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.meeting-join-browser-actions .meeting-join-share-geo {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+}
+
 .meeting-join-geo-wait,
 .meeting-join-geo-ok,
 .meeting-join-geo-hint {

@@ -785,18 +785,19 @@ router.post('/:id/attendance', async (req, res) => {
     const latRaw = req.body?.latitude;
     const lngRaw = req.body?.longitude;
     const accRaw = req.body?.locationAccuracy;
-    const latitude =
+    let latitude =
       latRaw === null || latRaw === undefined || latRaw === ''
         ? null
         : Number(latRaw);
-    const longitude =
+    let longitude =
       lngRaw === null || lngRaw === undefined || lngRaw === ''
         ? null
         : Number(lngRaw);
-    const locationAccuracy =
+    let locationAccuracy =
       accRaw === null || accRaw === undefined || accRaw === ''
         ? null
         : Number(accRaw);
+    if (!Number.isFinite(locationAccuracy)) locationAccuracy = null;
 
     if (fullName.length < 2) {
       return res.status(400).json({ error: 'Full name is required.' });
@@ -818,17 +819,39 @@ router.post('/:id/attendance', async (req, res) => {
         error: 'You must allow sharing your device location for check-in.',
       });
     }
+
+    const locationUnavailable = !!(
+      req.body?.locationUnavailable === true ||
+      req.body?.locationUnavailable === 1 ||
+      req.body?.locationUnavailable === 'true'
+    );
+    const isOnlineMeeting =
+      mRow.is_in_person === 0 ||
+      mRow.is_in_person === false ||
+      mRow.is_in_person === '0';
+    const hasVenuePin =
+      Number.isFinite(venueLat) && Number.isFinite(venueLng);
+
     if (
       !Number.isFinite(latitude) ||
       !Number.isFinite(longitude) ||
       Math.abs(latitude) > 90 ||
       Math.abs(longitude) > 180
     ) {
-      return res.status(400).json({
-        error:
-          'Location is required. Allow location access in your browser or app to check in.',
-      });
+      // Allow check-in without GPS for online meetings, or when the client
+      // reports the browser blocked location (in-app browsers, denied, etc.)
+      if (locationUnavailable || isOnlineMeeting || !hasVenuePin) {
+        latitude = null;
+        longitude = null;
+        locationAccuracy = null;
+      } else {
+        return res.status(400).json({
+          error:
+            'Location is required. Open the check-in link in Safari or Chrome, allow location, or check in again and choose unverified if GPS is blocked.',
+        });
+      }
     }
+
     if (
       mealMenu.breakfast.enabled &&
       !isValidMealChoice(mealMenu.breakfast, req.body?.breakfastChoice)
@@ -854,17 +877,20 @@ router.post('/:id/attendance', async (req, res) => {
       });
     }
 
-    const { locationMatch, distanceM } = verifyGuestAtVenue(
-      venueLat,
-      venueLng,
-      latitude,
-      longitude,
-      locationAccuracy,
-      venueRadiusM
-    );
+    const { locationMatch, distanceM } =
+      Number.isFinite(latitude) && Number.isFinite(longitude)
+        ? verifyGuestAtVenue(
+            venueLat,
+            venueLng,
+            latitude,
+            longitude,
+            locationAccuracy,
+            venueRadiusM
+          )
+        : { locationMatch: 'unknown', distanceM: null };
 
-    const latStr = String(latitude);
-    const lngStr = String(longitude);
+    const latStr = Number.isFinite(latitude) ? String(latitude) : '';
+    const lngStr = Number.isFinite(longitude) ? String(longitude) : '';
     const accStr = Number.isFinite(locationAccuracy)
       ? String(locationAccuracy)
       : '';
@@ -924,7 +950,10 @@ router.post('/:id/attendance', async (req, res) => {
 
     let message =
       'Checked in successfully. Your details, location and meal choice were shared with the host.';
-    if (locationMatch === 'at_venue') {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      message =
+        'Checked in successfully. Location could not be verified in this browser — the host sees Unverified.';
+    } else if (locationMatch === 'at_venue') {
       message =
         'Checked in successfully. Your location matches the meeting venue.';
     } else if (locationMatch === 'away') {

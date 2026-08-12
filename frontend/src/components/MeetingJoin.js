@@ -24,15 +24,112 @@ function isSecureGeoContext() {
   return h === 'localhost' || h === '127.0.0.1';
 }
 
-function geoErrorMessage(err) {
+/** WhatsApp / Instagram / etc. in-app browsers often block or fake GPS. */
+function detectBrowserEnv() {
+  if (typeof navigator === 'undefined') {
+    return {
+      isIOS: false,
+      isAndroid: false,
+      isInApp: false,
+      appName: '',
+      hasGeo: false,
+      secure: false,
+    };
+  }
+  const ua = String(navigator.userAgent || '');
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const apps = [
+    ['WhatsApp', /WhatsApp/i],
+    ['Instagram', /Instagram/i],
+    ['Facebook', /FBAN|FBAV|FB_IAB|FBJS/i],
+    ['LinkedIn', /LinkedInApp/i],
+    ['Twitter', /Twitter/i],
+    ['TikTok', /TikTok|BytedanceWebview/i],
+    ['Snapchat', /Snapchat/i],
+    ['Telegram', /Telegram/i],
+    ['Line', /\bLine\//i],
+  ];
+  let appName = '';
+  for (const [name, re] of apps) {
+    if (re.test(ua)) {
+      appName = name;
+      break;
+    }
+  }
+  const isWebView =
+    /(; wv\)|WebView|Version\/[\d.]+ Chrome\/[\d.]+ Mobile)/i.test(ua) &&
+    !/Chrome\/[\d.]+ Mobile Safari/i.test(ua);
+  const isInApp = !!appName || (isAndroid && /; wv\)/i.test(ua)) || isWebView && !!appName;
+  return {
+    isIOS,
+    isAndroid,
+    isInApp: !!appName || (isAndroid && /; wv\)/i.test(ua)),
+    appName: appName || (isAndroid && /; wv\)/i.test(ua) ? 'in-app browser' : ''),
+    hasGeo: typeof navigator.geolocation?.getCurrentPosition === 'function',
+    secure: isSecureGeoContext(),
+  };
+}
+
+function openInSystemBrowser() {
+  if (typeof window === 'undefined') return;
+  const url = window.location.href;
+  const env = detectBrowserEnv();
+  if (env.isAndroid) {
+    try {
+      const withoutScheme = url.replace(/^https?:\/\//i, '');
+      window.location.href =
+        `intent://${withoutScheme}#Intent;scheme=https;package=com.android.chrome;end`;
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  // iOS / others: open a new tab (may still stay in-app); copy is the reliable path
+  try {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    /* ignore */
+  }
+}
+
+async function copyPageLink() {
+  const url = typeof window !== 'undefined' ? window.location.href : '';
+  if (!url) return false;
+  try {
+    await navigator.clipboard.writeText(url);
+    return true;
+  } catch {
+    try {
+      window.prompt('Copy this link and open it in Safari or Chrome:', url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function geoErrorMessage(err, env) {
+  if (env?.isInApp) {
+    return `${env.appName || 'This in-app browser'} often blocks GPS. Tap “Open in Safari/Chrome” below (or copy the link), then check in from that browser.`;
+  }
   if (err && err.code === 1) {
-    return 'Location permission was denied. In your phone browser: allow Location for this site, turn on Precise Location, then tap Share location again.';
+    if (env?.isIOS) {
+      return 'Location was denied. On iPhone: Settings → Safari (or Chrome) → Location → Allow, turn on Precise Location, reload this page, then tap Try GPS again.';
+    }
+    if (env?.isAndroid) {
+      return 'Location was denied. In Chrome: tap the lock/tune icon next to the address → Permissions → Location → Allow, turn on Precise location, then tap Try GPS again.';
+    }
+    return 'Location permission was denied. Allow Location for this site, turn on Precise Location, then tap Try GPS again.';
   }
   if (err && err.code === 2) {
     return 'Could not determine your position. Turn on GPS / Location Services, step outdoors if you can, then try again.';
   }
   if (err && err.code === 3) {
-    return 'Location timed out. Move outdoors for a clearer GPS signal, then tap Share location again.';
+    return 'Location timed out. Move outdoors for a clearer GPS signal, then tap Try GPS again.';
+  }
+  if (!env?.hasGeo) {
+    return 'This browser does not support location. Open the check-in link in Safari or Chrome instead.';
   }
   return (
     err?.message ||
@@ -48,16 +145,22 @@ function requestDeviceLocation() {
   return new Promise((resolve, reject) => {
     if (!isSecureGeoContext()) {
       reject(
-        new Error(
-          'Location only works on HTTPS. Open the check-in page from the QR code (https://…), not an insecure http link.'
+        Object.assign(
+          new Error(
+            'Location only works on HTTPS. Open the check-in page from the QR code (https://…), not an insecure http link.'
+          ),
+          { code: 0 }
         )
       );
       return;
     }
     if (!navigator.geolocation) {
       reject(
-        new Error(
-          'This device does not support location. Use a phone browser with GPS / location services.'
+        Object.assign(
+          new Error(
+            geoErrorMessage({ code: 0 }, detectBrowserEnv())
+          ),
+          { code: 0 }
         )
       );
       return;
@@ -103,7 +206,9 @@ function requestDeviceLocation() {
       }
       settled = true;
       cleanup();
-      reject(new Error(geoErrorMessage(err)));
+      reject(Object.assign(new Error(geoErrorMessage(err, detectBrowserEnv())), {
+        code: err?.code,
+      }));
     };
 
     const consider = (pos) => {
@@ -192,10 +297,13 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   const [geo, setGeo] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
+  const [geoDenied, setGeoDenied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(null);
   const capturingRef = useRef(false);
   const geoRef = useRef(null);
+  const browserEnv = useMemo(() => detectBrowserEnv(), []);
 
   useEffect(() => {
     geoRef.current = geo;
@@ -246,6 +354,10 @@ const MeetingJoin = ({ meetingId, onClose }) => {
     Number.isFinite(Number(meeting.venueLat)) &&
     Number.isFinite(Number(meeting.venueLng))
   );
+  const isInPerson = meeting?.isInPerson !== false && hasVenue;
+  const locationRequired = isInPerson;
+  const canSkipLocation =
+    !locationRequired || geoDenied || browserEnv.isInApp || !browserEnv.hasGeo;
   const mealMenu = meeting?.mealMenu || {
     breakfast: { enabled: false, items: [] },
     lunch: { enabled: false, items: [] },
@@ -293,6 +405,7 @@ const MeetingJoin = ({ meetingId, onClose }) => {
     if (capturingRef.current) return geoRef.current;
     capturingRef.current = true;
     setGeoError('');
+    setGeoDenied(false);
     setGeoLoading(true);
     try {
       const loc = await requestDeviceLocation();
@@ -300,14 +413,25 @@ const MeetingJoin = ({ meetingId, onClose }) => {
       setConsentLocation(true);
       return loc;
     } catch (err) {
-      setGeoError(err.message || 'Could not get location.');
-      // Keep last good fix if we had one (don’t wipe on a failed refresh)
+      const msg = err?.message || geoErrorMessage(err, detectBrowserEnv());
+      setGeoError(msg);
+      if (err?.code === 1 || /denied|block|does not support|in-app/i.test(msg)) {
+        setGeoDenied(true);
+      }
       return geoRef.current;
     } finally {
       setGeoLoading(false);
       capturingRef.current = false;
     }
   }, []);
+
+  const onCopyLink = async () => {
+    const ok = await copyPageLink();
+    if (ok) {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -338,21 +462,21 @@ const MeetingJoin = ({ meetingId, onClose }) => {
 
     setSubmitting(true);
     try {
-      const existing = geoRef.current;
-      const age = existing?.timestamp
-        ? Date.now() - existing.timestamp
-        : Infinity;
+      let loc = geoRef.current;
+      const age = loc?.timestamp ? Date.now() - loc.timestamp : Infinity;
       const rough =
-        Number.isFinite(existing?.locationAccuracy) &&
-        existing.locationAccuracy > 150;
-      let loc = existing;
-      if (!loc || rough || age > 60000) {
-        loc = (await captureLocation()) || existing;
+        Number.isFinite(loc?.locationAccuracy) && loc.locationAccuracy > 150;
+      if (loc && (rough || age > 60000)) {
+        loc = (await captureLocation()) || loc;
+      } else if (!loc) {
+        loc = await captureLocation();
       }
-      if (!loc) {
+
+      const unverified = !loc;
+      if (unverified && locationRequired && !canSkipLocation) {
         setError(
           geoError ||
-            'Tap “Share my GPS location”, allow permission, then check in.'
+            'Tap “Share my GPS location”, allow permission, then check in. Or open this page in Safari/Chrome.'
         );
         setSubmitting(false);
         return;
@@ -362,9 +486,10 @@ const MeetingJoin = ({ meetingId, onClose }) => {
         ...form,
         consentDetails: true,
         consentLocation: true,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        locationAccuracy: loc.locationAccuracy,
+        latitude: loc?.latitude,
+        longitude: loc?.longitude,
+        locationAccuracy: loc?.locationAccuracy,
+        locationUnavailable: unverified,
         breakfastChoice: showBreakfast ? breakfastChoice : '',
         lunchChoice: showLunch ? lunchChoice : '',
         dinnerChoice: showDinner ? dinnerChoice : '',
@@ -791,7 +916,43 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                   </label>
 
                   <div className="meeting-join-geo-status">
-                    {!isSecureGeoContext() && (
+                    {(browserEnv.isInApp || !browserEnv.hasGeo || !browserEnv.secure) && (
+                      <div className="meeting-join-browser-banner" role="status">
+                        <p>
+                          <strong>
+                            {browserEnv.isInApp
+                              ? `${browserEnv.appName || 'This app browser'} blocks GPS.`
+                              : !browserEnv.secure
+                                ? 'Open the HTTPS check-in link.'
+                                : 'This browser cannot share location.'}
+                          </strong>{' '}
+                          {browserEnv.isIOS
+                            ? 'Tap ··· or Share → Open in Safari (or Chrome), then check in there.'
+                            : browserEnv.isAndroid
+                              ? 'Open this page in Chrome for location, or check in unverified below.'
+                              : 'Open this page in Safari or Chrome for location.'}
+                        </p>
+                        <div className="meeting-join-browser-actions">
+                          {browserEnv.isAndroid && (
+                            <button
+                              type="button"
+                              className="meeting-join-share-geo"
+                              onClick={openInSystemBrowser}
+                            >
+                              <FaExternalLinkAlt aria-hidden /> Open in Chrome
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="meeting-join-retry-geo"
+                            onClick={onCopyLink}
+                          >
+                            {linkCopied ? 'Link copied' : 'Copy check-in link'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {!isSecureGeoContext() && !browserEnv.isInApp && (
                       <p className="meeting-join-geo-warn" role="alert">
                         This page is not on HTTPS, so the phone cannot share GPS.
                         Open the QR check-in link that starts with https://
@@ -845,20 +1006,38 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     {geoError && (
                       <div className="meeting-join-error" role="alert">
                         {geoError}
-                        <button
-                          type="button"
-                          className="meeting-join-retry-geo"
-                          onClick={captureLocation}
-                        >
-                          Try GPS again
-                        </button>
+                        <div className="meeting-join-browser-actions">
+                          <button
+                            type="button"
+                            className="meeting-join-retry-geo"
+                            onClick={captureLocation}
+                          >
+                            Try GPS again
+                          </button>
+                          <button
+                            type="button"
+                            className="meeting-join-retry-geo"
+                            onClick={onCopyLink}
+                          >
+                            {linkCopied ? 'Link copied' : 'Copy link'}
+                          </button>
+                          {browserEnv.isAndroid && (
+                            <button
+                              type="button"
+                              className="meeting-join-retry-geo"
+                              onClick={openInSystemBrowser}
+                            >
+                              Open in Chrome
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                     {consentLocation && !geo && !geoLoading && !geoError && (
                         <div className="meeting-join-geo-tap">
                           <p className="meeting-join-geo-hint">
                             Tap below so your phone can ask for location
-                            permission (required on mobile).
+                            permission (works best in Safari or Chrome).
                           </p>
                           <button
                             type="button"
@@ -869,6 +1048,12 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                           </button>
                         </div>
                       )}
+                    {!geo && canSkipLocation && (geoError || geoDenied || browserEnv.isInApp || !browserEnv.hasGeo) && (
+                      <p className="meeting-join-geo-hint">
+                        You can still check in — the host will see location as{' '}
+                        <strong>Unverified</strong>.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -880,7 +1065,7 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     geoLoading ||
                     !consentDetails ||
                     !consentLocation ||
-                    !geo ||
+                    (!geo && !canSkipLocation) ||
                     (showBreakfast && !breakfastChoice) ||
                     (showLunch && !lunchChoice) ||
                     (showDinner && !dinnerChoice)
@@ -890,6 +1075,8 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     ? 'Checking in…'
                     : !consentDetails || !consentLocation
                       ? 'Allow permissions to continue'
+                      : !geo && canSkipLocation
+                        ? 'Check in without GPS (unverified)'
                       : !geo
                         ? 'Share location to check in'
                         : (showBreakfast && !breakfastChoice) ||
