@@ -1,14 +1,15 @@
 {
   "short_name": "GLICO Life",
-  "name": "GLICO Life Meetings",
-  "description": "GLICO Life Platform Meetings — schedule, QR check-in, venue GPS, meals, booking",
-  "start_url": ".",
-  "scope": ".",
+  "name": "GLICO Life Platform",
+  "description": "GLICO Life Platform — identity verification, meetings, and Ghana Card KYC",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#d03038",
-  "categories": ["business", "productivity"],
+  "categories": ["business", "utilities"],
   "icons": [
     {
       "src": "icons/icon-192.png",

@@ -9,6 +9,9 @@ import {
   FaShareAlt,
   FaWindows,
   FaGlobe,
+  FaChrome,
+  FaCopy,
+  FaLink,
 } from 'react-icons/fa';
 import MeetingsDeviceDownloads from './MeetingsDeviceDownloads';
 import {
@@ -16,6 +19,12 @@ import {
   resolveDownloadUrl,
   triggerDownload,
 } from '../utils/downloadUtils';
+import {
+  getDeferredInstallPrompt,
+  subscribeInstallPrompt,
+  promptPwaInstall,
+  isPwaInstalled,
+} from '../utils/pwaInstall';
 import { BRAND } from '../utils/brandAssets';
 import './InstallOnDevice.css';
 
@@ -34,14 +43,18 @@ const getPlatform = () => {
   const isAndroid = /Android/i.test(ua);
   const isMac = /Mac/i.test(ua) && !isIOS;
   const isWindows = /Win/i.test(ua);
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true;
+  const isChrome =
+    /Chrome|CriOS|Edg|EdgiOS/i.test(ua) && !/OPR|Opera/i.test(ua);
+  const isSafari =
+    /Safari/i.test(ua) && !/Chrome|CriOS|Chromium|Edg|EdgiOS|Android/i.test(ua);
+  const isStandalone = isPwaInstalled();
   return {
     isIOS,
     isAndroid,
     isMac,
     isWindows,
+    isChrome,
+    isSafari,
     isStandalone,
     isDesktop: !isIOS && !isAndroid,
   };
@@ -52,16 +65,21 @@ const getPlatform = () => {
  * @param {{ deviceOnly?: boolean }} props
  */
 const InstallOnDevice = ({ deviceOnly = false }) => {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [installed, setInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(() =>
+    getDeferredInstallPrompt()
+  );
+  const [installed, setInstalled] = useState(() => isPwaInstalled());
   const [busy, setBusy] = useState(false);
   const [dlBusy, setDlBusy] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [resolved, setResolved] = useState({
     dmg: null,
     exe: null,
   });
   const [platform] = useState(() => getPlatform());
-  const [open, setOpen] = useState(false);
+  // Open by default so PWA install is visible; collapse still available
+  const [open, setOpen] = useState(() => !isPwaInstalled());
 
   useEffect(() => {
     if (platform.isStandalone) setInstalled(true);
@@ -80,22 +98,21 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
       setResolved(next);
     })();
 
-    const onBeforeInstall = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
+    const unsub = subscribeInstallPrompt((ev) => setDeferredPrompt(ev));
     const onInstalled = () => {
       setInstalled(true);
       setDeferredPrompt(null);
     };
-    const onOpenInstall = () => setOpen(true);
+    const onOpenInstall = () => {
+      setOpen(true);
+      setShowGuide(true);
+    };
 
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
     window.addEventListener('glico-open-install', onOpenInstall);
     return () => {
       cancelled = true;
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      unsub();
       window.removeEventListener('appinstalled', onInstalled);
       window.removeEventListener('glico-open-install', onOpenInstall);
     };
@@ -105,22 +122,29 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
     if (deferredPrompt) {
       setBusy(true);
       try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        const { outcome } = await promptPwaInstall();
         if (outcome === 'accepted') setInstalled(true);
-        setDeferredPrompt(null);
-      } catch (err) {
-        console.warn('Install prompt failed:', err);
+        setDeferredPrompt(getDeferredInstallPrompt());
       } finally {
         setBusy(false);
       }
       return;
     }
-    const el = document.getElementById(
-      platform.isIOS ? 'install-ios' : platform.isAndroid ? 'install-android' : 'install-desktop-pwa'
-    );
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [deferredPrompt, platform]);
+    setShowGuide(true);
+    const el = document.getElementById('install-pwa-guide');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [deferredPrompt]);
+
+  const copyAppLink = useCallback(async () => {
+    const url = window.location.origin + '/';
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Copy this link and open it on your phone:', url);
+    }
+  }, []);
 
   const onDownload = useCallback(
     async (key, filename) => {
@@ -163,6 +187,8 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
     );
   };
 
+  const canOneTapInstall = Boolean(deferredPrompt);
+
   return (
     <section className="install-device" id="install-on-device">
       <button
@@ -175,7 +201,7 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
           <FaMobileAlt className="install-device-icon" />
           <div>
             <h2>Download &amp; install (optional)</h2>
-            <p>Desktop installers &amp; install Web PWA on this device</p>
+            <p>Install Web PWA on this device · Windows / Mac desktop apps</p>
           </div>
         </div>
         <span className="install-device-chevron">{open ? '−' : '+'}</span>
@@ -187,45 +213,135 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
             <div className="install-status success">
               <FaCheckCircle />
               <span>
-                App is installed on this device. Open it from your home screen or apps list.
+                App is installed on this device. Open it from your home screen,
+                dock, or apps list.
               </span>
             </div>
           ) : (
             <>
-              <div className="install-actions">
-                <div className="install-action-card install-pwa-card">
+              <div className="install-pwa-hero" id="install-pwa-guide">
+                <div className="install-pwa-hero-copy">
                   <h3>
-                    <FaGlobe /> Install Web PWA on this device
+                    <FaGlobe aria-hidden /> Install {BRAND.name} on this device
                   </h3>
                   <p>
-                    Add GLICO Life Platform to your phone or laptop — works in the browser, no
-                    ZIP file.
+                    Save it like an app — home screen, dock, or Start menu. No ZIP
+                    download required.
                   </p>
+                </div>
+
+                <div className="install-pwa-hero-actions">
                   <button
                     type="button"
-                    className="install-primary-btn"
+                    className="install-primary-btn install-pwa-main-btn"
                     onClick={handleInstallClick}
                     disabled={busy}
                   >
                     <FaDownload />
                     {busy
                       ? 'Installing…'
-                      : deferredPrompt
+                      : canOneTapInstall
                         ? 'Install on this device'
                         : platform.isIOS
-                          ? 'Show iPhone / iPad steps'
+                          ? 'How to add to Home Screen'
                           : platform.isAndroid
-                            ? 'Show Android steps'
-                            : 'Show browser install steps'}
+                            ? 'How to install on Android'
+                            : platform.isSafari
+                              ? 'How to add to Dock (Safari)'
+                              : 'How to install in browser'}
                   </button>
-                  {!deferredPrompt && !platform.isIOS && (
-                    <p className="install-note">
-                      On Chrome / Edge: menu (⋮) → <strong>Install app</strong> or{' '}
-                      <strong>Add to Home screen</strong>.
-                    </p>
-                  )}
+                  <button
+                    type="button"
+                    className="install-secondary-btn"
+                    onClick={copyAppLink}
+                  >
+                    {copied ? (
+                      <>
+                        <FaCheckCircle /> Link copied
+                      </>
+                    ) : (
+                      <>
+                        <FaCopy /> Copy app link
+                      </>
+                    )}
+                  </button>
                 </div>
 
+                {(showGuide || !canOneTapInstall) && (
+                  <div className="install-pwa-guide" role="region" aria-label="PWA install steps">
+                    {platform.isIOS && (
+                      <ol>
+                        <li>
+                          Stay in <strong>Safari</strong> on this page.
+                        </li>
+                        <li>
+                          Tap <FaShareAlt className="inline-ico" />{' '}
+                          <strong>Share</strong>.
+                        </li>
+                        <li>
+                          Tap <strong>Add to Home Screen</strong>, then{' '}
+                          <strong>Add</strong>.
+                        </li>
+                      </ol>
+                    )}
+                    {platform.isAndroid && (
+                      <ol>
+                        <li>
+                          Open this site in <strong>Chrome</strong>.
+                        </li>
+                        <li>
+                          Tap menu <strong>⋮</strong> →{' '}
+                          <strong>Install app</strong> or{' '}
+                          <strong>Add to Home screen</strong>.
+                        </li>
+                        <li>
+                          Or tap <strong>Install on this device</strong> when the
+                          red button appears above.
+                        </li>
+                      </ol>
+                    )}
+                    {platform.isDesktop && platform.isSafari && (
+                      <ol>
+                        <li>
+                          In Safari menu bar: <strong>File</strong> →{' '}
+                          <strong>Add to Dock</strong> (macOS Sonoma+).
+                        </li>
+                        <li>
+                          Or open this link in <strong>Chrome</strong> /{' '}
+                          <strong>Edge</strong> for one-tap install.
+                        </li>
+                        <li>
+                          <FaChrome aria-hidden /> Chrome: menu →{' '}
+                          <strong>Install GLICO Life Platform…</strong>
+                        </li>
+                      </ol>
+                    )}
+                    {platform.isDesktop && !platform.isSafari && (
+                      <ol>
+                        <li>
+                          Click <strong>Install on this device</strong> when it
+                          appears (Chrome / Edge).
+                        </li>
+                        <li>
+                          Or browser menu <strong>⋮</strong> →{' '}
+                          <strong>Install app</strong> /{' '}
+                          <strong>Apps → Install this site as an app</strong>.
+                        </li>
+                        <li>
+                          Launch <strong>{BRAND.name}</strong> from your apps list
+                          or dock.
+                        </li>
+                      </ol>
+                    )}
+                    <p className="install-pwa-guide-link">
+                      <FaLink aria-hidden /> Phone users: copy the app link above,
+                      open it on the phone, then follow the steps for that device.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="install-actions">
                 <div className="install-action-card desktop-downloads">
                   <h3>
                     <FaDesktop /> Image Recognition (desktop)
@@ -239,10 +355,11 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                     After install: <strong>Sign in · Register · Admin</strong>.
                   </p>
                   <p className="install-note">
-                    <strong>Windows:</strong> run the .exe. SmartScreen → More info → Run anyway.
+                    <strong>Windows:</strong> run the .exe. SmartScreen → More info → Run
+                    anyway.
                     <br />
-                    <strong>Mac:</strong> open the .dmg → drag to Applications → Control-click →
-                    Open. See{' '}
+                    <strong>Mac:</strong> open the .dmg → drag to Applications →
+                    Control-click → Open. See{' '}
                     <a href={MAC_HELP_URL} download="MAC-INSTALL.txt">
                       Mac steps
                     </a>
@@ -255,7 +372,8 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                     <FaDesktop /> Meetings (desktop)
                   </h3>
                   <p>
-                    Windows / Mac Meetings app — check-in QR, venue map, booking (no KYC login).
+                    Windows / Mac Meetings app — check-in QR, venue map, booking (no
+                    KYC login).
                   </p>
                   <MeetingsDeviceDownloads compact />
                 </div>
@@ -271,14 +389,15 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                   </div>
                   <ol>
                     <li>
-                      Open this site in <strong>Chrome</strong> or <strong>Edge</strong>.
+                      Prefer <strong>Chrome</strong> or <strong>Edge</strong> for
+                      one-tap install.
                     </li>
                     <li>
-                      Click <strong>Install on this device</strong> above, or browser menu →{' '}
+                      Use <strong>Install on this device</strong> above, or menu →{' '}
                       <strong>Install app</strong>.
                     </li>
                     <li>
-                      Launch <strong>{BRAND.name}</strong> from your apps list / dock.
+                      Launch <strong>{BRAND.name}</strong> from apps / dock.
                     </li>
                   </ol>
                 </article>
@@ -292,11 +411,11 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                   </div>
                   <ol>
                     <li>
-                      Open this site in <strong>Chrome</strong>.
+                      Open in <strong>Chrome</strong>.
                     </li>
                     <li>
                       Tap <strong>Install on this device</strong> or menu →{' '}
-                      <strong>Install app</strong> / <strong>Add to Home screen</strong>.
+                      <strong>Install app</strong>.
                     </li>
                   </ol>
                 </article>
@@ -319,10 +438,7 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                   </ol>
                 </article>
 
-                <article
-                  id="install-desktop"
-                  className="install-step"
-                >
+                <article id="install-desktop" className="install-step">
                   <div className="install-step-badge">
                     <FaDesktop /> Desktop .exe / .dmg
                   </div>

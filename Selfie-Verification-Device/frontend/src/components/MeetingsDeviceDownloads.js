@@ -12,6 +12,12 @@ import {
   triggerDownload,
   isLocalDevHost,
 } from '../utils/downloadUtils';
+import {
+  getDeferredInstallPrompt,
+  subscribeInstallPrompt,
+  promptPwaInstall,
+  isPwaInstalled,
+} from '../utils/pwaInstall';
 import './MeetingsDeviceDownloads.css';
 
 const FILES = {
@@ -42,11 +48,7 @@ export function getMeetingsWebPwaUrl() {
 }
 
 function isStandalonePwa() {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true
-  );
+  return isPwaInstalled();
 }
 
 /**
@@ -62,7 +64,9 @@ const MeetingsDeviceDownloads = ({
     mac: null,
   });
   const [busy, setBusy] = useState('');
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(() =>
+    getDeferredInstallPrompt()
+  );
   const [pwaInstalled, setPwaInstalled] = useState(() => isStandalonePwa());
   const [pwaBusy, setPwaBusy] = useState(false);
   const pwaUrl = getMeetingsWebPwaUrl();
@@ -84,18 +88,14 @@ const MeetingsDeviceDownloads = ({
 
   useEffect(() => {
     if (isStandalonePwa()) setPwaInstalled(true);
-    const onBeforeInstall = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
+    const unsub = subscribeInstallPrompt((ev) => setDeferredPrompt(ev));
     const onInstalled = () => {
       setPwaInstalled(true);
       setDeferredPrompt(null);
     };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      unsub();
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
@@ -130,15 +130,12 @@ const MeetingsDeviceDownloads = ({
       if (pwaUrl) window.open(pwaUrl, '_blank', 'noopener,noreferrer');
       return;
     }
-    if (deferredPrompt) {
+    if (deferredPrompt || getDeferredInstallPrompt()) {
       setPwaBusy(true);
       try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        const { outcome } = await promptPwaInstall();
         if (outcome === 'accepted') setPwaInstalled(true);
-        setDeferredPrompt(null);
-      } catch (err) {
-        console.warn('PWA install failed:', err);
+        setDeferredPrompt(getDeferredInstallPrompt());
       } finally {
         setPwaBusy(false);
       }
