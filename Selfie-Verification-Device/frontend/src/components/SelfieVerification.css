@@ -1,7 +1,9 @@
-.description {
-  color: #666;
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
+.selfie-verification > .card > h2 {
+  margin-top: 0;
+}
+
+.selfie-verification > .card {
+  border-radius: 16px;
 }
 
 .button-group {

@@ -6,6 +6,11 @@
   border-radius: 12px;
   border: 1px solid rgba(16, 48, 120, 0.12);
   background: linear-gradient(165deg, #f7fafc 0%, #eef5fb 100%);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .meet-device-dl.compact {
@@ -33,23 +38,26 @@
   font-weight: 500;
 }
 
-/* Equal-width download cards */
+/* Equal-width download cards — minmax(0,…) prevents overflow in narrow columns */
 .meet-device-dl-grid {
   display: grid;
   gap: 0.55rem;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .meet-device-dl-grid--1 {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .meet-device-dl-grid--2 {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .meet-device-dl-grid--3 {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .meet-dl-btn {
@@ -57,6 +65,8 @@
   align-items: center;
   gap: 0.55rem;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 3.35rem;
   margin: 0;
   padding: 0.55rem 0.7rem;
@@ -87,6 +97,7 @@
   flex-direction: column;
   gap: 0.08rem;
   min-width: 0;
+  flex: 1;
   line-height: 1.2;
 }
 
@@ -160,6 +171,17 @@
   text-decoration: underline;
 }
 
+a.meet-dl-btn {
+  text-decoration: none;
+}
+
+.meet-dl-ext {
+  font-size: 0.65em;
+  opacity: 0.85;
+  margin-left: 0.15rem;
+  vertical-align: middle;
+}
+
 .meet-device-dl-note {
   margin: 0.55rem 0 0;
   font-size: 0.78rem;
@@ -181,26 +203,38 @@
 
 .app-hub-meet-dl-stop {
   width: 100%;
+  min-width: 0;
 }
 
-/* Narrow: stack for readability */
-@media (max-width: 560px) {
-  .meet-device-dl-grid--2,
-  .meet-device-dl-grid--3 {
-    grid-template-columns: 1fr;
-  }
+/* Compact (Install card / hub): stack so buttons never overflow the column */
+.meet-device-dl.compact .meet-device-dl-grid--2,
+.meet-device-dl.compact .meet-device-dl-grid--3,
+.install-action-card .meet-device-dl-grid--2,
+.install-action-card .meet-device-dl-grid--3 {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-/* Compact hub/banner: keep two columns when space allows */
 .meet-device-dl.compact .meet-dl-btn {
   min-height: 3.1rem;
-  padding: 0.5rem 0.55rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .meet-device-dl.compact .meet-dl-btn-title {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
 }
 
 .meet-device-dl.compact .meet-dl-btn-sub {
-  font-size: 0.66rem;
+  font-size: 0.72rem;
+}
+
+.install-action-card .meet-device-dl {
+  margin-top: 0;
+}
+
+/* Narrow screens: always stack */
+@media (max-width: 720px) {
+  .meet-device-dl-grid--2,
+  .meet-device-dl-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

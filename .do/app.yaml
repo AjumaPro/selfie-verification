@@ -45,7 +45,7 @@ services:
         value: "*"
         scope: RUN_TIME
       - key: SUPERADMIN_NAME
-        value: Super Admin
+        value: Francis Sarpaning
         scope: RUN_TIME
       - key: DATABASE_URL
         value: ${db.DATABASE_URL}
@@ -57,11 +57,11 @@ services:
         scope: RUN_TIME
       - key: SUPERADMIN_EMAIL
         type: SECRET
-        value: superadmin@glico.local
+        value: infoajumapro@gmail.com
         scope: RUN_TIME
       - key: SUPERADMIN_PASSWORD
         type: SECRET
-        value: SuperAdmin@123
+        value: MyGlicoFIF@2025
         scope: RUN_TIME
       - key: REACT_APP_AUTH_API_URL
         value: ""

@@ -64,9 +64,10 @@
 
 .install-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   margin-bottom: 1.25rem;
+  align-items: stretch;
 }
 
 .install-action-card {
@@ -74,6 +75,20 @@
   border: 1px solid #c5d0e8;
   border-radius: 12px;
   padding: 1.1rem 1.15rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.install-pwa-card {
+  border-color: #90caf9;
+  background: linear-gradient(165deg, #e8f4fc 0%, #f5f7fb 100%);
+}
+
+.install-pwa-card .install-primary-btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .install-action-card h3 {

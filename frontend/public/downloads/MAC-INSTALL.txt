@@ -13,9 +13,6 @@ INSTALL
      xattr -cr "/Applications/GLICO Life Platform.app"
      open "/Applications/GLICO Life Platform.app"
 
-Prefer ZIP? Download Selfie-Verification-Mac.zip, unzip, then open the .app
-the same way (Control-click → Open).
-
 AUTHENTICATION (required for Image Recognition)
 -----------------------------------------------
 The Mac app is a **device build**: full KYC / web features **without Meetings**.

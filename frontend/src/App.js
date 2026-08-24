@@ -12,6 +12,8 @@ import AppHub from './components/AppHub';
 import MeetingsApp from './components/MeetingsApp';
 import MeetingJoin from './components/MeetingJoin';
 import BookingGuest from './components/BookingGuest';
+import VerifyJoin from './components/VerifyJoin';
+import VerifyShare from './components/VerifyShare';
 import { useAuth } from './context/AuthContext';
 import { loadModels } from './services/faceDetection';
 import apiConfig from './config/api';
@@ -52,6 +54,16 @@ function getBookPageIdFromUrl() {
   try {
     const params = new URLSearchParams(window.location.search);
     return String(params.get('book') || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+function getVerifySessionIdFromUrl() {
+  if (typeof window === 'undefined') return '';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get('verify') || '').trim();
   } catch {
     return '';
   }
@@ -113,6 +125,9 @@ function App() {
   const [bookPageId, setBookPageId] = useState(() =>
     isDeviceAppBuild() ? '' : getBookPageIdFromUrl()
   );
+  const [verifySessionId, setVerifySessionId] = useState(() =>
+    getVerifySessionIdFromUrl()
+  );
   const apiReady = apiConfig.isAutoVerificationEnabled;
   const missingConfig = apiConfig.missingConfig || [];
 
@@ -128,11 +143,27 @@ function App() {
     if (deviceOnly && section === 'meetings') setSection('hub');
   }, [deviceOnly, section]);
 
+  // Deep-link: /?app=meetings opens Meetings in the browser / PWA
   useEffect(() => {
     if (deviceOnly) return undefined;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (String(params.get('app') || '').toLowerCase() === 'meetings') {
+        setSection('meetings');
+      }
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  }, [deviceOnly]);
+
+  useEffect(() => {
     const onPop = () => {
-      setJoinMeetingId(getJoinMeetingIdFromUrl());
-      setBookPageId(getBookPageIdFromUrl());
+      if (!deviceOnly) {
+        setJoinMeetingId(getJoinMeetingIdFromUrl());
+        setBookPageId(getBookPageIdFromUrl());
+      }
+      setVerifySessionId(getVerifySessionIdFromUrl());
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -206,6 +237,25 @@ function App() {
     }
     setSection(deviceOnly ? 'hub' : 'meetings');
   };
+
+  const leaveVerifyPage = () => {
+    setVerifySessionId('');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verify');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    } catch {
+      /* ignore */
+    }
+    setSection('hub');
+  };
+
+  // Public guest identity verification (QR / shared link)
+  if (verifySessionId) {
+    return (
+      <VerifyJoin sessionId={verifySessionId} onClose={leaveVerifyPage} />
+    );
+  }
 
   // Public QR check-in (web only)
   if (!deviceOnly && joinMeetingId) {
@@ -284,7 +334,7 @@ function App() {
             <p>
               {deviceOnly
                 ? 'Sign in to use selfie verification and Ghana Card KYC on this device. Use Sign in, Register, or Admin below.'
-                : 'Sign in to use selfie verification and Ghana Card KYC. Meetings stay available without an account — use the Meetings tab.'}
+                : 'Sign in to share a verification QR / link, or verify Ghana Card KYC on this device.'}
             </p>
           </div>
           <AuthPanel deviceOnly={deviceOnly} />
@@ -293,66 +343,68 @@ function App() {
     );
   }
 
-  if (modelsLoading) {
+  if (section === 'recognition' && isAuthenticated) {
     return (
       <div className={shellClass}>
         {deviceBrand}
         <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
         <div className="container">
           {nav}
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <h2>Loading Face Detection Models...</h2>
-            <p>This may take a few moments on first load</p>
-          </div>
+          {!apiReady && (
+            <div className="config-banner" role="alert">
+              <strong>API not fully configured.</strong>
+              <p>
+                Missing: <code>{missingConfig.join(', ') || 'unknown'}</code>
+              </p>
+            </div>
+          )}
+
+          {/* Always visible — does not wait for face models */}
+          <VerifyShare />
+
+          {modelsLoading && (
+            <div className="loading-container" style={{ padding: '1.5rem 0' }}>
+              <div className="loading-spinner" />
+              <h2>Loading face models for on-device selfie…</h2>
+              <p>You can still create and share the QR link above.</p>
+            </div>
+          )}
+
+          {modelsError && (
+            <div className="error-container" style={{ marginBottom: '1rem' }}>
+              <h2>Face models issue</h2>
+              <p>{modelsError}</p>
+              <p>
+                QR share still works. On-device selfie may need a refresh after
+                models are available.
+              </p>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => window.location.reload()}
+              >
+                Retry models
+              </button>
+            </div>
+          )}
+
+          {modelsReady && <SelfieVerification />}
+
+          <InstallOnDevice deviceOnly={deviceOnly} />
+          {isSuperAdmin && <SuperAdminDashboard />}
         </div>
       </div>
     );
   }
 
-  if (modelsError) {
-    return (
-      <div className={shellClass}>
-        {deviceBrand}
-        <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
-        <div className="container">
-          {nav}
-          <div className="error-container">
-            <h2>Error Loading Models</h2>
-            <p>{modelsError}</p>
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => window.location.reload()}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!modelsReady) return null;
-
+  // Fallback hub if section unknown
   return (
     <div className={shellClass}>
       {deviceBrand}
-      <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
+      <Header activeApp="hub" onBackToApps={null} deviceOnly={deviceOnly} />
       <div className="container">
         {nav}
-        {isSuperAdmin && <SuperAdminDashboard />}
-
-        {!apiReady && (
-          <div className="config-banner" role="alert">
-            <strong>API not fully configured.</strong>
-            <p>
-              Missing: <code>{missingConfig.join(', ') || 'unknown'}</code>
-            </p>
-          </div>
-        )}
-        <InstallOnDevice deviceOnly={deviceOnly} />
-        <SelfieVerification />
+        <AppHub onSelect={openSection} deviceOnly={deviceOnly} />
       </div>
     </div>
   );

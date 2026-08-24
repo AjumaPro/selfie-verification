@@ -12,6 +12,22 @@ export const GH_RELEASE_BASE =
   process.env.REACT_APP_MEETINGS_DOWNLOAD_BASE ||
   'https://github.com/AjumaPro/selfie-verification/releases/download/desktop-v2.0.0';
 
+/**
+ * Only these assets exist on the GitHub desktop-v2.0.0 release.
+ * Meetings installers and help .txt are local/build-only — never invent a GH URL.
+ */
+const GH_REMOTE_ALLOWLIST = new Set([
+  'Selfie-Verification-Mac.dmg',
+  'Selfie-Verification-Mac.zip',
+  'Selfie-Verification-Windows.exe',
+  'selfie-verification-ui.zip',
+]);
+
+export function hasRemoteFallback(filename) {
+  const name = String(filename || '').replace(/^\//, '');
+  return GH_REMOTE_ALLOWLIST.has(name);
+}
+
 /** Loopback or private LAN — still served by CRA/API, not the public internet. */
 export function isLocalDevHost() {
   if (typeof window === 'undefined') return true;
@@ -117,21 +133,36 @@ export function triggerDownload(url, filename) {
 }
 
 /**
- * Try same-origin file first; if missing, fall back to GitHub release URL.
- * Remote probes often fail (CORS), so on non-local hosts we offer GH without probing.
+ * Try same-origin file first; if missing, fall back to GitHub only when allowlisted.
  */
 export async function resolveDownloadUrl(filename) {
-  const primary = assetUrl(filename);
+  const name = String(filename || '').replace(/^\//, '');
+  const primary = assetUrl(name);
   const ok = await probeDownloadUrl(primary);
   if (ok) return { url: primary, source: 'local' };
 
-  const remote = remoteFallbackUrl(filename);
-  // Local/LAN: only use GH if we can verify (or always offer as last hope when force)
+  if (!hasRemoteFallback(name)) {
+    return { url: null, source: 'missing' };
+  }
+
+  const remote = remoteFallbackUrl(name);
   if (isLocalDevHost()) {
     const okRemote = await probeDownloadUrl(remote);
     if (okRemote) return { url: remote, source: 'remote' };
     return { url: null, source: 'missing' };
   }
-  // Hosted: same-origin miss → release assets (open in new tab; no CORS probe)
+  // Hosted + allowlisted: offer GH (open in new tab; CORS often blocks probe)
   return { url: remote, source: 'remote' };
+}
+
+/**
+ * Resolve first available filename from a list (e.g. Mac .dmg then .zip package).
+ */
+export async function resolveFirstDownloadUrl(filenames) {
+  const list = Array.isArray(filenames) ? filenames : [filenames];
+  for (const name of list) {
+    const r = await resolveDownloadUrl(name);
+    if (r?.url) return { ...r, filename: String(name || '').replace(/^\//, '') };
+  }
+  return { url: null, source: 'missing', filename: list[0] || null };
 }

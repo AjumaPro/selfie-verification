@@ -7,6 +7,8 @@ async function migratePostgres(client) {
 
   const { ensureMeetingsSchema } = require('./meetingsSchema');
   await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensureVerifySchema } = require('./verifySchema');
+  await ensureVerifySchema((text, params) => client.query(text, params));
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -66,6 +68,8 @@ async function migratePostgres(client) {
 async function migrateSqlite(client) {
   const { ensureMeetingsSchema } = require('./meetingsSchema');
   await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensureVerifySchema } = require('./verifySchema');
+  await ensureVerifySchema((text, params) => client.query(text, params));
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (

@@ -3,9 +3,14 @@ import { FaDownload, FaMobileAlt, FaCheckCircle } from 'react-icons/fa';
 import MeetingsApp from './components/MeetingsApp';
 import MeetingJoin from './components/MeetingJoin';
 import BookingGuest from './components/BookingGuest';
-import GlicoLifeLogo from './components/GlicoLifeLogo';
-import { BRAND } from './utils/brandAssets';
 import './App.css';
+
+function publicAsset(path) {
+  const raw = process.env.PUBLIC_URL || '';
+  const base =
+    raw === '.' || raw === './' ? '' : String(raw).replace(/\/$/, '');
+  return `${base}/${String(path || '').replace(/^\//, '')}`;
+}
 
 function getQueryParam(name) {
   if (typeof window === 'undefined') return '';
@@ -25,7 +30,8 @@ function isStandalone() {
 }
 
 /**
- * GLICO Life Meetings PWA — schedule, QR check-in, venue map, booking.
+ * GLICO Meetings PWA — full web Meetings feature set only.
+ * Branded with official Glico logo + red / sky / navy.
  */
 function App() {
   const [joinId, setJoinId] = useState(() => getQueryParam('join'));
@@ -95,7 +101,7 @@ function App() {
     } else if (/Android/i.test(ua)) {
       setInstallHint('Android: browser menu → Install app / Add to Home screen');
     } else {
-      setInstallHint('Use your browser Install icon, or menu → Install GLICO Life Meetings');
+      setInstallHint('Use your browser Install icon, or menu → Install GLICO Meetings');
     }
   };
 
@@ -116,10 +122,14 @@ function App() {
       </div>
       <header className="meetings-pwa-header">
         <div className="meetings-pwa-brand">
-          <GlicoLifeLogo compact markClassName="meetings-pwa-logo" />
+          <img
+            src={publicAsset('Glico.png')}
+            alt="GLICO"
+            className="meetings-pwa-logo"
+          />
           <div>
-            <h1>{BRAND.meetingsName}</h1>
-            <p>{BRAND.name} · schedule · QR · booking</p>
+            <h1>GLICO Life Platform</h1>
+            <p>Meetings · on-device · schedule · QR · booking</p>
           </div>
         </div>
         <div className="meetings-pwa-actions">

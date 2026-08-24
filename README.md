@@ -81,8 +81,8 @@ API: **http://localhost:4000**
 
 ### Default superadmin (after migrate)
 
-- **Email:** `superadmin@glico.local`
-- **Password:** `SuperAdmin@123` (change in `backend/.env` for production)
+- **Email:** `infoajumapro@gmail.com`
+- **Password:** from `MyGlicoFIF@2025` in `backend/.env` (and DigitalOcean App env). Change before production.
 
 Use the **Admin** tab in the UI (not normal Sign in).
 

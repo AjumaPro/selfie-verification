@@ -113,12 +113,11 @@ const SelfieVerification = () => {
   return (
     <div className="selfie-verification">
       <div className="card">
-        <h2>Selfie Verification</h2>
+        <h2>Selfie Verification (this device)</h2>
         <p className="description">
-          Take a live selfie and enter your Ghana card number. The selfie is checked locally, then
-          verified with the KYC API. Successful matches show the returned identity details below
-          (not raw JSON).
-          Images are processed to the API standard: live portrait, 640×480 PNG, under 1MB, with sufficient lighting.
+          Verify someone on <strong>this</strong> computer or phone. To collect
+          many verifications from guests, use <strong>Share verification link</strong>{' '}
+          above (QR / URL).
         </p>
 
         <div className="form-row">

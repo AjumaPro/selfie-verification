@@ -3,23 +3,37 @@ GLICO Life Platform — Mac install (unsigned build)
 SIZE: The new installer is much smaller (~80–120 MB). If your DMG is still
 ~400–500 MB, delete it and download again (hard refresh the download page).
 
-GATEKEEPER (“developer cannot be verified”)
-This build is not signed with an Apple Developer ID, so macOS blocks it by
-default. That is expected — not a corrupt file.
-
-Option A (easiest)
+INSTALL
+-------
 1. Open the .dmg and drag “GLICO Life Platform” to Applications.
-2. In Finder → Applications, Control-click (right-click) the app → Open.
-3. Click Open in the dialog (only appears the first time).
+2. First open: Control-click (right-click) the app → Open → Open again.
+   (Gatekeeper: “developer cannot be verified” is expected for unsigned builds.)
+   Or: System Settings → Privacy & Security → Open Anyway.
+3. Optional quarantine clear:
+     xattr -cr "/Applications/GLICO Life Platform.app"
+     open "/Applications/GLICO Life Platform.app"
 
-Option B (System Settings)
-1. Try to open the app once (it will be blocked).
-2. Open System Settings → Privacy & Security.
-3. Scroll to the message about GLICO Life Platform → click Open Anyway.
+AUTHENTICATION (required for Image Recognition)
+-----------------------------------------------
+The Mac app is a **device build**: full KYC / web features **without Meetings**.
 
-Option C (Terminal — clears Safari quarantine flag)
-  xattr -cr "/Applications/GLICO Life Platform.app"
-  open "/Applications/GLICO Life Platform.app"
+On first launch (Image Recognition) you will see three authentication sections:
 
-Prefer ZIP? Download Selfie-Verification-Mac.zip, unzip, then use Option A/C
-on the .app (do not leave it in Downloads if quarantine keeps blocking).
+  • Sign in     — approved staff accounts (email + password)
+  • Register    — request an account; stays Pending until a superadmin
+                  approves you in Super Admin on the app
+  • Admin       — superadmin only (user management)
+
+What needs login:
+  • Image Recognition / Ghana Card KYC  → sign-in required
+  • Meetings                            → not in this app (use the website)
+
+Tips
+  • Tick “Stay signed in on this device” so the app remembers you next open.
+  • Internet required for login (auth and KYC talk to the GLICO API).
+  • Desktop builds call the auth API at the URL baked in at build time
+    (REACT_APP_AUTH_API_URL or REACT_APP_DESKTOP_AUTH_API_URL).
+
+CAMERA
+------
+Allow camera when macOS prompts — required for live selfie capture.

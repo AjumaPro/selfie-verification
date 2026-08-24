@@ -8,7 +8,7 @@ import {
   FaShieldAlt,
   FaMobileAlt,
 } from 'react-icons/fa';
-import MeetingsDeviceDownloads from './MeetingsDeviceDownloads';
+import MeetingsDeviceDownloads, { getMeetingsWebPwaUrl } from './MeetingsDeviceDownloads';
 import { BRAND } from '../utils/brandAssets';
 import './AppHub.css';
 
@@ -22,20 +22,9 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
       onSelect('meetings');
       return;
     }
-    const pwa = process.env.REACT_APP_MEETINGS_PWA_URL;
+    const pwa = getMeetingsWebPwaUrl();
     if (pwa) {
       window.open(pwa, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    // Same origin website Meetings (DigitalOcean / browser builds)
-    try {
-      const url = new URL(window.location.href);
-      url.search = '';
-      url.hash = '';
-      // Web app reads section from in-app state only; open full site meetings path via query for guests
-      window.open(`${url.origin}/`, '_blank', 'noopener,noreferrer');
-    } catch {
-      /* ignore */
     }
   };
 
@@ -55,9 +44,9 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
             </>
           ) : (
             <>
-              Choose an app. <strong>Meetings</strong> is open without login —
-              also download for Windows or Mac. <strong>Image Recognition</strong>{' '}
-              requires sign-in for KYC.
+              Choose an app. <strong>Image Recognition</strong> — sign in, then
+              share a QR so guests verify Ghana Card + selfie. <strong>Meetings</strong>{' '}
+              is open without login.
             </>
           )}
         </p>
@@ -74,13 +63,14 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
           </span>
           <h3>Image Recognition</h3>
           <p>
-            Ghana Card selfie verification and face checks. Sign in required.
+            Share a QR / link for guests to verify Ghana Card + selfie — or
+            verify on this device. Sign in required.
           </p>
           <span className="app-hub-card-meta">
-            <FaLock aria-hidden /> Requires sign-in
+            <FaLock aria-hidden /> Sign in · QR share &amp; KYC
           </span>
           <span className="app-hub-card-cta">
-            Open app <FaArrowRight aria-hidden />
+            Open &amp; share QR <FaArrowRight aria-hidden />
           </span>
         </button>
 
@@ -126,8 +116,8 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
       {deviceOnly && (
         <div className="app-hub-device-note" role="note">
           <FaShieldAlt aria-hidden /> This package is Image Recognition. Use the
-          Meetings column for Windows (.exe) and Mac (.dmg / .zip) Meetings
-          installers.
+          Meetings column for Windows (.exe), Mac (.dmg), or Install PWA on this
+          device.
         </div>
       )}
     </section>

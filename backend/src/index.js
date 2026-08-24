@@ -69,6 +69,7 @@ app.get('/health', async (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/booking', require('./routes/booking'));
+app.use('/api/verify', require('./routes/verify'));
 
 // Production: serve React build from backend/public (copied during root `npm run build`)
 const clientDir = path.join(__dirname, '..', 'public');
@@ -112,6 +113,7 @@ try {
 
 const { ensureMeetingsSchema } = require('./db/meetingsSchema');
 const { ensureBookingSchema } = require('./db/bookingSchema');
+const { ensureVerifySchema } = require('./db/verifySchema');
 
 async function start() {
   try {
@@ -125,6 +127,12 @@ async function start() {
     console.log('✓ Booking schema ready');
   } catch (err) {
     console.error('Booking schema setup failed:', err.message);
+  }
+  try {
+    await ensureVerifySchema(query);
+    console.log('✓ Verify-share schema ready');
+  } catch (err) {
+    console.error('Verify schema setup failed:', err.message);
   }
 
   app.listen(port, '0.0.0.0', () => {

@@ -9,60 +9,27 @@ import InstallOnDevice from './components/InstallOnDevice';
 import SelfieVerification from './components/SelfieVerification';
 import SuperAdminDashboard from './components/SuperAdminDashboard';
 import AppHub from './components/AppHub';
-import MeetingsApp from './components/MeetingsApp';
-import MeetingJoin from './components/MeetingJoin';
-import BookingGuest from './components/BookingGuest';
+import VerifyJoin from './components/VerifyJoin';
+import VerifyShare from './components/VerifyShare';
 import { useAuth } from './context/AuthContext';
 import { loadModels } from './services/faceDetection';
 import apiConfig from './config/api';
 
 /**
- * Device / Windows-Mac installer builds: full web KYC features, no Meetings.
- * Set REACT_APP_DEVICE_APP=true for Electron (see electron-build.js).
- * Website (DigitalOcean) leaves this unset so Meetings remains available.
+ * Selfie Verification device package — Image Recognition / KYC only.
+ * Meetings lives in the website or Meetings-Device package.
  */
-function isDeviceAppBuild() {
-  const flag = String(process.env.REACT_APP_DEVICE_APP || '')
-    .toLowerCase()
-    .trim();
-  if (flag === '1' || flag === 'true' || flag === 'yes') return true;
-  if (typeof window === 'undefined') return false;
-  try {
-    if (window.location.protocol === 'file:') return true;
-    if (document.body && document.body.dataset.desktopApp === 'true') return true;
-    if (/Electron/i.test(navigator.userAgent || '')) return true;
-  } catch {
-    /* ignore */
-  }
-  return false;
-}
-
-function getJoinMeetingIdFromUrl() {
+function getVerifySessionIdFromUrl() {
   if (typeof window === 'undefined') return '';
   try {
     const params = new URLSearchParams(window.location.search);
-    return String(params.get('join') || '').trim();
+    return String(params.get('verify') || '').trim();
   } catch {
     return '';
   }
 }
 
-function getBookPageIdFromUrl() {
-  if (typeof window === 'undefined') return '';
-  try {
-    const params = new URLSearchParams(window.location.search);
-    return String(params.get('book') || '').trim();
-  } catch {
-    return '';
-  }
-}
-
-/**
- * Public hub + app nav.
- * Web: Meetings never requires login. Image Recognition does.
- * Device: Image Recognition only (no Meetings nav).
- */
-function AppNav({ section, onChange, isAuthenticated, deviceOnly }) {
+function AppNav({ section, onChange, isAuthenticated }) {
   return (
     <nav className="app-nav" aria-label="Applications">
       <button
@@ -84,61 +51,29 @@ function AppNav({ section, onChange, isAuthenticated, deviceOnly }) {
           </span>
         )}
       </button>
-      {!deviceOnly && (
-        <button
-          type="button"
-          className={`app-nav-btn ${section === 'meetings' ? 'active' : ''}`}
-          onClick={() => onChange('meetings')}
-        >
-          Meetings
-          <span className="app-nav-open" title="No login needed">
-            · open
-          </span>
-        </button>
-      )}
     </nav>
   );
 }
 
 function App() {
   const { isAuthenticated, isSuperAdmin, booting } = useAuth();
-  const [deviceOnly, setDeviceOnly] = useState(() => isDeviceAppBuild());
+  const deviceOnly = true;
   const [section, setSection] = useState('hub');
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsReady, setModelsReady] = useState(false);
   const [modelsError, setModelsError] = useState(null);
-  const [joinMeetingId, setJoinMeetingId] = useState(() =>
-    isDeviceAppBuild() ? '' : getJoinMeetingIdFromUrl()
-  );
-  const [bookPageId, setBookPageId] = useState(() =>
-    isDeviceAppBuild() ? '' : getBookPageIdFromUrl()
+  const [verifySessionId, setVerifySessionId] = useState(() =>
+    getVerifySessionIdFromUrl()
   );
   const apiReady = apiConfig.isAutoVerificationEnabled;
   const missingConfig = apiConfig.missingConfig || [];
 
-  // Electron preload sets data-desktop-app after first paint
   useEffect(() => {
-    const sync = () => setDeviceOnly(isDeviceAppBuild());
-    sync();
-    const t = window.setTimeout(sync, 80);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (deviceOnly && section === 'meetings') setSection('hub');
-  }, [deviceOnly, section]);
-
-  useEffect(() => {
-    if (deviceOnly) return undefined;
-    const onPop = () => {
-      setJoinMeetingId(getJoinMeetingIdFromUrl());
-      setBookPageId(getBookPageIdFromUrl());
-    };
+    const onPop = () => setVerifySessionId(getVerifySessionIdFromUrl());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [deviceOnly]);
+  }, []);
 
-  // Face models only when authenticated user is in Image Recognition
   useEffect(() => {
     if (!isAuthenticated || section !== 'recognition') {
       return undefined;
@@ -149,74 +84,50 @@ function App() {
     let cancelled = false;
     setModelsLoading(true);
     setModelsError(null);
-
     loadModels()
       .then(() => {
+        if (!cancelled) setModelsReady(true);
+      })
+      .catch((err) => {
         if (!cancelled) {
-          setModelsReady(true);
-          setModelsLoading(false);
+          setModelsError(err?.message || 'Could not load face models');
         }
       })
-      .catch((error) => {
-        if (!cancelled) {
-          setModelsError(error.message);
-          setModelsLoading(false);
-        }
+      .finally(() => {
+        if (!cancelled) setModelsLoading(false);
       });
-
     return () => {
       cancelled = true;
     };
   }, [isAuthenticated, section, modelsReady]);
 
   const openSection = (next) => {
-    if (deviceOnly && next === 'meetings') return;
+    if (next === 'meetings') return;
     setSection(next);
   };
+
   const backToHub = () => setSection('hub');
 
-  const shellClass = deviceOnly ? 'App App--device' : 'App';
-  const deviceBrand = deviceOnly ? (
-    <GlicoBrandBar
-      product={BRAND.name}
-      tagline="Identity · Ghana Card KYC · Windows & Mac"
-    />
-  ) : null;
-
-  const leaveJoinPage = () => {
-    setJoinMeetingId('');
+  const leaveVerifyPage = () => {
+    setVerifySessionId('');
     try {
       const url = new URL(window.location.href);
-      url.searchParams.delete('join');
+      url.searchParams.delete('verify');
       window.history.replaceState({}, '', url.pathname + url.search + url.hash);
     } catch {
       /* ignore */
     }
-    setSection(deviceOnly ? 'hub' : 'meetings');
   };
 
-  const leaveBookPage = () => {
-    setBookPageId('');
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('book');
-      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
-    } catch {
-      /* ignore */
-    }
-    setSection(deviceOnly ? 'hub' : 'meetings');
-  };
+  const shellClass = 'App App--device';
+  const deviceBrand = (
+    <GlicoBrandBar compact product={BRAND.name} tagline="Device · Image Recognition" />
+  );
 
-  // Public QR check-in (web only)
-  if (!deviceOnly && joinMeetingId) {
+  if (verifySessionId) {
     return (
-      <MeetingJoin meetingId={joinMeetingId} onClose={leaveJoinPage} />
+      <VerifyJoin sessionId={verifySessionId} onClose={leaveVerifyPage} />
     );
-  }
-
-  // Public guest booking (web only)
-  if (!deviceOnly && bookPageId) {
-    return <BookingGuest pageId={bookPageId} onClose={leaveBookPage} />;
   }
 
   if (booting) {
@@ -239,11 +150,9 @@ function App() {
       section={section}
       onChange={openSection}
       isAuthenticated={isAuthenticated}
-      deviceOnly={deviceOnly}
     />
   );
 
-  // ——— Home ———
   if (section === 'hub') {
     return (
       <div className={shellClass}>
@@ -258,20 +167,6 @@ function App() {
     );
   }
 
-  // ——— Meetings (web only) ———
-  if (!deviceOnly && section === 'meetings') {
-    return (
-      <div className={shellClass}>
-        <Header activeApp="meetings" onBackToApps={backToHub} />
-        <div className="container">
-          {nav}
-          <MeetingsApp />
-        </div>
-      </div>
-    );
-  }
-
-  // ——— Image Recognition: requires sign-in ———
   if (section === 'recognition' && !isAuthenticated) {
     return (
       <div className={shellClass}>
@@ -282,9 +177,8 @@ function App() {
           <div className="app-auth-banner">
             <h2>Image Recognition</h2>
             <p>
-              {deviceOnly
-                ? 'Sign in to use selfie verification and Ghana Card KYC on this device. Use Sign in, Register, or Admin below.'
-                : 'Sign in to use selfie verification and Ghana Card KYC. Meetings stay available without an account — use the Meetings tab.'}
+              Sign in to use selfie verification and Ghana Card KYC on this device.
+              Use Sign in, Register, or Admin below.
             </p>
           </div>
           <AuthPanel deviceOnly={deviceOnly} />
@@ -293,66 +187,62 @@ function App() {
     );
   }
 
-  if (modelsLoading) {
+  if (section === 'recognition' && isAuthenticated) {
     return (
       <div className={shellClass}>
         {deviceBrand}
         <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
         <div className="container">
           {nav}
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <h2>Loading Face Detection Models...</h2>
-            <p>This may take a few moments on first load</p>
-          </div>
+          {!apiReady && (
+            <div className="config-banner" role="alert">
+              <strong>API not fully configured.</strong>
+              <p>
+                Missing: <code>{missingConfig.join(', ') || 'unknown'}</code>
+              </p>
+            </div>
+          )}
+
+          <VerifyShare />
+
+          {modelsLoading && (
+            <div className="loading-container" style={{ padding: '1.5rem 0' }}>
+              <div className="loading-spinner" />
+              <h2>Loading face models for on-device selfie…</h2>
+              <p>You can still create and share the QR link above.</p>
+            </div>
+          )}
+
+          {modelsError && (
+            <div className="error-container" style={{ marginBottom: '1rem' }}>
+              <h2>Face models issue</h2>
+              <p>{modelsError}</p>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => window.location.reload()}
+              >
+                Retry models
+              </button>
+            </div>
+          )}
+
+          {modelsReady && <SelfieVerification />}
+
+          <InstallOnDevice deviceOnly={deviceOnly} />
+          {isSuperAdmin && <SuperAdminDashboard />}
         </div>
       </div>
     );
   }
-
-  if (modelsError) {
-    return (
-      <div className={shellClass}>
-        {deviceBrand}
-        <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
-        <div className="container">
-          {nav}
-          <div className="error-container">
-            <h2>Error Loading Models</h2>
-            <p>{modelsError}</p>
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => window.location.reload()}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!modelsReady) return null;
 
   return (
     <div className={shellClass}>
       {deviceBrand}
-      <Header activeApp="recognition" onBackToApps={backToHub} deviceOnly={deviceOnly} />
+      <Header activeApp="hub" onBackToApps={null} deviceOnly={deviceOnly} />
       <div className="container">
         {nav}
-        {isSuperAdmin && <SuperAdminDashboard />}
-
-        {!apiReady && (
-          <div className="config-banner" role="alert">
-            <strong>API not fully configured.</strong>
-            <p>
-              Missing: <code>{missingConfig.join(', ') || 'unknown'}</code>
-            </p>
-          </div>
-        )}
-        <InstallOnDevice deviceOnly={deviceOnly} />
-        <SelfieVerification />
+        <AppHub onSelect={openSection} deviceOnly={deviceOnly} />
       </div>
     </div>
   );
