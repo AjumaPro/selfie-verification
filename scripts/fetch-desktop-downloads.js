@@ -21,7 +21,6 @@ const DEFAULT_BASE =
 const FILES = [
   'Selfie-Verification-Windows.exe',
   'Selfie-Verification-Mac.dmg',
-  'Selfie-Verification-Mac.zip',
 ];
 
 function fetchToFile(url, dest) {
