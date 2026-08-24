@@ -1,7 +1,7 @@
 GLICO Life Platform — Mac install (unsigned build)
 
-SIZE: The new installer is much smaller (~80–120 MB). If your DMG is still
-~400–500 MB, delete it and download again (hard refresh the download page).
+SIZE: Installer is typically ~80–120 MB. If your DMG is still an old
+“Selfie Verification” green app, delete it and download again (hard refresh).
 
 INSTALL
 -------
