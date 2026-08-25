@@ -324,36 +324,6 @@
   margin: 0 0 0.65rem;
 }
 
-.meetings-map-choice {
-  padding: 0.75rem 0.85rem;
-  border-radius: 12px;
-  border: 1px solid rgba(16, 48, 120, 0.12);
-  background: linear-gradient(165deg, #f7fafc 0%, #eef5fb 100%);
-}
-
-.meetings-map-choice .meetings-field-hint {
-  margin: 0.55rem 0 0;
-}
-
-.meetings-clear-pin-btn {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 0.45rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid rgba(208, 48, 56, 0.35);
-  background: #fff;
-  color: var(--glico-red, #d03038);
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.meetings-clear-pin-btn:hover {
-  background: rgba(208, 48, 56, 0.06);
-}
-
 .meetings-format-label {
   display: block;
   font-size: 0.8rem;

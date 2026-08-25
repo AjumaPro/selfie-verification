@@ -78,6 +78,8 @@ const emptyForm = {
   durationMins: '60',
   location: '',
   isInPerson: true,
+  /** Host opted to attach a Google Maps check-in pin */
+  includeMapPin: false,
   googlePlace: '',
   venueLat: '',
   venueLng: '',
@@ -536,6 +538,7 @@ function formFromMeeting(m) {
     durationMins: String(m.durationMins || 60),
     location: m.location || '',
     isInPerson: m.isInPerson !== false,
+    includeMapPin: venue.lat != null && venue.lng != null,
     googlePlace: m.googlePlace || m.location || '',
     venueLat: venue.lat != null ? String(venue.lat) : '',
     venueLng: venue.lng != null ? String(venue.lng) : '',
@@ -826,11 +829,12 @@ const MeetingsApp = () => {
           venueLat: String(Number(resolved.lat.toFixed(7))),
           venueLng: String(Number(resolved.lng.toFixed(7))),
           isInPerson: true,
+          includeMapPin: true,
           location: (f.location || '').trim() || shortVenue,
         }));
         setGmapsPaste('');
         flash(
-          'Exact Google Maps pin saved. Guests check in against this location.'
+          'Exact Google Maps pin set on this form. Create or Update the meeting to publish it for guests.'
         );
         return;
       }
@@ -923,25 +927,18 @@ const MeetingsApp = () => {
       return null;
     }
     const isInPerson = form.isInPerson !== false;
-    if (isInPerson) {
-      if (!location) {
-        setError(
-          'Add a venue address, then paste a Google Maps link or pin on the map.'
-        );
-        return null;
-      }
+    const includeMapPin = isInPerson && form.includeMapPin === true;
+    if (isInPerson && includeMapPin) {
       if (venueLat == null || venueLng == null) {
         setError(
-          'Set the check-in pin: paste a Google Maps link above, or open Map and pin the venue.'
+          'You chose to add a Google Maps pin — paste a Maps link or open Map and pin the venue. Or switch to “No map pin”.'
         );
         return null;
       }
-      if (!(form.googlePlace || '').trim()) {
-        setError(
-          'Confirm the map place — paste from Google Maps or use Map to pin the venue.'
-        );
-        return null;
-      }
+    }
+    if (!includeMapPin) {
+      venueLat = null;
+      venueLng = null;
     }
     const mealMenu = {
       breakfast: {
@@ -971,12 +968,11 @@ const MeetingsApp = () => {
       durationMins,
       location,
       isInPerson,
-      googlePlace:
-        (form.googlePlace || '').trim() ||
-        (isInPerson ? location : '') ||
-        '',
-      venueLat: venueLat != null ? venueLat : null,
-      venueLng: venueLng != null ? venueLng : null,
+      googlePlace: includeMapPin
+        ? (form.googlePlace || '').trim() || location || ''
+        : location || (form.googlePlace || '').trim() || '',
+      venueLat: includeMapPin && venueLat != null ? venueLat : null,
+      venueLng: includeMapPin && venueLng != null ? venueLng : null,
       venueRadiusM,
       onlineLink: form.onlineLink.trim(),
       organiser: form.organiser.trim(),
@@ -1350,11 +1346,14 @@ const MeetingsApp = () => {
                 ? String(Number(lng.toFixed(7)))
                 : f.venueLng,
               isInPerson: true,
+              includeMapPin: true,
               // Keep host venue note; seed from map address if empty
               location: (f.location || '').trim() || shortVenue,
             }));
             setShowMapPicker(false);
-            flash('Venue address and map pin saved.');
+            flash(
+              'Map pin set on this form. Create or Update the meeting to publish it.'
+            );
           }}
         />
       )}
@@ -1595,18 +1594,13 @@ const MeetingsApp = () => {
                 <label className="meetings-field">
                   <span>
                     <FaMapMarkerAlt aria-hidden /> Venue address
-                    {form.isInPerson !== false ? (
-                      <span className="meetings-required-tag"> Required</span>
-                    ) : (
-                      <span className="meetings-optional-tag"> Optional</span>
-                    )}
+                    <span className="meetings-optional-tag"> Optional</span>
                   </span>
                   <input
                     name="location"
                     className="form-input"
                     value={form.location}
                     onChange={onChange}
-                    required={form.isInPerson !== false}
                     placeholder={
                       form.isInPerson !== false
                         ? 'e.g. GLICO Life Head Office, boardroom, street…'
@@ -1615,13 +1609,64 @@ const MeetingsApp = () => {
                   />
                   {form.isInPerson !== false && (
                     <p className="meetings-field-hint">
-                      Plain-language address for the agenda and guests.
+                      Plain-language address for the agenda and guests. Google Maps
+                      pin is separate below.
                     </p>
                   )}
                 </label>
-                {form.isInPerson !== false && (() => {
+                {form.isInPerson !== false && (
+                  <div
+                    className="meetings-format-row meetings-map-choice"
+                    role="group"
+                    aria-label="Google Maps location"
+                  >
+                    <span className="meetings-format-label">
+                      Google Maps location
+                    </span>
+                    <div className="meetings-format-options">
+                      <label
+                        className={`meetings-format-opt ${form.includeMapPin ? 'on' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="includeMapPin"
+                          checked={!!form.includeMapPin}
+                          onChange={() =>
+                            setForm((f) => ({ ...f, includeMapPin: true }))
+                          }
+                        />
+                        <span>Add map pin</span>
+                      </label>
+                      <label
+                        className={`meetings-format-opt ${!form.includeMapPin ? 'on' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="includeMapPin"
+                          checked={!form.includeMapPin}
+                          onChange={() =>
+                            setForm((f) => ({
+                              ...f,
+                              includeMapPin: false,
+                              venueLat: '',
+                              venueLng: '',
+                              googlePlace: '',
+                            }))
+                          }
+                        />
+                        <span>No map pin</span>
+                      </label>
+                    </div>
+                    <p className="meetings-field-hint">
+                      {form.includeMapPin
+                        ? 'Guests can check in against this pin (± radius). Paste a Maps link or open the map.'
+                        : 'Create the meeting without GPS check-in. You can add a pin later by editing.'}
+                    </p>
+                  </div>
+                )}
+                {form.isInPerson !== false && form.includeMapPin && (() => {
                   const pinSaved =
-                    !!(form.googlePlace && form.venueLat && form.venueLng);
+                    !!(form.venueLat && form.venueLng);
                   const gmapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                     (form.location || form.googlePlace || 'Accra Ghana').trim()
                   )}`;
@@ -1668,11 +1713,27 @@ const MeetingsApp = () => {
                             View in Google Maps{' '}
                             <FaExternalLinkAlt aria-hidden />
                           </a>
+                          <button
+                            type="button"
+                            className="meetings-clear-pin-btn"
+                            onClick={() =>
+                              setForm((f) => ({
+                                ...f,
+                                includeMapPin: false,
+                                venueLat: '',
+                                venueLng: '',
+                                googlePlace: '',
+                              }))
+                            }
+                          >
+                            Remove pin
+                          </button>
                         </div>
                       </div>
                     ) : (
                       <p className="meetings-venue-pending">
-                        No pin yet — use Option A or B below.
+                        No pin yet — use Option A or B below, or choose{' '}
+                        <strong>No map pin</strong> above to create without one.
                       </p>
                     )}
 
@@ -1736,12 +1797,18 @@ const MeetingsApp = () => {
                         <ol className="meetings-venue-steps">
                           <li>Open Google Maps and find the venue</li>
                           <li>
-                            Most accurate: right‑click the red pin → copy
-                            coordinates → paste here
+                            Phone / tablet: tap the pin → <strong>Share</strong> →{' '}
+                            <strong>Copy link</strong> (or copy coordinates), then
+                            paste below and tap <strong>Add pin</strong>
                           </li>
                           <li>
-                            Or Share → copy link (full place URL works best;
-                            short Share links often need map confirm)
+                            Computer: right‑click the red pin → copy coordinates,
+                            or Share → copy link, then paste and{' '}
+                            <strong>Add pin</strong>
+                          </li>
+                          <li>
+                            Full place URLs work best; short Share links
+                            (<code>maps.app.goo.gl</code>) often need map confirm
                           </li>
                         </ol>
                       </div>
@@ -1779,17 +1846,10 @@ const MeetingsApp = () => {
                         </ol>
                       </div>
                     </div>
-
-                    {!pinSaved && !(form.location || '').trim() && (
-                      <p className="meetings-field-hint warn">
-                        Add a venue address above, then set the pin with Option
-                        A or B.
-                      </p>
-                    )}
                   </div>
                   );
                 })()}
-                {form.isInPerson !== false && (
+                {form.isInPerson !== false && form.includeMapPin && (
                   <label className="meetings-field meetings-radius-field">
                     <span>Check-in radius (metres)</span>
                     <input

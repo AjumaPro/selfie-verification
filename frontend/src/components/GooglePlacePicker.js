@@ -1020,6 +1020,12 @@ const GooglePlacePicker = ({ value, onChange, onClose }) => {
                 }
               }
             }}
+            onPaste={(e) => {
+              const text = e.clipboardData?.getData('text');
+              if (text && isGoogleMapsPaste(text)) {
+                setTimeout(() => importFromGoogleMaps(text.trim()), 0);
+              }
+            }}
             autoComplete="off"
             autoFocus
           />
@@ -1175,8 +1181,9 @@ const GooglePlacePicker = ({ value, onChange, onClose }) => {
                   >
                     Google Maps
                   </a>
-                  , copy coordinates, paste as <code>5.60, -0.18</code>, Search,
-                  then tap the result.
+                  , Share → Copy link (or copy coordinates like{' '}
+                  <code>5.60, -0.18</code>), paste below, then{' '}
+                  <strong>Add pin</strong>.
                 </p>
               </div>
             )}

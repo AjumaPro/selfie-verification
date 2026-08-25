@@ -366,7 +366,7 @@
   padding: 0.25rem 0;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .verify-share-qr-grid {
     grid-template-columns: 1fr;
     justify-items: center;

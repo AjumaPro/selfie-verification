@@ -39,8 +39,8 @@ body {
   overflow-x: hidden;
 }
 
-/* iOS: 16px+ inputs avoid auto-zoom on focus */
-@media (max-width: 768px) {
+/* Touch devices / tablets: 16px+ inputs avoid iOS auto-zoom on focus */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   input.form-input,
   select.form-input,
   textarea.form-input,

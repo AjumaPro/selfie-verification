@@ -182,6 +182,25 @@
   background: #1a7ab8;
 }
 
+/* Tablets: avoid brand + user controls fighting for width */
+@media (max-width: 1024px) {
+  .header-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .header-user {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .header-apps-btn,
+  .header-logout {
+    min-height: 2.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   .header-main {
     text-align: center;

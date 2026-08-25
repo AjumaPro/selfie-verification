@@ -324,6 +324,36 @@
   margin: 0 0 0.65rem;
 }
 
+.meetings-map-choice {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 48, 120, 0.12);
+  background: linear-gradient(165deg, #f7fafc 0%, #eef5fb 100%);
+}
+
+.meetings-map-choice .meetings-field-hint {
+  margin: 0.55rem 0 0;
+}
+
+.meetings-clear-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(208, 48, 56, 0.35);
+  background: #fff;
+  color: var(--glico-red, #d03038);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.meetings-clear-pin-btn:hover {
+  background: rgba(208, 48, 56, 0.06);
+}
+
 .meetings-format-label {
   display: block;
   font-size: 0.8rem;
@@ -524,7 +554,7 @@
   margin-bottom: 1.4rem;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .meetings-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -708,6 +738,25 @@
 
 .meetings-row-3 {
   grid-template-columns: 1.2fr 0.95fr 0.7fr;
+}
+
+@media (max-width: 960px) {
+  .meetings-row-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .meetings-chip-toggle,
+  .meetings-filter {
+    min-height: 2.5rem;
+    padding: 0.45rem 0.85rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .meetings-row,
+  .meetings-row-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 420px) {

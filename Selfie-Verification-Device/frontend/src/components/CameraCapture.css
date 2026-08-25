@@ -202,17 +202,31 @@
   background: #a8242c;
 }
 
-@media (max-width: 768px) {
+/* Phones + tablets (incl. iPad landscape) */
+@media (max-width: 1024px) {
   .camera-capture-overlay {
     padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    align-items: stretch;
   }
 
   .camera-capture-container {
     border-radius: 0;
-    max-height: 100vh;
+    max-width: none;
+    max-height: 100dvh;
+    min-height: 100dvh;
   }
 
   .camera-preview {
-    min-height: 300px;
+    min-height: min(50dvh, 360px);
+    max-height: none;
+    flex: 1;
+  }
+
+  .camera-header,
+  .camera-controls {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 }

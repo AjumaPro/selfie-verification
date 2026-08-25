@@ -8,6 +8,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
+  padding-top: max(1.25rem, env(safe-area-inset-top, 0px));
+  padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
   background: linear-gradient(
     100deg,
     var(--glico-navy, #103078) 0%,

@@ -74,7 +74,8 @@
   margin-bottom: 0.25rem;
 }
 
-@media (max-width: 720px) {
+/* Stack through iPad portrait / small landscape (not only phones) */
+@media (max-width: 960px) {
   .app-hub-grid,
   .app-hub-grid-single {
     grid-template-columns: 1fr;

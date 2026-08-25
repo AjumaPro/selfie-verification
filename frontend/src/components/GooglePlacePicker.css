@@ -785,16 +785,33 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .gpp-main {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(200px, 34%) 1fr;
+    grid-template-rows: minmax(240px, 48%) 1fr;
   }
 
   .gpp-side {
     border-right: none;
     border-bottom: 1px solid rgba(16, 48, 120, 0.1);
-    max-height: 34vh;
+    max-height: 48vh;
+  }
+
+  .gpp-map-tall {
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 900px) {
+  .gpp-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(220px, 45%) 1fr;
+  }
+
+  .gpp-side {
+    border-right: none;
+    border-bottom: 1px solid rgba(16, 48, 120, 0.1);
+    max-height: 42vh;
   }
 }
 

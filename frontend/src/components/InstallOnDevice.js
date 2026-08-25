@@ -188,6 +188,8 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
   };
 
   const canOneTapInstall = Boolean(deferredPrompt);
+  const isIpadChrome = platform.isIOS && platform.isChrome;
+  const isIpadSafari = platform.isIOS && platform.isSafari;
 
   return (
     <section className="install-device" id="install-on-device">
@@ -225,8 +227,8 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                     <FaGlobe aria-hidden /> Install {BRAND.name} on this device
                   </h3>
                   <p>
-                    Save it like an app — home screen, dock, or Start menu. No ZIP
-                    download required.
+                    Save it like an app on phone, tablet, or laptop — home screen,
+                    dock, or Start menu. No ZIP download required.
                   </p>
                 </div>
 
@@ -243,7 +245,7 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                       : canOneTapInstall
                         ? 'Install on this device'
                         : platform.isIOS
-                          ? 'How to add to Home Screen'
+                          ? 'How to add to Home Screen (iPad / iPhone)'
                           : platform.isAndroid
                             ? 'How to install on Android'
                             : platform.isSafari
@@ -271,9 +273,24 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                   <div className="install-pwa-guide" role="region" aria-label="PWA install steps">
                     {platform.isIOS && (
                       <ol>
-                        <li>
-                          Stay in <strong>Safari</strong> on this page.
-                        </li>
+                        {isIpadChrome ? (
+                          <>
+                            <li>
+                              For the most reliable install on iPad, open this page
+                              in <strong>Safari</strong> (Chrome on iPad often
+                              cannot install PWAs).
+                            </li>
+                            <li>
+                              Or in Chrome: tap <strong>Share</strong> →{' '}
+                              <strong>Add to Home Screen</strong> if shown.
+                            </li>
+                          </>
+                        ) : (
+                          <li>
+                            Stay in <strong>Safari</strong> on this page
+                            {isIpadSafari ? ' (iPad / iPhone)' : ''}.
+                          </li>
+                        )}
                         <li>
                           Tap <FaShareAlt className="inline-ico" />{' '}
                           <strong>Share</strong>.
@@ -281,6 +298,10 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                         <li>
                           Tap <strong>Add to Home Screen</strong>, then{' '}
                           <strong>Add</strong>.
+                        </li>
+                        <li>
+                          Open the new <strong>{BRAND.name}</strong> icon from
+                          your Home Screen — it runs full-screen like an app.
                         </li>
                       </ol>
                     )}
@@ -334,8 +355,10 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                       </ol>
                     )}
                     <p className="install-pwa-guide-link">
-                      <FaLink aria-hidden /> Phone users: copy the app link above,
-                      open it on the phone, then follow the steps for that device.
+                      <FaLink aria-hidden /> Tablet / phone: use{' '}
+                      <strong>Copy app link</strong>, open it on the device, then
+                      follow the steps for that browser. Desktop .exe / .dmg are
+                      for Windows and Mac computers only — not for iPad.
                     </p>
                   </div>
                 )}
@@ -429,11 +452,16 @@ const InstallOnDevice = ({ deviceOnly = false }) => {
                   </div>
                   <ol>
                     <li>
-                      Open in <strong>Safari</strong>.
+                      Open in <strong>Safari</strong> (best for install on iPad /
+                      iPhone).
                     </li>
                     <li>
                       Tap <FaShareAlt className="inline-ico" /> Share →{' '}
                       <strong>Add to Home Screen</strong>.
+                    </li>
+                    <li>
+                      Use the Home Screen icon — not the Windows/Mac .exe/.dmg
+                      downloads.
                     </li>
                   </ol>
                 </article>

@@ -605,23 +605,14 @@ router.put('/:id', async (req, res) => {
       body.is_in_person === '0'
     );
 
-    // In-person: require plain venue address + map pin coordinates
-    if (isInPerson && (venueLat == null || venueLng == null)) {
+    // In-person may optionally include a map pin; never require pin to create
+    if (
+      isInPerson &&
+      ((venueLat != null && venueLng == null) ||
+        (venueLat == null && venueLng != null))
+    ) {
       return res.status(400).json({
-        error:
-          'In-person meetings need a map pin. Open Place → Map and choose the venue, or mark the meeting as online only.',
-      });
-    }
-    if (isInPerson && !location) {
-      return res.status(400).json({
-        error:
-          'In-person meetings need a venue address (room, branch, or street), plus a map pin.',
-      });
-    }
-    if (isInPerson && !googlePlace) {
-      return res.status(400).json({
-        error:
-          'In-person meetings need the map address with the pin. Confirm the location in Map.',
+        error: 'Venue pin needs both latitude and longitude, or omit both.',
       });
     }
 

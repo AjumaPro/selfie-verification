@@ -33,6 +33,18 @@
   font-weight: 600;
 }
 
+.booking-host-gmaps-paste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.booking-host-gmaps-paste .form-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
 .booking-host-form {
   padding: 1rem;
   border-radius: 12px;

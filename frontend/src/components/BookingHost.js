@@ -4,6 +4,7 @@ import {
   FaCopy,
   FaExternalLinkAlt,
   FaMapMarkerAlt,
+  FaPaste,
   FaSync,
   FaTrash,
 } from 'react-icons/fa';
@@ -14,7 +15,12 @@ import {
   cancelAppointment,
   getBookingUrl,
 } from '../services/bookingApi';
-import { mapsOpenUrl } from '../services/meetingsApi';
+import { mapsOpenUrl, resolveMapsLink } from '../services/meetingsApi';
+import {
+  resolveGoogleMapsPaste,
+  isGoogleMapsPaste,
+  formatCoord,
+} from '../utils/googleMapsPaste';
 import './BookingHost.css';
 import './MeetingCheckIn.css';
 
@@ -89,6 +95,8 @@ const BookingHost = () => {
   const [copied, setCopied] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [published, setPublished] = useState(false);
+  const [gmapsPaste, setGmapsPaste] = useState('');
+  const [gmapsPasteBusy, setGmapsPasteBusy] = useState(false);
 
   const bookingUrl = getBookingUrl(page.id);
 
@@ -126,6 +134,62 @@ const BookingHost = () => {
 
   const setField = (key, value) => {
     setPage((p) => ({ ...p, [key]: value }));
+  };
+
+  const applyGoogleMapsPaste = async (raw) => {
+    const text = String(raw ?? gmapsPaste).trim();
+    if (!text) {
+      setError('Paste a Google Maps link or coordinates (e.g. 5.6037, -0.1870).');
+      return;
+    }
+    setGmapsPasteBusy(true);
+    setError('');
+    try {
+      const resolved = await resolveGoogleMapsPaste(text, {
+        hint: page.location || page.googlePlace || '',
+        expandUrl: async (url) => {
+          try {
+            return await resolveMapsLink(url, page.location || '');
+          } catch {
+            return null;
+          }
+        },
+      });
+
+      if (
+        resolved?.lat != null &&
+        resolved?.lng != null &&
+        !resolved.needsConfirm &&
+        !resolved.error
+      ) {
+        const label =
+          resolved.label ||
+          `${formatCoord(resolved.lat)}, ${formatCoord(resolved.lng)}`;
+        setPage((p) => ({
+          ...p,
+          googlePlace: label,
+          venueLat: Number(resolved.lat.toFixed(7)),
+          venueLng: Number(resolved.lng.toFixed(7)),
+          location: (p.location || '').trim() || label.split(',').slice(0, 2).join(',').trim(),
+        }));
+        setGmapsPaste('');
+        flash('Exact Google Maps pin set. Publish/Update to save for guests.');
+        return;
+      }
+
+      // Uncertain / short link — open map for confirm
+      setGmapsPaste(text);
+      setShowMap(true);
+      if (resolved?.error) {
+        setError(resolved.error);
+      } else {
+        flash('Confirm the pin on the map, then Use this place.');
+      }
+    } catch (err) {
+      setError(err.message || 'Could not read that Google Maps paste.');
+    } finally {
+      setGmapsPasteBusy(false);
+    }
   };
 
   const toggleDay = (day) => {
@@ -357,6 +421,42 @@ const BookingHost = () => {
               Map
             </button>
           </div>
+          <div className="booking-host-gmaps-paste">
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Paste Google Maps link or lat, lng — then Add pin"
+              value={gmapsPaste}
+              onChange={(e) => {
+                setGmapsPaste(e.target.value);
+                setError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyGoogleMapsPaste(gmapsPaste);
+                }
+              }}
+              onPaste={(e) => {
+                const text = e.clipboardData?.getData('text');
+                if (text && (isGoogleMapsPaste(text) || /,/.test(text))) {
+                  setTimeout(() => applyGoogleMapsPaste(text.trim()), 0);
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="meetings-pick-map-btn"
+              onClick={() => applyGoogleMapsPaste(gmapsPaste)}
+              disabled={gmapsPasteBusy}
+            >
+              <FaPaste aria-hidden /> {gmapsPasteBusy ? 'Adding…' : 'Add pin'}
+            </button>
+          </div>
+          <p className="booking-host-hint">
+            Tablet: Google Maps → Share → Copy link → paste above → Add pin. Exact
+            pins set the place; short links open the map to confirm.
+          </p>
         </label>
         <label className="meetings-field">
           <span>Online link (optional)</span>
