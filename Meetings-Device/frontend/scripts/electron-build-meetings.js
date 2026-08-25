@@ -175,6 +175,8 @@ try {
     targets.push('--config.win.target=portable');
   }
 
+  // Do not put ${ext}/${version} on the CLI — the shell expands them to empty
+  // and breaks artifact names (e.g. Glico-Meetings-Mac-.). Use package.json "build".
   const builderCmd = [
     `"${ebBin}"`,
     ...targets,
@@ -183,8 +185,6 @@ try {
     '--config.appId=org.glico.meetings',
     '--config.directories.output=dist-desktop',
     '--config.extraMetadata.main=electron/main.js',
-    '--config.win.artifactName=Glico-Meetings-Windows.exe',
-    '--config.mac.artifactName=Glico-Meetings-Mac-${version}.${ext}',
   ].join(' ');
 
   run(builderCmd);

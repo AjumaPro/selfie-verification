@@ -59,7 +59,7 @@
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "identity": null,
-      "artifactName": "Glico-Meetings-Mac-${version}.${ext}"
+      "artifactName": "Glico-Meetings-Mac.${ext}"
     },
     "win": {
       "target": [

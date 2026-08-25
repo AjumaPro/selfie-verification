@@ -74,7 +74,8 @@ const RECURRENCE = [
 const emptyForm = {
   title: '',
   date: '',
-  time: '',
+  time: '09:00',
+  endTime: '10:00',
   durationMins: '60',
   location: '',
   isInPerson: true,
@@ -279,6 +280,43 @@ function meetingStart(m) {
 function meetingEnd(m) {
   const start = meetingStart(m);
   return new Date(start.getTime() + (Number(m.durationMins) || 60) * 60000);
+}
+
+/** Parse HH:MM to minutes from midnight. */
+function timeToMinutes(t) {
+  const parts = String(t || '')
+    .trim()
+    .split(':');
+  const h = Number(parts[0]);
+  const m = Number(parts[1] || 0);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return h * 60 + m;
+}
+
+/** Minutes from midnight → HH:MM */
+function minutesToTime(total) {
+  let mins = Number(total);
+  if (!Number.isFinite(mins)) return '09:00';
+  mins = ((Math.round(mins) % (24 * 60)) + 24 * 60) % (24 * 60);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function endTimeFromStartDuration(time, durationMins) {
+  const start = timeToMinutes(time);
+  if (start == null) return '10:00';
+  const dur = Math.max(15, Number(durationMins) || 60);
+  return minutesToTime(start + dur);
+}
+
+function durationFromStartEnd(startTime, endTime) {
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  if (start == null || end == null) return 60;
+  let d = end - start;
+  if (d <= 0) return null; // end must be after start (same day)
+  return Math.max(15, d);
 }
 
 function formatTimeRange(m) {
@@ -535,6 +573,7 @@ function formFromMeeting(m) {
     title: m.title || '',
     date: m.date || '',
     time: m.time || '',
+    endTime: endTimeFromStartDuration(m.time || '09:00', m.durationMins || 60),
     durationMins: String(m.durationMins || 60),
     location: m.location || '',
     isInPerson: m.isInPerson !== false,
@@ -891,7 +930,14 @@ const MeetingsApp = () => {
       setError('Choose a meeting date.');
       return null;
     }
-    const durationMins = Math.max(15, Number(form.durationMins) || 60);
+    const startTime = form.time || '09:00';
+    const endTime =
+      form.endTime || endTimeFromStartDuration(startTime, form.durationMins);
+    const durationMins = durationFromStartEnd(startTime, endTime);
+    if (durationMins == null) {
+      setError('End time must be after start time (same day).');
+      return null;
+    }
     const location = form.location.trim();
     const googlePlace = (form.googlePlace || form.location || '').trim();
     let venueLat = parseCoords(form.venueLat);
@@ -964,7 +1010,7 @@ const MeetingsApp = () => {
       id: existing?.id || newId(),
       title,
       date: form.date,
-      time: form.time || '09:00',
+      time: startTime,
       durationMins,
       location,
       isInPerson,
@@ -1454,28 +1500,65 @@ const MeetingsApp = () => {
                 />
               </label>
               <label className="meetings-field">
-                <span>Time</span>
+                <span>Start</span>
                 <input
                   name="time"
                   type="time"
                   className="form-input"
                   value={form.time}
-                  onChange={onChange}
+                  onChange={(e) => {
+                    const time = e.target.value;
+                    setForm((f) => {
+                      const next = { ...f, time };
+                      const dur = durationFromStartEnd(time, f.endTime);
+                      if (dur != null) next.durationMins = String(dur);
+                      else if (time) {
+                        next.endTime = endTimeFromStartDuration(
+                          time,
+                          f.durationMins || 60
+                        );
+                        next.durationMins = String(
+                          durationFromStartEnd(time, next.endTime) || 60
+                        );
+                      }
+                      return next;
+                    });
+                    setError('');
+                  }}
+                  required
                 />
               </label>
               <label className="meetings-field">
-                <span>Mins</span>
+                <span>End</span>
                 <input
-                  name="durationMins"
-                  type="number"
-                  min={15}
-                  step={15}
+                  name="endTime"
+                  type="time"
                   className="form-input"
-                  value={form.durationMins}
-                  onChange={onChange}
+                  value={form.endTime}
+                  onChange={(e) => {
+                    const endTime = e.target.value;
+                    setForm((f) => {
+                      const next = { ...f, endTime };
+                      const dur = durationFromStartEnd(f.time, endTime);
+                      if (dur != null) next.durationMins = String(dur);
+                      return next;
+                    });
+                    setError('');
+                  }}
+                  required
                 />
               </label>
             </div>
+            {form.time && form.endTime && (
+              <p className="meetings-field-hint meetings-duration-hint">
+                Duration:{' '}
+                <strong>
+                  {durationFromStartEnd(form.time, form.endTime) != null
+                    ? `${durationFromStartEnd(form.time, form.endTime)} min`
+                    : 'end must be after start'}
+                </strong>
+              </p>
+            )}
 
             <div className="meetings-row">
               <label className="meetings-field">

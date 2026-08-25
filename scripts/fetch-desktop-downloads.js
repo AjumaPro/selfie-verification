@@ -21,6 +21,8 @@ const DEFAULT_BASE =
 const FILES = [
   'Selfie-Verification-Windows.exe',
   'Selfie-Verification-Mac.dmg',
+  'Glico-Meetings-Windows.exe',
+  'Glico-Meetings-Mac.dmg',
 ];
 
 function fetchToFile(url, dest) {

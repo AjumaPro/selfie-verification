@@ -13,14 +13,17 @@ export const GH_RELEASE_BASE =
   'https://github.com/AjumaPro/selfie-verification/releases/download/desktop-v2.0.0';
 
 /**
- * Only these assets exist on the GitHub desktop-v2.0.0 release.
- * Meetings installers and help .txt are local/build-only — never invent a GH URL.
+ * Assets published on the GitHub desktop-v2.0.0 release (fetched at DO build).
+ * Help .txt files stay local/build-only — never invent a GH URL for them.
  */
 const GH_REMOTE_ALLOWLIST = new Set([
   'Selfie-Verification-Mac.dmg',
   'Selfie-Verification-Mac.zip',
   'Selfie-Verification-Windows.exe',
   'selfie-verification-ui.zip',
+  'Glico-Meetings-Windows.exe',
+  'Glico-Meetings-Mac.dmg',
+  'Glico-Meetings-Mac.zip',
 ]);
 
 export function hasRemoteFallback(filename) {
