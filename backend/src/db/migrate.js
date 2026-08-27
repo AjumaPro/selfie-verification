@@ -104,11 +104,42 @@ async function seedSuperadmin(client) {
     .toLowerCase();
   const password = String(process.env.SUPERADMIN_PASSWORD || 'SuperAdmin@123');
   const fullName = String(process.env.SUPERADMIN_NAME || 'Super Admin').trim();
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  const legacyEmails = ['superadmin@glico.local'];
+
+  for (const legacyEmail of legacyEmails) {
+    if (legacyEmail === email) continue;
+    const legacy = await client.query(
+      'SELECT id FROM users WHERE email = $1 AND role = $2',
+      [legacyEmail, 'superadmin']
+    );
+    if (legacy.rowCount === 0) continue;
+
+    const target = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (target.rowCount === 0) {
+      await client.query(
+        `UPDATE users
+         SET email = $1,
+             full_name = $2,
+             password_hash = $3,
+             role = 'superadmin',
+             status = 'approved',
+             updated_at = NOW()
+         WHERE email = $4`,
+        [email, fullName, passwordHash, legacyEmail]
+      );
+      console.log(`✓ Superadmin migrated: ${legacyEmail} → ${email}`);
+      return;
+    }
+
+    await client.query('DELETE FROM users WHERE email = $1', [legacyEmail]);
+    console.log(`✓ Removed legacy superadmin ${legacyEmail} (${email} already exists)`);
+  }
 
   const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
 
   if (existing.rowCount > 0) {
-    const passwordHash = await bcrypt.hash(password, 12);
     await client.query(
       `UPDATE users
        SET role = 'superadmin',
@@ -121,7 +152,6 @@ async function seedSuperadmin(client) {
     );
     console.log(`✓ Superadmin ready: ${email}`);
   } else {
-    const passwordHash = await bcrypt.hash(password, 12);
     await client.query(
       `INSERT INTO users (email, full_name, organization, password_hash, role, status)
        VALUES ($1, $2, $3, $4, 'superadmin', 'approved')`,

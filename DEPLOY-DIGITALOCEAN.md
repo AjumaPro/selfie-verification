@@ -50,7 +50,18 @@ Root deploy must run **`npm run build`** (copies UI into `backend/public`) befor
 
 ---
 
-## Local vs DigitalOcean DB
+## “Superadmin login not working” (live)
+
+The database account is seeded on each deploy from App Platform env vars. If login fails:
+
+1. Try **legacy** credentials: `superadmin@glico.local` / `SuperAdmin@123` (older deploys).
+2. In DigitalOcean → **App → web → Environment Variables**, set:
+   - `SUPERADMIN_EMAIL` = `infoajumapro@gmail.com`
+   - `SUPERADMIN_PASSWORD` = your chosen password (must match `.do/app.yaml`)
+3. **Actions → Force Rebuild and Deploy** (runs `db:migrate` and migrates legacy superadmin to the new email).
+4. Sign in on the **Admin** tab (not Sign in).
+
+---
 
 | Environment | Database |
 |-------------|----------------|
