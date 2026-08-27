@@ -26,7 +26,10 @@ let missing = [];
 
 for (const key of keys) {
   const raw = process.env[key];
-  const value = raw === undefined || raw === null ? '' : String(raw);
+  let value = raw === undefined || raw === null ? '' : String(raw);
+  if (key === 'REACT_APP_SHOW_SUPERADMIN_LOGIN' && !value.trim()) {
+    value = process.env.NODE_ENV === 'production' ? 'false' : 'true';
+  }
   // AUTH / DESKTOP auth may be intentionally empty
   if (
     key !== 'REACT_APP_AUTH_API_URL' &&
@@ -52,10 +55,6 @@ for (const key of keys) {
 
 if (!process.env.REACT_APP_DEFAULT_CENTER) {
   lines.push('REACT_APP_DEFAULT_CENTER=BRANCHLESS');
-}
-
-if (!process.env.REACT_APP_SHOW_SUPERADMIN_LOGIN) {
-  lines.push('REACT_APP_SHOW_SUPERADMIN_LOGIN=true');
 }
 
 fs.writeFileSync(outFile, `${lines.join('\n')}\n`, 'utf8');

@@ -1,15 +1,19 @@
 /**
  * Control whether the Super Admin tab appears on the public sign-in screen.
  *
- * REACT_APP_SHOW_SUPERADMIN_LOGIN=false  → hide Admin tab (production)
+ * REACT_APP_SHOW_SUPERADMIN_LOGIN=false  → hide Admin tab (production default)
  * Add ?admin=1 to the URL to open the admin login when hidden.
  */
+function superAdminLoginFlag() {
+  const fromEnv = process.env.REACT_APP_SHOW_SUPERADMIN_LOGIN;
+  if (fromEnv !== undefined && fromEnv !== null && String(fromEnv).trim() !== '') {
+    return String(fromEnv).trim().toLowerCase();
+  }
+  return process.env.NODE_ENV === 'production' ? 'false' : 'true';
+}
+
 export function isSuperAdminLoginPublic() {
-  const flag = String(
-    process.env.REACT_APP_SHOW_SUPERADMIN_LOGIN ?? 'true'
-  )
-    .trim()
-    .toLowerCase();
+  const flag = superAdminLoginFlag();
   return flag !== 'false' && flag !== '0' && flag !== 'no';
 }
 

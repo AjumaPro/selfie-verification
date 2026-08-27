@@ -353,7 +353,7 @@ function App() {
             <h2>Image Recognition</h2>
             <p>
               {deviceOnly
-                ? 'Sign in to use selfie verification and Ghana Card KYC on this device. Use Sign in, Register, or Admin below.'
+                ? 'Sign in to use selfie verification and Ghana Card KYC on this device.'
                 : 'Sign in to share a verification QR / link, or verify Ghana Card KYC on this device.'}
             </p>
           </div>
