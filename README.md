@@ -89,9 +89,25 @@ Configured in `backend/.env` / DigitalOcean **web** env vars (`SUPERADMIN_EMAIL`
 | **Live** (until DO env is synced) | `superadmin@glico.local` | `SuperAdmin@123` |
 | **Live** (after DO env + redeploy) | `infoajumapro@gmail.com` | `MyGlicoFIF@2025` |
 
-Use the **Admin** tab in the UI (not normal Sign in).
+Use the **Admin** tab in the UI (not normal Sign in). On production you can hide that tab — see [Hide Super Admin login](#hide-super-admin-login) below.
 
 If live Admin login fails with the new email, the App Platform env may still use the legacy account — try the legacy row above, or set env vars from [`.do/app.yaml`](./.do/app.yaml) and **Force Rebuild and Deploy**.
+
+### Hide Super Admin login
+
+Set build-time env **`REACT_APP_SHOW_SUPERADMIN_LOGIN=false`** (already set in [`.do/app.yaml`](./.do/app.yaml) for App Platform). The **Admin** tab disappears from Sign in / Register.
+
+Superadmins can still sign in at a hidden URL:
+
+`https://YOUR-APP.ondigitalocean.app/?admin=1`
+
+Local dev: add to `frontend/.env`:
+
+```bash
+REACT_APP_SHOW_SUPERADMIN_LOGIN=false
+```
+
+Restart `npm run web` after changing `.env`.
 
 ### Auth API endpoints
 

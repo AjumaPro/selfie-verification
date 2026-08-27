@@ -69,6 +69,9 @@ services:
       - key: REACT_APP_API_BASE_URL
         value: https://selfie.imsgh.org:2035/skyface
         scope: BUILD_TIME
+      - key: REACT_APP_SHOW_SUPERADMIN_LOGIN
+        value: "false"
+        scope: BUILD_TIME
       - key: REACT_APP_DEFAULT_CENTER
         value: BRANCHLESS
         scope: BUILD_TIME

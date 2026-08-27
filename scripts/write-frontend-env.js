@@ -15,6 +15,7 @@ const keys = [
   'REACT_APP_DEFAULT_CENTER',
   'REACT_APP_AUTH_API_URL',
   'REACT_APP_DESKTOP_AUTH_API_URL',
+  'REACT_APP_SHOW_SUPERADMIN_LOGIN',
 ];
 
 const lines = [
@@ -30,6 +31,7 @@ for (const key of keys) {
   if (
     key !== 'REACT_APP_AUTH_API_URL' &&
     key !== 'REACT_APP_DESKTOP_AUTH_API_URL' &&
+    key !== 'REACT_APP_SHOW_SUPERADMIN_LOGIN' &&
     !value.trim()
   ) {
     missing.push(key);
@@ -50,6 +52,10 @@ for (const key of keys) {
 
 if (!process.env.REACT_APP_DEFAULT_CENTER) {
   lines.push('REACT_APP_DEFAULT_CENTER=BRANCHLESS');
+}
+
+if (!process.env.REACT_APP_SHOW_SUPERADMIN_LOGIN) {
+  lines.push('REACT_APP_SHOW_SUPERADMIN_LOGIN=true');
 }
 
 fs.writeFileSync(outFile, `${lines.join('\n')}\n`, 'utf8');

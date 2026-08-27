@@ -9,6 +9,11 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { resolveApiBase } from '../config/apiBase';
+import {
+  canUseSuperAdminLogin,
+  hasSuperAdminLoginOverride,
+  isSuperAdminLoginPublic,
+} from '../config/authUi';
 import { BRAND } from '../utils/brandAssets';
 import GlicoLifeLogo from './GlicoLifeLogo';
 import './AuthPanel.css';
@@ -50,12 +55,25 @@ const AuthPanel = () => {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [shell, setShell] = useState(() => detectDesktopShell());
+  const showAdminTab = isSuperAdminLoginPublic();
+
+  useEffect(() => {
+    if (hasSuperAdminLoginOverride()) {
+      setMode('superadmin');
+    }
+  }, []);
 
   useEffect(() => {
     // Preload may set data-desktop-app after first paint
     const t = window.setTimeout(() => setShell(detectDesktopShell()), 50);
     return () => window.clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!canUseSuperAdminLogin() && mode === 'superadmin') {
+      setMode('login');
+    }
+  }, [mode]);
 
   const apiHint = resolveApiBase();
 
@@ -207,7 +225,7 @@ const AuthPanel = () => {
             </strong>
             <p>
               Authentication uses the same GLICO accounts as the website. Choose a
-              section below — Sign in, Register, or Admin.
+              section below — Sign in{showAdminTab ? ', Register, or Admin' : ' or Register'}.
               {apiHint ? (
                 <>
                   {' '}
@@ -220,7 +238,11 @@ const AuthPanel = () => {
       )}
 
       <h3 className="auth-sections-label">Authentication</h3>
-      <div className="auth-tabs auth-tabs-3" role="tablist" aria-label="Authentication sections">
+      <div
+        className={`auth-tabs ${showAdminTab ? 'auth-tabs-3' : ''}`}
+        role="tablist"
+        aria-label="Authentication sections"
+      >
         <button
           type="button"
           role="tab"
@@ -239,15 +261,17 @@ const AuthPanel = () => {
         >
           <FaUserPlus /> Register
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'superadmin'}
-          className={`auth-tab admin ${mode === 'superadmin' ? 'active' : ''}`}
-          onClick={() => switchMode('superadmin')}
-        >
-          <FaUserShield /> Admin
-        </button>
+        {showAdminTab && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'superadmin'}
+            className={`auth-tab admin ${mode === 'superadmin' ? 'active' : ''}`}
+            onClick={() => switchMode('superadmin')}
+          >
+            <FaUserShield /> Admin
+          </button>
+        )}
       </div>
 
       {error && (
@@ -280,7 +304,7 @@ const AuthPanel = () => {
         </form>
       )}
 
-      {mode === 'superadmin' && (
+      {mode === 'superadmin' && canUseSuperAdminLogin() && (
         <form className="auth-form" onSubmit={onSuperAdminLogin} noValidate>
           <p className="auth-section-hint">
             Section: <strong>Admin</strong> — superadmin credentials only (not regular staff login)
