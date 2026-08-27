@@ -430,8 +430,8 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
           </h4>
           <p className="meeting-checkin-hint">
             {isInPerson
-              ? `Guests scan this code on site. Their GPS is compared to the host venue pin${hasVenue ? ` (±${meeting.venueRadiusM || 200} m)` : ''}.`
-              : 'Online meeting — guests check in with details (and location if their browser allows). No venue pin required.'}
+              ? `Guests scan this code on site. Their GPS is compared to the host venue pin${hasVenue ? ` (±${meeting.venueRadiusM || 200} m)` : ''}. Ask them to open in Chrome (or Safari on iPhone) — camera in-app browsers often block GPS.`
+              : 'Online meeting — guests check in with details (and location if their browser allows). Ask them to use Chrome when possible.'}
           </p>
           {hasVenue && (
             <p className="meeting-checkin-venue-pin">

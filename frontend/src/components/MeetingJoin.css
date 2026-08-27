@@ -342,6 +342,100 @@
   color: #5c3d00;
 }
 
+.meeting-join-browser-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  background: rgba(16, 48, 120, 0.58);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.meeting-join-browser-gate-card {
+  width: min(100%, 420px);
+  background: #fff;
+  border-radius: 18px 18px 14px 14px;
+  padding: 1.25rem 1.1rem 1.1rem;
+  box-shadow: 0 18px 48px rgba(16, 48, 120, 0.28);
+}
+
+.meeting-join-browser-gate-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #4285f4, #1a73e8);
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 0.65rem;
+}
+
+.meeting-join-browser-gate-card h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.2rem;
+  color: var(--glico-navy, #103078);
+}
+
+.meeting-join-browser-gate-card > p {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #445;
+}
+
+.meeting-join-browser-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.meeting-join-browser-gate-primary {
+  width: 100%;
+  min-height: 2.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.meeting-join-browser-gate-secondary {
+  width: 100%;
+  min-height: 2.65rem;
+  background: #eef4fb;
+  color: var(--glico-navy, #103078);
+  border: 1px solid rgba(16, 48, 120, 0.14);
+  border-radius: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  font: inherit;
+}
+
+.meeting-join-browser-gate-skip {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #667;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.35rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.meeting-join-browser-gate-foot {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #667;
+}
+
 .meeting-join-browser-banner p {
   margin: 0 0 0.55rem;
   font-size: 0.88rem;

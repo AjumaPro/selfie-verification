@@ -7,6 +7,7 @@ import {
   FaExternalLinkAlt,
   FaShieldAlt,
   FaLocationArrow,
+  FaChrome,
 } from 'react-icons/fa';
 import {
   fetchPublicMeeting,
@@ -25,12 +26,33 @@ function isSecureGeoContext() {
   return h === 'localhost' || h === '127.0.0.1';
 }
 
+const BROWSER_OK_KEY = 'glico_meeting_join_browser_ok';
+
+function isChromeBrowser(ua) {
+  return (
+    /CriOS/i.test(ua) ||
+    (/Chrome\/[\d.]+/i.test(ua) &&
+      !/Edg\//i.test(ua) &&
+      !/OPR\//i.test(ua) &&
+      !/SamsungBrowser/i.test(ua) &&
+      !/UCBrowser/i.test(ua))
+  );
+}
+
+function isSafariBrowser(ua, isIOS) {
+  if (!isIOS) return false;
+  return /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+}
+
 /** WhatsApp / Instagram / etc. in-app browsers often block or fake GPS. */
 function detectBrowserEnv() {
   if (typeof navigator === 'undefined') {
     return {
       isIOS: false,
       isAndroid: false,
+      isMobile: false,
+      isChrome: false,
+      isSafari: false,
       isInApp: false,
       appName: '',
       hasGeo: false,
@@ -40,6 +62,7 @@ function detectBrowserEnv() {
   const ua = String(navigator.userAgent || '');
   const isIOS = /iPad|iPhone|iPod/i.test(ua);
   const isAndroid = /Android/i.test(ua);
+  const isMobile = isIOS || isAndroid || /Mobile/i.test(ua);
   const apps = [
     ['WhatsApp', /WhatsApp/i],
     ['Instagram', /Instagram/i],
@@ -61,37 +84,82 @@ function detectBrowserEnv() {
   const isWebView =
     /(; wv\)|WebView|Version\/[\d.]+ Chrome\/[\d.]+ Mobile)/i.test(ua) &&
     !/Chrome\/[\d.]+ Mobile Safari/i.test(ua);
-  const isInApp = !!appName || (isAndroid && /; wv\)/i.test(ua)) || isWebView && !!appName;
+  const isInApp =
+    !!appName ||
+    (isAndroid && /; wv\)/i.test(ua)) ||
+    (isWebView && !isChromeBrowser(ua));
   return {
     isIOS,
     isAndroid,
-    isInApp: !!appName || (isAndroid && /; wv\)/i.test(ua)),
+    isMobile,
+    isChrome: isChromeBrowser(ua),
+    isSafari: isSafariBrowser(ua, isIOS),
+    isInApp,
     appName: appName || (isAndroid && /; wv\)/i.test(ua) ? 'in-app browser' : ''),
     hasGeo: typeof navigator.geolocation?.getCurrentPosition === 'function',
     secure: isSecureGeoContext(),
   };
 }
 
-function openInSystemBrowser() {
+function buildChromeDeepLink(url) {
+  if (/^https:\/\//i.test(url)) {
+    return url.replace(/^https:\/\//i, 'googlechromes://');
+  }
+  if (/^http:\/\//i.test(url)) {
+    return url.replace(/^http:\/\//i, 'googlechrome://');
+  }
+  return url;
+}
+
+function openInChrome() {
   if (typeof window === 'undefined') return;
   const url = window.location.href;
   const env = detectBrowserEnv();
   if (env.isAndroid) {
     try {
       const withoutScheme = url.replace(/^https?:\/\//i, '');
+      const fallback = encodeURIComponent(url);
       window.location.href =
-        `intent://${withoutScheme}#Intent;scheme=https;package=com.android.chrome;end`;
+        `intent://${withoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
       return;
     } catch {
       /* fall through */
     }
   }
-  // iOS / others: open a new tab (may still stay in-app); copy is the reliable path
+  if (env.isIOS) {
+    try {
+      window.location.href = buildChromeDeepLink(url);
+      window.setTimeout(() => {
+        try {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        } catch {
+          /* ignore */
+        }
+      }, 900);
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
   try {
     window.open(url, '_blank', 'noopener,noreferrer');
   } catch {
     /* ignore */
   }
+}
+
+function openInSafari() {
+  if (typeof window === 'undefined') return;
+  const url = window.location.href;
+  try {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    /* ignore */
+  }
+}
+
+function openInSystemBrowser() {
+  openInChrome();
 }
 
 async function copyPageLink() {
@@ -112,7 +180,7 @@ async function copyPageLink() {
 
 function geoErrorMessage(err, env) {
   if (env?.isInApp) {
-    return `${env.appName || 'This in-app browser'} often blocks GPS. Tap “Open in Safari/Chrome” below (or copy the link), then check in from that browser.`;
+    return `${env.appName || 'This in-app browser'} often blocks GPS. Tap “Open in Chrome” below (or Safari on iPhone), then check in there.`;
   }
   if (err && err.code === 1) {
     if (env?.isIOS) {
@@ -305,9 +373,26 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(null);
+  const [browserGateDismissed, setBrowserGateDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem(BROWSER_OK_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const capturingRef = useRef(false);
   const geoRef = useRef(null);
   const browserEnv = useMemo(() => detectBrowserEnv(), []);
+
+  useEffect(() => {
+    if (!browserEnv.isChrome) return;
+    try {
+      sessionStorage.setItem(BROWSER_OK_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  }, [browserEnv.isChrome]);
 
   useEffect(() => {
     geoRef.current = geo;
@@ -363,6 +448,13 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   );
   const isInPerson = meeting?.isInPerson !== false && hasVenue;
   const locationRequired = isInPerson;
+  const needsChromeGate =
+    browserEnv.isMobile &&
+    !browserEnv.isChrome &&
+    (browserEnv.isInApp || locationRequired);
+  const showBrowserGate =
+    !!meeting && !done && !loading && needsChromeGate && !browserGateDismissed;
+  const allowContinueInThisBrowser = !browserEnv.isInApp;
   const canSkipLocation =
     !locationRequired || geoDenied || browserEnv.isInApp || !browserEnv.hasGeo;
   const mealMenu = meeting?.mealMenu || {
@@ -447,6 +539,15 @@ const MeetingJoin = ({ meetingId, onClose }) => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2500);
     }
+  };
+
+  const dismissBrowserGate = () => {
+    try {
+      sessionStorage.setItem(BROWSER_OK_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setBrowserGateDismissed(true);
   };
 
   const onSubmit = async (e) => {
@@ -540,6 +641,72 @@ const MeetingJoin = ({ meetingId, onClose }) => {
       </header>
 
       <main className="meeting-join-main">
+        {showBrowserGate && (
+          <div
+            className="meeting-join-browser-gate"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="meeting-join-browser-gate-title"
+          >
+            <div className="meeting-join-browser-gate-card">
+              <span className="meeting-join-browser-gate-icon" aria-hidden>
+                <FaChrome />
+              </span>
+              <h2 id="meeting-join-browser-gate-title">Open in Chrome</h2>
+              <p>
+                {browserEnv.isInApp
+                  ? `${browserEnv.appName || 'Your camera app'} opened an in-app browser that often blocks GPS check-in.`
+                  : locationRequired
+                    ? 'Venue check-in needs your phone location. Chrome is the most reliable browser for this.'
+                    : 'For the best check-in experience, open this page in Chrome.'}
+              </p>
+              <div className="meeting-join-browser-gate-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary meeting-join-browser-gate-primary"
+                  onClick={openInChrome}
+                >
+                  <FaChrome aria-hidden /> Open in Chrome
+                </button>
+                {browserEnv.isIOS && (
+                  <button
+                    type="button"
+                    className="btn meeting-join-browser-gate-secondary"
+                    onClick={() => {
+                      openInSafari();
+                      dismissBrowserGate();
+                    }}
+                  >
+                    Use Safari instead
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="meeting-join-retry-geo"
+                  onClick={onCopyLink}
+                >
+                  {linkCopied ? 'Link copied' : 'Copy check-in link'}
+                </button>
+                {allowContinueInThisBrowser && (
+                  <button
+                    type="button"
+                    className="meeting-join-browser-gate-skip"
+                    onClick={dismissBrowserGate}
+                  >
+                    Continue in this browser
+                  </button>
+                )}
+              </div>
+              {browserEnv.isInApp && (
+                <p className="meeting-join-browser-gate-foot">
+                  On iPhone: tap <strong>···</strong> or <strong>Share</strong> →{' '}
+                  <strong>Open in Chrome</strong> or <strong>Open in Safari</strong>.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {loading && (
           <div className="meeting-join-card">
             <div className="loading-spinner" />
@@ -992,30 +1159,44 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                   </label>
 
                   <div className="meeting-join-geo-status">
-                    {(browserEnv.isInApp || !browserEnv.hasGeo || !browserEnv.secure) && (
+                    {(browserEnv.isInApp ||
+                      !browserEnv.isChrome ||
+                      !browserEnv.hasGeo ||
+                      !browserEnv.secure) && (
                       <div className="meeting-join-browser-banner" role="status">
                         <p>
                           <strong>
                             {browserEnv.isInApp
                               ? `${browserEnv.appName || 'This app browser'} blocks GPS.`
+                              : !browserEnv.isChrome && browserEnv.isMobile
+                                ? 'Chrome is recommended for GPS check-in.'
                               : !browserEnv.secure
                                 ? 'Open the HTTPS check-in link.'
                                 : 'This browser cannot share location.'}
                           </strong>{' '}
                           {browserEnv.isIOS
-                            ? 'Tap ··· or Share → Open in Safari (or Chrome), then check in there.'
+                            ? 'Tap Open in Chrome below, or use Safari if Chrome is not installed.'
                             : browserEnv.isAndroid
-                              ? 'Open this page in Chrome for location, or check in unverified below.'
-                              : 'Open this page in Safari or Chrome for location.'}
+                              ? 'Tap Open in Chrome below for location, or check in unverified.'
+                              : 'Open this page in Chrome for location.'}
                         </p>
                         <div className="meeting-join-browser-actions">
-                          {browserEnv.isAndroid && (
+                          {(browserEnv.isAndroid || browserEnv.isIOS) && (
                             <button
                               type="button"
                               className="meeting-join-share-geo"
-                              onClick={openInSystemBrowser}
+                              onClick={openInChrome}
                             >
-                              <FaExternalLinkAlt aria-hidden /> Open in Chrome
+                              <FaChrome aria-hidden /> Open in Chrome
+                            </button>
+                          )}
+                          {browserEnv.isIOS && (
+                            <button
+                              type="button"
+                              className="meeting-join-retry-geo"
+                              onClick={openInSafari}
+                            >
+                              Open in Safari
                             </button>
                           )}
                           <button
@@ -1101,9 +1282,9 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                             <button
                               type="button"
                               className="meeting-join-retry-geo"
-                              onClick={openInSystemBrowser}
+                              onClick={openInChrome}
                             >
-                              Open in Chrome
+                              <FaChrome aria-hidden /> Open in Chrome
                             </button>
                           )}
                         </div>
