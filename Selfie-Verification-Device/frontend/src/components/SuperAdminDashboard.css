@@ -161,6 +161,20 @@
   background: #1a7ab8;
 }
 
+.admin-departments-panel .admin-departments-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: #556;
+  line-height: 1.45;
+}
+
+.admin-departments-textarea {
+  width: 100%;
+  min-height: 8rem;
+  margin-bottom: 0.75rem;
+  resize: vertical;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
 }

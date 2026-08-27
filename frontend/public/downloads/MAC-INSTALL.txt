@@ -1,39 +1,21 @@
-GLICO Life Platform — Mac install (unsigned build)
+FastHR Meetings — Mac install (unsigned build)
 
-SIZE: Installer is typically ~80–120 MB. If your DMG is still an old
-“Selfie Verification” green app, delete it and download again (hard refresh).
+macOS may say “developer cannot be verified.” That is expected until the
+app is Apple-signed and notarized. Do not click “Move to Bin.”
 
 INSTALL
 -------
-1. Open the .dmg and drag “GLICO Life Platform” to Applications.
-2. First open: Control-click (right-click) the app → Open → Open again.
-   (Gatekeeper: “developer cannot be verified” is expected for unsigned builds.)
-   Or: System Settings → Privacy & Security → Open Anyway.
-3. Optional quarantine clear:
-     xattr -cr "/Applications/GLICO Life Platform.app"
-     open "/Applications/GLICO Life Platform.app"
+1. Open the .dmg and drag “FastHR Meetings” into Applications.
+2. First launch — use one of these:
 
-AUTHENTICATION (required for Image Recognition)
------------------------------------------------
-The Mac app is a **device build**: full KYC / web features **without Meetings**.
+   A) Control-click (right-click) “FastHR Meetings” → Open → Open again.
 
-On first launch (Image Recognition) you will see three authentication sections:
+   B) System Settings → Privacy & Security → scroll to Security →
+      Open Anyway (then confirm).
 
-  • Sign in     — approved staff accounts (email + password)
-  • Register    — request an account; stays Pending until a superadmin
-                  approves you in Super Admin on the app
-  • Admin       — superadmin only (user management)
+3. Optional (Terminal) to clear quarantine:
+     xattr -cr "/Applications/FastHR Meetings.app"
+     open "/Applications/FastHR Meetings.app"
 
-What needs login:
-  • Image Recognition / Ghana Card KYC  → sign-in required
-  • Meetings                            → not in this app (use the website)
-
-Tips
-  • Tick “Stay signed in on this device” so the app remembers you next open.
-  • Internet required for login (auth and KYC talk to the GLICO API).
-  • Desktop builds call the auth API at the URL baked in at build time
-    (REACT_APP_AUTH_API_URL or REACT_APP_DESKTOP_AUTH_API_URL).
-
-CAMERA
-------
-Allow camera when macOS prompts — required for live selfie capture.
+Prefer ZIP? Download FastHR-Meetings-Mac.zip, unzip, then open the .app
+the same way (Control-click → Open).

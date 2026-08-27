@@ -9,6 +9,10 @@ import {
   mapsEmbedUrl,
   mapsOpenUrl,
 } from '../services/meetingsApi';
+import {
+  hasPerPersonFoodDownload,
+  resolveFoodDownloadVisibility,
+} from '../utils/foodDownloadOptions';
 import './MeetingCheckIn.css';
 
 function tallyChoices(list, key) {
@@ -73,56 +77,79 @@ function meetingFileSlug(meeting) {
 /** CSV: each person + the food they selected (for catering / kitchen). */
 function buildFoodSelectionsCsv(meeting, attendance) {
   const list = attendance || [];
-  const showB =
-    meeting?.mealMenu?.breakfast?.enabled ||
-    list.some((a) => a.breakfastChoice);
-  const showL =
-    meeting?.mealMenu?.lunch?.enabled || list.some((a) => a.lunchChoice);
-  const showD =
-    meeting?.mealMenu?.dinner?.enabled || list.some((a) => a.dinnerChoice);
+  const vis = resolveFoodDownloadVisibility(
+    meeting,
+    list,
+    meeting?.mealMenu?.downloadOptions
+  );
+  const showPeople = hasPerPersonFoodDownload(vis);
 
-  const header = ['#', 'Full name', 'Email', 'Phone'];
-  if (showB) header.push('Breakfast');
-  if (showL) header.push('Lunch');
-  if (showD) header.push('Dinner');
-  header.push('Checked in');
+  const header = [];
+  if (showPeople) header.push('#');
+  if (vis.name) header.push('Full name');
+  if (vis.department) header.push('Department');
+  if (vis.email) header.push('Email');
+  if (vis.phone) header.push('Phone');
+  if (vis.breakfast) header.push('Breakfast');
+  if (vis.lunch) header.push('Lunch');
+  if (vis.dinner) header.push('Dinner');
+  if (vis.locationStatus) header.push('Location status');
+  if (vis.checkedIn) header.push('Checked in');
 
-  const rows = [header];
-  list.forEach((a, i) => {
-    const row = [
-      i + 1,
-      a.fullName || '',
-      a.email || '',
-      a.phone || '',
-    ];
-    if (showB) row.push(a.breakfastChoice || '');
-    if (showL) row.push(a.lunchChoice || '');
-    if (showD) row.push(a.dinnerChoice || '');
-    row.push(
-      a.checkedInAt ? new Date(a.checkedInAt).toLocaleString() : ''
-    );
-    rows.push(row);
-  });
-
-  // Totals section
-  rows.push([]);
-  rows.push(['Meal totals']);
-  [
-    ['Breakfast', 'breakfastChoice', showB],
-    ['Lunch', 'lunchChoice', showL],
-    ['Dinner', 'dinnerChoice', showD],
-  ].forEach(([label, key, show]) => {
-    if (!show) return;
-    tallyChoices(list, key).forEach(([item, n]) => {
-      rows.push([label, item, n]);
+  const rows = header.length ? [header] : [];
+  if (showPeople) {
+    list.forEach((a, i) => {
+      const row = [];
+      row.push(i + 1);
+      if (vis.name) row.push(a.fullName || '');
+      if (vis.department) row.push(a.department || '');
+      if (vis.email) row.push(a.email || '');
+      if (vis.phone) row.push(a.phone || '');
+      if (vis.breakfast) row.push(a.breakfastChoice || '');
+      if (vis.lunch) row.push(a.lunchChoice || '');
+      if (vis.dinner) row.push(a.dinnerChoice || '');
+      if (vis.locationStatus) {
+        row.push(locationStatusLabel(a).text);
+      }
+      if (vis.checkedIn) {
+        row.push(
+          a.checkedInAt ? new Date(a.checkedInAt).toLocaleString() : ''
+        );
+      }
+      rows.push(row);
     });
-  });
+  }
+
+  if (vis.totals) {
+    if (rows.length) rows.push([]);
+    rows.push(['Meal totals']);
+    [
+      ['Breakfast', 'breakfastChoice', vis.breakfast],
+      ['Lunch', 'lunchChoice', vis.lunch],
+      ['Dinner', 'dinnerChoice', vis.dinner],
+    ].forEach(([label, key, show]) => {
+      if (!show) return;
+      tallyChoices(list, key).forEach(([item, n]) => {
+        rows.push([label, item, n]);
+      });
+    });
+  }
+
+  if (!rows.length) {
+    rows.push(['No fields selected for download']);
+  }
 
   return `\uFEFF${rows.map((r) => r.map(csvEscape).join(',')).join('\n')}`;
 }
 
 function buildFoodSelectionsTxt(meeting, attendance) {
   const list = attendance || [];
+  const vis = resolveFoodDownloadVisibility(
+    meeting,
+    list,
+    meeting?.mealMenu?.downloadOptions
+  );
+  const showPeople = hasPerPersonFoodDownload(vis);
   const lines = [
     'GLICO Life Platform — Food selections',
     '================================',
@@ -132,36 +159,71 @@ function buildFoodSelectionsTxt(meeting, attendance) {
     '',
   ];
 
-  list.forEach((a, i) => {
-    lines.push(`${i + 1}. ${a.fullName || '—'}`);
-    if (a.email) lines.push(`   Email: ${a.email}`);
-    if (a.phone) lines.push(`   Phone: ${a.phone}`);
-    if (a.breakfastChoice) lines.push(`   Breakfast: ${a.breakfastChoice}`);
-    if (a.lunchChoice) lines.push(`   Lunch: ${a.lunchChoice}`);
-    if (a.dinnerChoice) lines.push(`   Dinner: ${a.dinnerChoice}`);
-    if (!a.breakfastChoice && !a.lunchChoice && !a.dinnerChoice) {
-      lines.push('   Food: (none selected)');
-    }
-    lines.push('');
-  });
-
-  const hasTally =
-    tallyChoices(list, 'breakfastChoice').length ||
-    tallyChoices(list, 'lunchChoice').length ||
-    tallyChoices(list, 'dinnerChoice').length;
-  if (hasTally) {
-    lines.push('Totals');
-    lines.push('------');
-    [
-      ['Breakfast', 'breakfastChoice'],
-      ['Lunch', 'lunchChoice'],
-      ['Dinner', 'dinnerChoice'],
-    ].forEach(([label, key]) => {
-      const tallies = tallyChoices(list, key);
-      if (!tallies.length) return;
-      lines.push(`${label}:`);
-      tallies.forEach(([item, n]) => lines.push(`  ${item} — ${n}`));
+  if (showPeople) {
+    list.forEach((a, i) => {
+      lines.push(
+        vis.name ? `${i + 1}. ${a.fullName || '—'}` : `${i + 1}. Participant`
+      );
+      if (vis.email && a.email) lines.push(`   Email: ${a.email}`);
+      if (vis.department && a.department) {
+        lines.push(`   Department: ${a.department}`);
+      }
+      if (vis.phone && a.phone) lines.push(`   Phone: ${a.phone}`);
+      if (vis.breakfast && a.breakfastChoice) {
+        lines.push(`   Breakfast: ${a.breakfastChoice}`);
+      }
+      if (vis.lunch && a.lunchChoice) lines.push(`   Lunch: ${a.lunchChoice}`);
+      if (vis.dinner && a.dinnerChoice) {
+        lines.push(`   Dinner: ${a.dinnerChoice}`);
+      }
+      if (vis.locationStatus) {
+        lines.push(`   Location: ${locationStatusLabel(a).text}`);
+      }
+      if (vis.checkedIn) {
+        lines.push(
+          `   Checked in: ${
+            a.checkedInAt
+              ? new Date(a.checkedInAt).toLocaleString()
+              : '—'
+          }`
+        );
+      }
+      const hasFood =
+        (vis.breakfast && a.breakfastChoice) ||
+        (vis.lunch && a.lunchChoice) ||
+        (vis.dinner && a.dinnerChoice);
+      if ((vis.breakfast || vis.lunch || vis.dinner) && !hasFood) {
+        lines.push('   Food: (none selected)');
+      }
+      lines.push('');
     });
+  }
+
+  if (vis.totals) {
+    const hasTally =
+      (vis.breakfast && tallyChoices(list, 'breakfastChoice').length) ||
+      (vis.lunch && tallyChoices(list, 'lunchChoice').length) ||
+      (vis.dinner && tallyChoices(list, 'dinnerChoice').length);
+    if (hasTally) {
+      lines.push('Totals');
+      lines.push('------');
+      [
+        ['Breakfast', 'breakfastChoice', vis.breakfast],
+        ['Lunch', 'lunchChoice', vis.lunch],
+        ['Dinner', 'dinnerChoice', vis.dinner],
+      ].forEach(([label, key, show]) => {
+        if (!show) return;
+        const tallies = tallyChoices(list, key);
+        if (!tallies.length) return;
+        lines.push(`${label}:`);
+        tallies.forEach(([item, n]) => lines.push(`  ${item} — ${n}`));
+      });
+      lines.push('');
+    }
+  }
+
+  if (!showPeople && !vis.totals) {
+    lines.push('No fields selected for download.');
     lines.push('');
   }
 
@@ -595,7 +657,7 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
         {listError && <p className="meeting-checkin-hint">{listError}</p>}
         {attendance.length === 0 ? (
           <p className="meeting-checkin-empty">
-            No one has scanned in yet. Guests must allow contact details and
+            No one has scanned in yet. Guests must allow name, department, phone and
             location at the venue. At-venue vs not-at-venue status appears here.
           </p>
         ) : (
@@ -605,6 +667,7 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
                 <tr>
                   <th>#</th>
                   <th>Full name</th>
+                  <th>Department</th>
                   <th>Email</th>
                   <th>Phone</th>
                   {showBreakfastCol && <th>Breakfast</th>}
@@ -630,8 +693,13 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
                     <td className="name" data-label="Name">
                       {a.fullName}
                     </td>
+                    <td data-label="Department">{a.department || '—'}</td>
                     <td data-label="Email">
-                      <a href={`mailto:${a.email}`}>{a.email}</a>
+                      {a.email ? (
+                        <a href={`mailto:${a.email}`}>{a.email}</a>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td data-label="Phone">
                       <a href={`tel:${a.phone}`}>{a.phone}</a>

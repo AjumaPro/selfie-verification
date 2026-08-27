@@ -4,7 +4,6 @@ import {
   FaVideo,
   FaArrowRight,
   FaLock,
-  FaUnlock,
   FaShieldAlt,
   FaMobileAlt,
 } from 'react-icons/fa';
@@ -46,7 +45,7 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
             <>
               Choose an app. <strong>Image Recognition</strong> — sign in, then
               share a QR so guests verify Ghana Card + selfie. <strong>Meetings</strong>{' '}
-              is open without login.
+              requires sign-in to create and manage sessions; guests scan QR without login.
             </>
           )}
         </p>
@@ -87,7 +86,7 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
             <p>
               {deviceOnly
                 ? 'Full meetings tools (QR, map, booking) as Windows / Mac / phone apps — not bundled inside Image Recognition.'
-                : 'Plan sessions, QR check-in, venue map, meals, free-slot booking — no account needed.'}
+                : 'Plan sessions, QR check-in, venue map, meals, free-slot booking — sign in to host.'}
             </p>
             <span className="app-hub-card-meta open">
               {deviceOnly ? (
@@ -96,7 +95,7 @@ const AppHub = ({ onSelect, deviceOnly = false }) => {
                 </>
               ) : (
                 <>
-                  <FaUnlock aria-hidden /> No login · open below
+                  <FaLock aria-hidden /> Sign in · host meetings
                 </>
               )}
             </span>

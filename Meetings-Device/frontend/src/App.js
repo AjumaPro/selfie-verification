@@ -3,6 +3,8 @@ import { FaDownload, FaMobileAlt, FaCheckCircle } from 'react-icons/fa';
 import MeetingsApp from './components/MeetingsApp';
 import MeetingJoin from './components/MeetingJoin';
 import BookingGuest from './components/BookingGuest';
+import AuthPanel from './components/AuthPanel';
+import { useAuth } from './context/AuthContext';
 import './App.css';
 
 function publicAsset(path) {
@@ -34,6 +36,7 @@ function isStandalone() {
  * Branded with official Glico logo + red / sky / navy.
  */
 function App() {
+  const { isAuthenticated, booting } = useAuth();
   const [joinId, setJoinId] = useState(() => getQueryParam('join'));
   const [bookId, setBookId] = useState(() => getQueryParam('book'));
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -113,6 +116,52 @@ function App() {
     return <BookingGuest pageId={bookId} onClose={leaveBook} />;
   }
 
+  if (booting) {
+    return (
+      <div className="meetings-pwa">
+        <div className="loading-container" style={{ padding: '3rem 1rem' }}>
+          <div className="loading-spinner" />
+          <h2>Loading…</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="meetings-pwa">
+        <div className="glico-brand-stripes" aria-hidden>
+          <span className="stripe stripe-red" />
+          <span className="stripe stripe-sky" />
+          <span className="stripe stripe-navy" />
+        </div>
+        <header className="meetings-pwa-header">
+          <div className="meetings-pwa-brand">
+            <img
+              src={publicAsset('Glico.png')}
+              alt="GLICO"
+              className="meetings-pwa-logo"
+            />
+            <div>
+              <h1>GLICO Life Platform</h1>
+              <p>Meetings · sign in to host</p>
+            </div>
+          </div>
+        </header>
+        <main className="meetings-pwa-main">
+          <div className="app-auth-banner" style={{ marginBottom: '1rem' }}>
+            <h2>Meetings</h2>
+            <p>
+              Sign in to create meetings and manage attendance. Guests can still
+              open QR check-in links without an account.
+            </p>
+          </div>
+          <AuthPanel />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="meetings-pwa">
       <div className="glico-brand-stripes" aria-hidden>
@@ -158,8 +207,9 @@ function App() {
             <FaMobileAlt aria-hidden /> Meetings-only device app
           </strong>
           <p style={{ margin: '0.35rem 0 0' }}>
-            Same features as the website Meetings section — no sign-in, no Image
-            Recognition. Guests open QR / booking links on any phone.
+            Signed in — create meetings, publish QR check-in, and manage
+            attendance. Guests open QR / booking links on any phone without
+            signing in.
           </p>
           <div className="meetings-pwa-features" aria-label="Features">
             <span className="meetings-pwa-chip">Create &amp; edit</span>

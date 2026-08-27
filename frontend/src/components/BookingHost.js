@@ -23,6 +23,8 @@ import {
 } from '../utils/googleMapsPaste';
 import './BookingHost.css';
 import './MeetingCheckIn.css';
+import './AppToast.css';
+import { useAppToast } from '../hooks/useAppToast';
 
 const STORAGE_KEY = 'glico_booking_page_v1';
 
@@ -91,7 +93,7 @@ const BookingHost = () => {
   const [saving, setSaving] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState('');
+  const { toast, flash } = useAppToast();
   const [copied, setCopied] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [published, setPublished] = useState(false);
@@ -99,11 +101,6 @@ const BookingHost = () => {
   const [gmapsPasteBusy, setGmapsPasteBusy] = useState(false);
 
   const bookingUrl = getBookingUrl(page.id);
-
-  const flash = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  };
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -262,6 +259,15 @@ const BookingHost = () => {
 
   return (
     <div className="booking-host">
+      {toast && (
+        <div
+          className="app-toast-fixed success"
+          role="status"
+          aria-live="polite"
+        >
+          {toast}
+        </div>
+      )}
       {showMap && (
         <GooglePlacePicker
           value={
@@ -305,11 +311,6 @@ const BookingHost = () => {
             no account needed.
           </p>
         </div>
-        {toast && (
-          <div className="booking-host-toast" role="status">
-            {toast}
-          </div>
-        )}
       </header>
 
       <form className="booking-host-form" onSubmit={publish}>

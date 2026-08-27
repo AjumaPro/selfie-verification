@@ -266,6 +266,20 @@ export async function updateUser(id, { fullName, email, organization }) {
   return user;
 }
 
+export async function fetchMeetingDepartments() {
+  return request('/api/settings/meeting-departments');
+}
+
+export async function saveMeetingDepartments(departments) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return request('/api/settings/meeting-departments', {
+    method: 'PUT',
+    token,
+    body: { departments },
+  });
+}
+
 export function logout() {
   // Keep remember preference so the checkbox stays as the user left it
   clearSession({ clearRemember: false });

@@ -10,6 +10,7 @@ import {
   FaKey,
   FaEdit,
   FaUserCog,
+  FaBuilding,
 } from 'react-icons/fa';
 import {
   listUsers,
@@ -20,6 +21,8 @@ import {
   updateOwnProfile,
   resetUserPassword,
   updateUser,
+  fetchMeetingDepartments,
+  saveMeetingDepartments,
 } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import './SuperAdminDashboard.css';
@@ -63,6 +66,9 @@ const SuperAdminDashboard = () => {
   });
   const [resetTarget, setResetTarget] = useState(null);
   const [resetPassword, setResetPassword] = useState('');
+  const [departmentsText, setDepartmentsText] = useState('');
+  const [savingDepartments, setSavingDepartments] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -87,9 +93,23 @@ const SuperAdminDashboard = () => {
     }
   }, []);
 
+  const loadDepartments = useCallback(async () => {
+    setLoadingDepartments(true);
+    try {
+      const data = await fetchMeetingDepartments();
+      const list = Array.isArray(data?.departments) ? data.departments : [];
+      setDepartmentsText(list.join('\n'));
+    } catch (err) {
+      setError(err.message || 'Failed to load meeting departments');
+    } finally {
+      setLoadingDepartments(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadDepartments();
+  }, [load, loadDepartments]);
 
   const formatDate = (value) => {
     if (!value) return '—';
@@ -112,6 +132,27 @@ const SuperAdminDashboard = () => {
       setError(err.message || 'Action failed');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const onSaveDepartments = async (e) => {
+    e.preventDefault();
+    setSavingDepartments(true);
+    setError('');
+    setInfo('');
+    try {
+      const departments = departmentsText
+        .split(/[\n,;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const data = await saveMeetingDepartments(departments);
+      const saved = Array.isArray(data?.departments) ? data.departments : [];
+      setDepartmentsText(saved.join('\n'));
+      setInfo('Meeting departments saved.');
+    } catch (err) {
+      setError(err.message || 'Could not save departments');
+    } finally {
+      setSavingDepartments(false);
     }
   };
 
@@ -359,6 +400,31 @@ const SuperAdminDashboard = () => {
           </div>
         </form>
       </div>
+
+      <form className="admin-create admin-departments-panel" onSubmit={onSaveDepartments}>
+        <h3>
+          <FaBuilding /> Meeting departments
+        </h3>
+        <p className="admin-departments-hint">
+          Guests see this list when they scan a meeting QR code. They can pick a
+          department or type their own. One department per line.
+        </p>
+        <textarea
+          className="form-input admin-departments-textarea"
+          value={departmentsText}
+          onChange={(e) => setDepartmentsText(e.target.value)}
+          rows={6}
+          placeholder={'Micro Insurance\nIndividual Life\nFinance\nUnderwriting\nClaims'}
+          disabled={loadingDepartments}
+        />
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={savingDepartments || loadingDepartments}
+        >
+          {savingDepartments ? 'Saving…' : 'Save departments'}
+        </button>
+      </form>
 
       <form className="admin-create" onSubmit={onCreate}>
         <h3>

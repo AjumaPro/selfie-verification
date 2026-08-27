@@ -290,6 +290,9 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   const [meeting, setMeeting] = useState(null);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ fullName: '', email: '', phone: '' });
+  const [departments, setDepartments] = useState([]);
+  const [departmentPick, setDepartmentPick] = useState('');
+  const [customDepartment, setCustomDepartment] = useState('');
   const [breakfastChoice, setBreakfastChoice] = useState('');
   const [lunchChoice, setLunchChoice] = useState('');
   const [dinnerChoice, setDinnerChoice] = useState('');
@@ -316,7 +319,10 @@ const MeetingJoin = ({ meetingId, onClose }) => {
     setError('');
     fetchPublicMeeting(meetingId)
       .then((data) => {
-        if (!cancelled) setMeeting(data.meeting);
+        if (!cancelled) {
+          setMeeting(data.meeting);
+          setDepartments(Array.isArray(data.departments) ? data.departments : []);
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -377,6 +383,11 @@ const MeetingJoin = ({ meetingId, onClose }) => {
     return mapsOpenUrl(`${geo.latitude},${geo.longitude}`);
   }, [geo]);
 
+  const resolvedDepartment = useMemo(() => {
+    if (departmentPick === '__other__') return customDepartment.trim();
+    return departmentPick.trim();
+  }, [departmentPick, customDepartment]);
+
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -386,21 +397,25 @@ const MeetingJoin = ({ meetingId, onClose }) => {
   // Do NOT auto-call GPS here — mobile browsers block location without a tap.
   useEffect(() => {
     const nameOk = form.fullName.trim().length >= 2;
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+    const departmentOk = resolvedDepartment.length >= 2;
+    const emailVal = form.email.trim();
+    const emailOk = !emailVal || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
     const phoneDigits = form.phone.replace(/\D/g, '');
+    const phoneOk = phoneDigits.length >= 7;
     const phoneStarted = phoneDigits.length >= 3;
     const anyFilled =
       form.fullName.trim().length > 0 ||
-      form.email.trim().length > 0 ||
+      resolvedDepartment.length > 0 ||
+      emailVal.length > 0 ||
       form.phone.trim().length > 0;
 
-    if (nameOk && emailOk) {
+    if (nameOk && departmentOk && phoneOk && emailOk) {
       setConsentDetails(true);
     }
     if (anyFilled || phoneStarted) {
       setConsentLocation(true);
     }
-  }, [form.fullName, form.email, form.phone]);
+  }, [form.fullName, form.email, form.phone, resolvedDepartment]);
 
   const captureLocation = useCallback(async () => {
     if (capturingRef.current) return geoRef.current;
@@ -440,8 +455,17 @@ const MeetingJoin = ({ meetingId, onClose }) => {
 
     if (!consentDetails) {
       setError(
-        'Please allow the host to see your name, email and phone number.'
+        'Please allow the host to see your name, department and phone number.'
       );
+      return;
+    }
+    if (resolvedDepartment.length < 2) {
+      setError('Please select or enter your department.');
+      return;
+    }
+    const emailVal = form.email.trim();
+    if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      setError('Enter a valid email address or leave it blank.');
       return;
     }
     if (!consentLocation) {
@@ -485,6 +509,8 @@ const MeetingJoin = ({ meetingId, onClose }) => {
 
       const data = await registerAttendance(meetingId, {
         ...form,
+        email: form.email.trim(),
+        department: resolvedDepartment,
         consentDetails: true,
         consentLocation: true,
         latitude: loc?.latitude,
@@ -701,9 +727,15 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     <dd>{done.attendance?.fullName}</dd>
                   </div>
                   <div>
-                    <dt>Email</dt>
-                    <dd>{done.attendance?.email}</dd>
+                    <dt>Department</dt>
+                    <dd>{done.attendance?.department || '—'}</dd>
                   </div>
+                  {done.attendance?.email && (
+                    <div>
+                      <dt>Email</dt>
+                      <dd>{done.attendance.email}</dd>
+                    </div>
+                  )}
                   <div>
                     <dt>Phone</dt>
                     <dd>{done.attendance?.phone}</dd>
@@ -761,9 +793,9 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                   <FaUsers aria-hidden /> Register attendance
                 </h3>
                 <p className="meeting-join-form-hint">
-                  Check-in requires your contact details and your device
-                  location. Both are shared with the meeting host on the
-                  attendance list.
+                  Check-in requires your name, department, phone and your device
+                  location. Email is optional. Details are shared with the
+                  meeting host on the attendance list.
                 </p>
                 {error && (
                   <div className="meeting-join-error" role="alert">
@@ -782,15 +814,61 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     placeholder="As on your badge"
                   />
                 </label>
+                {departments.length > 0 ? (
+                  <>
+                    <label className="meeting-join-field">
+                      <span>Department</span>
+                      <select
+                        className="form-input"
+                        value={departmentPick}
+                        onChange={(e) => setDepartmentPick(e.target.value)}
+                        required
+                      >
+                        <option value="">Select department…</option>
+                        {departments.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
+                        <option value="__other__">Other — type your own</option>
+                      </select>
+                    </label>
+                    {departmentPick === '__other__' && (
+                      <label className="meeting-join-field">
+                        <span>Your department</span>
+                        <input
+                          className="form-input"
+                          value={customDepartment}
+                          onChange={(e) => setCustomDepartment(e.target.value)}
+                          required
+                          placeholder="e.g. Human Resources"
+                        />
+                      </label>
+                    )}
+                  </>
+                ) : (
+                  <label className="meeting-join-field">
+                    <span>Department</span>
+                    <input
+                      className="form-input"
+                      value={customDepartment}
+                      onChange={(e) => {
+                        setCustomDepartment(e.target.value);
+                        setDepartmentPick('__other__');
+                      }}
+                      required
+                      placeholder="e.g. Finance, IT, Operations"
+                    />
+                  </label>
+                )}
                 <label className="meeting-join-field">
-                  <span>Email</span>
+                  <span>Email (optional)</span>
                   <input
                     name="email"
                     type="email"
                     className="form-input"
                     value={form.email}
                     onChange={onChange}
-                    required
                     autoComplete="email"
                     placeholder="you@company.com"
                   />
@@ -884,8 +962,9 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                       required
                     />
                     <span>
-                      I allow the host to see my <strong>name, email and phone
+                      I allow the host to see my <strong>name, department and phone
                       number</strong> on the meeting attendance register.
+                      {form.email.trim() ? ' Email will also be shared.' : ''}
                     </span>
                   </label>
 
@@ -1062,6 +1141,7 @@ const MeetingJoin = ({ meetingId, onClose }) => {
                     geoLoading ||
                     !consentDetails ||
                     !consentLocation ||
+                    resolvedDepartment.length < 2 ||
                     (!geo && !canSkipLocation) ||
                     (showBreakfast && !breakfastChoice) ||
                     (showLunch && !lunchChoice) ||

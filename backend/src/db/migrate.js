@@ -7,6 +7,8 @@ async function migratePostgres(client) {
 
   const { ensureMeetingsSchema } = require('./meetingsSchema');
   await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensurePlatformSettingsSchema } = require('./platformSettingsSchema');
+  await ensurePlatformSettingsSchema((text, params) => client.query(text, params));
   const { ensureVerifySchema } = require('./verifySchema');
   await ensureVerifySchema((text, params) => client.query(text, params));
 
@@ -68,6 +70,8 @@ async function migratePostgres(client) {
 async function migrateSqlite(client) {
   const { ensureMeetingsSchema } = require('./meetingsSchema');
   await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensurePlatformSettingsSchema } = require('./platformSettingsSchema');
+  await ensurePlatformSettingsSchema((text, params) => client.query(text, params));
   const { ensureVerifySchema } = require('./verifySchema');
   await ensureVerifySchema((text, params) => client.query(text, params));
 
@@ -138,6 +142,11 @@ async function migrate() {
       await migratePostgres(client);
     }
     await seedSuperadmin(client);
+    const { seedMeetingDepartments } = require('../services/meetingDepartments');
+    const departments = await seedMeetingDepartments((text, params) =>
+      client.query(text, params)
+    );
+    console.log(`✓ Meeting departments ready (${departments.length})`);
     console.log('✓ Migration complete');
   } finally {
     client.release();

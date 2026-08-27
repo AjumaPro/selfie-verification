@@ -71,8 +71,7 @@ function getVerifySessionIdFromUrl() {
 
 /**
  * Public hub + app nav.
- * Web: Meetings never requires login. Image Recognition does.
- * Device: Image Recognition only (no Meetings nav).
+ * Web: Meetings and Image Recognition require sign-in. Guest QR check-in stays public.
  */
 function AppNav({ section, onChange, isAuthenticated, deviceOnly }) {
   return (
@@ -103,9 +102,11 @@ function AppNav({ section, onChange, isAuthenticated, deviceOnly }) {
           onClick={() => onChange('meetings')}
         >
           Meetings
-          <span className="app-nav-open" title="No login needed">
-            · open
-          </span>
+          {!isAuthenticated && (
+            <span className="app-nav-lock" title="Sign in required">
+              · sign in
+            </span>
+          )}
         </button>
       )}
     </nav>
@@ -309,6 +310,25 @@ function App() {
   }
 
   // ——— Meetings (web only) ———
+  if (!deviceOnly && section === 'meetings' && !isAuthenticated) {
+    return (
+      <div className={shellClass}>
+        <Header activeApp="meetings" onBackToApps={backToHub} />
+        <div className="container">
+          {nav}
+          <div className="app-auth-banner">
+            <h2>Meetings</h2>
+            <p>
+              Sign in to create meetings, publish QR check-in, and manage
+              attendance. Guests can still scan QR links without an account.
+            </p>
+          </div>
+          <AuthPanel />
+        </div>
+      </div>
+    );
+  }
+
   if (!deviceOnly && section === 'meetings') {
     return (
       <div className={shellClass}>

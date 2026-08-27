@@ -1,9 +1,9 @@
 {
-  "name": "glico-meetings-pwa",
+  "name": "fasthr-meetings",
   "version": "1.0.0",
   "private": true,
-  "description": "GLICO Meetings \u2014 installable PWA (full meetings features, no Image Recognition)",
-  "author": "GLICO",
+  "description": "FastHR Meetings — installable desktop app",
+  "author": "AjumaPro FastHR",
   "main": "electron/main.js",
   "homepage": "./",
   "dependencies": {
@@ -31,9 +31,9 @@
     "electron:build:mac": "node scripts/electron-build-meetings.js --mac"
   },
   "build": {
-    "appId": "org.glico.meetings",
-    "productName": "GLICO Meetings",
-    "copyright": "Copyright \u00a9 GLICO",
+    "appId": "com.ajumapro.fasthr.meetings",
+    "productName": "FastHR Meetings",
+    "copyright": "Copyright © AjumaPro FastHR",
     "extends": null,
     "directories": {
       "output": "dist-desktop"
@@ -59,7 +59,7 @@
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "identity": null,
-      "artifactName": "Glico-Meetings-Mac.${ext}"
+      "artifactName": "FastHR-Meetings-Mac.${ext}"
     },
     "win": {
       "target": [
@@ -70,7 +70,7 @@
           ]
         }
       ],
-      "artifactName": "Glico-Meetings-Windows.exe"
+      "artifactName": "FastHR-Meetings-Windows.exe"
     },
     "icon": "electron/assets/icon.png"
   },

@@ -8,7 +8,7 @@ function createWindow() {
     height: 860,
     minWidth: 900,
     minHeight: 640,
-    title: 'GLICO Meetings',
+    title: 'FastHR Meetings',
     backgroundColor: '#f4f7fc',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

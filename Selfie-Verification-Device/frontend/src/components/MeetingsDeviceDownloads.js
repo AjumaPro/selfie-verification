@@ -157,27 +157,24 @@ const MeetingsDeviceDownloads = ({
   const macIsDmg = /\.dmg$/i.test(macFilename);
 
   const items = [];
-  if (!ready('exe') || ok('exe')) {
-    items.push({
-      key: 'exe',
-      title: 'Windows',
-      sub: '.exe installer',
-      Icon: FaWindows,
-      tone: 'win',
-      kind: 'download',
-    });
-  }
 
-  if (!ready('mac') || ok('mac')) {
-    items.push({
-      key: 'mac',
-      title: 'Mac',
-      sub: macIsDmg || !ready('mac') ? '.dmg installer' : 'desktop installer',
-      Icon: FaApple,
-      tone: 'mac',
-      kind: 'download',
-    });
-  }
+  items.push({
+    key: 'exe',
+    title: 'Windows',
+    sub: '.exe installer',
+    Icon: FaWindows,
+    tone: 'win',
+    kind: 'download',
+  });
+
+  items.push({
+    key: 'mac',
+    title: 'Mac',
+    sub: macIsDmg || !ready('mac') ? '.dmg installer' : 'desktop installer',
+    Icon: FaApple,
+    tone: 'mac',
+    kind: 'download',
+  });
 
   if (showOpenPwa) {
     items.push({

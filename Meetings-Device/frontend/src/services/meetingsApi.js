@@ -1,9 +1,10 @@
 /**
  * Public Meetings API — check-in QR, attendance, map location.
- * Host list is owned by a durable per-browser creator key (until deleted).
+ * Host actions require sign-in (JWT). Guest check-in stays public.
  */
 
 import { resolveApiBase } from '../config/apiBase';
+import { getToken } from './authService';
 
 const API_BASE = resolveApiBase();
 const HOST_KEY_STORAGE = 'glico_meetings_host_key_v1';
@@ -36,6 +37,11 @@ async function request(path, options = {}) {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
   };
+  const useAuth = options.withAuth !== false;
+  const token = useAuth ? getToken() : '';
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
   const hostKey = options.hostKey !== false ? getMeetingsHostKey() : '';
   if (hostKey && options.withHost !== false) {
     headers['X-Meetings-Host-Key'] = hostKey;
@@ -143,6 +149,7 @@ export async function deleteMeeting(meetingId) {
 export async function fetchPublicMeeting(id) {
   return request(`/api/meetings/${encodeURIComponent(id)}`, {
     withHost: false,
+    withAuth: false,
   });
 }
 
@@ -152,6 +159,7 @@ export async function registerAttendance(
     fullName,
     email,
     phone,
+    department,
     consentDetails,
     consentLocation,
     latitude,
@@ -166,10 +174,12 @@ export async function registerAttendance(
   return request(`/api/meetings/${encodeURIComponent(meetingId)}/attendance`, {
     method: 'POST',
     withHost: false,
+    withAuth: false,
     body: JSON.stringify({
       fullName,
-      email,
+      email: email || '',
       phone,
+      department: department || '',
       consentDetails: !!consentDetails,
       consentLocation: !!consentLocation,
       latitude,
@@ -188,6 +198,7 @@ export async function resolveMapsLink(url, hint = '') {
   return request('/api/meetings/resolve-maps-link', {
     method: 'POST',
     withHost: false,
+    withAuth: false,
     body: JSON.stringify({ url, hint }),
   });
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FaCalendarPlus,
   FaTrash,
@@ -29,6 +29,14 @@ import MeetingCheckIn from './MeetingCheckIn';
 import GooglePlacePicker from './GooglePlacePicker';
 import BookingHost from './BookingHost';
 import MeetingsDeviceDownloads from './MeetingsDeviceDownloads';
+import {
+  FOOD_DOWNLOAD_FIELDS,
+  defaultFoodDownloadOptions,
+  normalizeFoodDownloadOptions,
+} from '../utils/foodDownloadOptions';
+import { useAuth } from '../context/AuthContext';
+import { useAppToast, meetingsSyncErrorMessage } from '../hooks/useAppToast';
+import './AppToast.css';
 import {
   publishMeeting,
   fetchMyMeetings,
@@ -105,6 +113,7 @@ const emptyForm = {
   programFileName: '',
   programFileMime: '',
   programFileData: '',
+  foodDownloadOptions: defaultFoodDownloadOptions(),
 };
 
 function parseMenuLines(text) {
@@ -137,6 +146,7 @@ function normalizeMealMenu(raw) {
       items,
     };
   });
+  out.downloadOptions = normalizeFoodDownloadOptions(raw.downloadOptions);
   return out;
 }
 
@@ -602,6 +612,7 @@ function formFromMeeting(m) {
     programFileName: program.fileName || '',
     programFileMime: program.fileMime || '',
     programFileData: program.fileData || '',
+    foodDownloadOptions: normalizeFoodDownloadOptions(meal.downloadOptions),
   };
 }
 
@@ -609,6 +620,8 @@ function formFromMeeting(m) {
  * Advanced Meetings app — server-backed (API) + local cache until creator deletes.
  */
 const MeetingsApp = () => {
+  const { logout } = useAuth();
+  const { toast, flash } = useAppToast();
   const [meetings, setMeetings] = useState(() => loadMeetings());
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState('');
@@ -629,7 +642,6 @@ const MeetingsApp = () => {
   const [gmapsPaste, setGmapsPaste] = useState('');
   const [gmapsPasteBusy, setGmapsPasteBusy] = useState(false);
   const [newActionText, setNewActionText] = useState({});
-  const [toast, setToast] = useState('');
   const [calendarDate, setCalendarDate] = useState('');
   const [listView, setListView] = useState('agenda'); // agenda | calendar | booking
 
@@ -644,52 +656,49 @@ const MeetingsApp = () => {
   }, [meetings]);
 
   // Load creator's meetings from API (source of truth until deleted)
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setSyncing(true);
-      setSyncError('');
-      try {
-        getMeetingsHostKey();
-        const data = await fetchMyMeetings();
-        if (cancelled) return;
-        const remote = Array.isArray(data?.meetings)
-          ? data.meetings.map(migrateMeeting)
-          : [];
-        setMeetings((local) => {
-          // Prefer server copy of same id; keep only local-only drafts not yet synced
-          const byId = new Map();
-          local.forEach((m) => byId.set(m.id, m));
-          remote.forEach((m) => byId.set(m.id, { ...m, qrEnabled: true }));
-          return Array.from(byId.values()).sort((a, b) => {
-            const da = `${a.date || ''}T${a.time || '00:00'}`;
-            const db = `${b.date || ''}T${b.time || '00:00'}`;
-            return da.localeCompare(db);
-          });
+  const loadFromServer = useCallback(async () => {
+    setSyncing(true);
+    setSyncError('');
+    try {
+      getMeetingsHostKey();
+      const data = await fetchMyMeetings();
+      const remote = Array.isArray(data?.meetings)
+        ? data.meetings.map(migrateMeeting)
+        : [];
+      setMeetings((local) => {
+        const byId = new Map();
+        local.forEach((m) => byId.set(m.id, m));
+        remote.forEach((m) => byId.set(m.id, { ...m, qrEnabled: true }));
+        return Array.from(byId.values()).sort((a, b) => {
+          const da = `${a.date || ''}T${a.time || '00:00'}`;
+          const db = `${b.date || ''}T${b.time || '00:00'}`;
+          return da.localeCompare(db);
         });
-      } catch (err) {
-        if (!cancelled) {
-          setSyncError(
-            err?.message ||
-              'Could not reach the meetings server — showing local saves only.'
-          );
-        }
-      } finally {
-        if (!cancelled) setSyncing(false);
+      });
+    } catch (err) {
+      const msg = meetingsSyncErrorMessage(err);
+      setSyncError(msg);
+      if (err?.status === 401 || err?.status === 403) {
+        logout();
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    } finally {
+      setSyncing(false);
+    }
+  }, [logout]);
 
   useEffect(() => {
-    if (!toast) return undefined;
-    const t = setTimeout(() => setToast(''), 3200);
-    return () => clearTimeout(t);
-  }, [toast]);
+    loadFromServer();
+  }, [loadFromServer]);
 
-  const flash = (msg) => setToast(msg);
+  useEffect(() => {
+    const onOnline = () => {
+      if (!syncError) return;
+      flash('Back online — syncing meetings…');
+      loadFromServer();
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [syncError, loadFromServer, flash]);
 
   const persistMeeting = async (inst) => {
     getMeetingsHostKey();
@@ -999,6 +1008,7 @@ const MeetingsApp = () => {
         enabled: !!form.offerDinner && dinnerItems.length > 0,
         items: dinnerItems,
       },
+      downloadOptions: normalizeFoodDownloadOptions(form.foodDownloadOptions),
     };
     const programSchedule = {
       text: form.programText.trim(),
@@ -1071,6 +1081,10 @@ const MeetingsApp = () => {
           // Always keep a local copy so the creator never loses input
           savedList.push({ ...inst, qrEnabled: false });
           failures.push(err?.message || 'save failed');
+          if (err?.status === 401 || err?.status === 403) {
+            logout();
+            setError(meetingsSyncErrorMessage(err));
+          }
         }
       }
 
@@ -1357,8 +1371,20 @@ const MeetingsApp = () => {
     flash('Menu downloaded (.txt).');
   };
 
+  const formPanelsOpen =
+    showDetails || showMeals || showProgram || showAdvanced;
+
   return (
     <section className="meetings-app" aria-label="Meetings">
+      {toast && (
+        <div
+          className="app-toast-fixed success"
+          role="status"
+          aria-live="polite"
+        >
+          {toast}
+        </div>
+      )}
       {showMapPicker && (
         <GooglePlacePicker
           value={
@@ -1415,11 +1441,6 @@ const MeetingsApp = () => {
             <MeetingsDeviceDownloads compact />
           </div>
         </div>
-        {toast && (
-          <div className="meetings-toast" role="status">
-            {toast}
-          </div>
-        )}
       </header>
 
       <div className="meetings-stats" aria-label="Meeting stats">
@@ -1447,8 +1468,17 @@ const MeetingsApp = () => {
         )}
       </div>
 
-      <div className="meetings-layout">
-        <form className="meetings-form" onSubmit={onSubmit}>
+      <div
+        className={`meetings-layout${
+          formPanelsOpen ? ' meetings-layout-expanded' : ''
+        }`}
+      >
+        <form
+          className={`meetings-form${
+            formPanelsOpen ? ' meetings-form-expanded' : ''
+          }`}
+          onSubmit={onSubmit}
+        >
           <div className="meetings-form-head">
             <span className="meetings-form-icon" aria-hidden>
               <FaCalendarPlus />
@@ -1471,7 +1501,16 @@ const MeetingsApp = () => {
             )}
             {syncError && !error && (
               <div className="meetings-error meetings-error-soft" role="status">
-                {syncError}
+                <span>{syncError}</span>
+                {!syncing && (
+                  <button
+                    type="button"
+                    className="meetings-sync-retry"
+                    onClick={() => loadFromServer()}
+                  >
+                    Retry sync
+                  </button>
+                )}
               </div>
             )}
 
@@ -1487,7 +1526,7 @@ const MeetingsApp = () => {
               />
             </label>
 
-            <div className="meetings-row meetings-row-3">
+            <div className="meetings-datetime">
               <label className="meetings-field">
                 <span>Date</span>
                 <input
@@ -1499,55 +1538,57 @@ const MeetingsApp = () => {
                   required
                 />
               </label>
-              <label className="meetings-field">
-                <span>Start</span>
-                <input
-                  name="time"
-                  type="time"
-                  className="form-input"
-                  value={form.time}
-                  onChange={(e) => {
-                    const time = e.target.value;
-                    setForm((f) => {
-                      const next = { ...f, time };
-                      const dur = durationFromStartEnd(time, f.endTime);
-                      if (dur != null) next.durationMins = String(dur);
-                      else if (time) {
-                        next.endTime = endTimeFromStartDuration(
-                          time,
-                          f.durationMins || 60
-                        );
-                        next.durationMins = String(
-                          durationFromStartEnd(time, next.endTime) || 60
-                        );
-                      }
-                      return next;
-                    });
-                    setError('');
-                  }}
-                  required
-                />
-              </label>
-              <label className="meetings-field">
-                <span>End</span>
-                <input
-                  name="endTime"
-                  type="time"
-                  className="form-input"
-                  value={form.endTime}
-                  onChange={(e) => {
-                    const endTime = e.target.value;
-                    setForm((f) => {
-                      const next = { ...f, endTime };
-                      const dur = durationFromStartEnd(f.time, endTime);
-                      if (dur != null) next.durationMins = String(dur);
-                      return next;
-                    });
-                    setError('');
-                  }}
-                  required
-                />
-              </label>
+              <div className="meetings-row meetings-time-pair">
+                <label className="meetings-field">
+                  <span>Start</span>
+                  <input
+                    name="time"
+                    type="time"
+                    className="form-input"
+                    value={form.time}
+                    onChange={(e) => {
+                      const time = e.target.value;
+                      setForm((f) => {
+                        const next = { ...f, time };
+                        const dur = durationFromStartEnd(time, f.endTime);
+                        if (dur != null) next.durationMins = String(dur);
+                        else if (time) {
+                          next.endTime = endTimeFromStartDuration(
+                            time,
+                            f.durationMins || 60
+                          );
+                          next.durationMins = String(
+                            durationFromStartEnd(time, next.endTime) || 60
+                          );
+                        }
+                        return next;
+                      });
+                      setError('');
+                    }}
+                    required
+                  />
+                </label>
+                <label className="meetings-field">
+                  <span>End</span>
+                  <input
+                    name="endTime"
+                    type="time"
+                    className="form-input"
+                    value={form.endTime}
+                    onChange={(e) => {
+                      const endTime = e.target.value;
+                      setForm((f) => {
+                        const next = { ...f, endTime };
+                        const dur = durationFromStartEnd(f.time, endTime);
+                        if (dur != null) next.durationMins = String(dur);
+                        return next;
+                      });
+                      setError('');
+                    }}
+                    required
+                  />
+                </label>
+              </div>
             </div>
             {form.time && form.endTime && (
               <p className="meetings-field-hint meetings-duration-hint">
@@ -2068,6 +2109,51 @@ const MeetingsApp = () => {
                       placeholder="One item per line"
                     />
                   </label>
+                )}
+                {(form.offerBreakfast ||
+                  form.offerLunch ||
+                  form.offerDinner) && (
+                  <div className="meetings-food-dl-options">
+                    <p className="meetings-food-dl-title">
+                      Food list download
+                    </p>
+                    <p className="meetings-field-hint">
+                      Choose what appears when you download participant meal
+                      selections from the check-in register.
+                    </p>
+                    <div className="meetings-food-dl-grid">
+                      {FOOD_DOWNLOAD_FIELDS.map((field) => {
+                        const checked =
+                          form.foodDownloadOptions?.[field.key] !== false;
+                        return (
+                          <label
+                            key={field.key}
+                            className={`meetings-food-dl-option${
+                              field.alwaysOn ? ' is-locked' : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!!field.alwaysOn}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  foodDownloadOptions: {
+                                    ...normalizeFoodDownloadOptions(
+                                      f.foodDownloadOptions
+                                    ),
+                                    [field.key]: e.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            <span>{field.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

@@ -1,6 +1,12 @@
 const crypto = require('crypto');
 const express = require('express');
 const { query } = require('../db/pool');
+const { authRequired } = require('../middleware/auth');
+const {
+  getMeetingDepartments,
+  normalizeDepartmentName,
+  isValidDepartment,
+} = require('../services/meetingDepartments');
 
 const router = express.Router();
 
@@ -15,7 +21,30 @@ function emptyMealMenu() {
     breakfast: { enabled: false, items: [] },
     lunch: { enabled: false, items: [] },
     dinner: { enabled: false, items: [] },
+    downloadOptions: {
+      name: true,
+      email: false,
+      phone: true,
+      department: true,
+      breakfast: true,
+      lunch: true,
+      dinner: true,
+      checkedIn: true,
+      totals: true,
+      locationStatus: false,
+    },
   };
+}
+
+function normalizeFoodDownloadOptions(raw) {
+  const defaults = emptyMealMenu().downloadOptions;
+  if (!raw || typeof raw !== 'object') return { ...defaults };
+  const out = { ...defaults };
+  Object.keys(defaults).forEach((key) => {
+    if (typeof raw[key] === 'boolean') out[key] = raw[key];
+  });
+  out.name = true;
+  return out;
 }
 
 function normalizeMealItems(items) {
@@ -54,6 +83,7 @@ function parseMealMenu(raw) {
       base[key] = { enabled: false, items: [] };
     }
   });
+  base.downloadOptions = normalizeFoodDownloadOptions(data.downloadOptions);
   return base;
 }
 
@@ -325,8 +355,9 @@ function rowToAttendance(row) {
     id: row.id,
     meetingId: row.meeting_id,
     fullName: row.full_name,
-    email: row.email,
+    email: row.email || '',
     phone: row.phone,
+    department: row.department || '',
     latitude: Number.isFinite(lat) ? lat : null,
     longitude: Number.isFinite(lng) ? lng : null,
     locationAccuracy:
@@ -371,12 +402,31 @@ function normalizeEmail(email) {
 }
 
 function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const e = String(email || '').trim();
+  if (!e) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
 function isValidPhone(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   return digits.length >= 7 && digits.length <= 15;
+}
+
+function meetingOwnedByUser(row, userId) {
+  if (!row || !userId) return false;
+  const owner = String(row.host_user_id || '').trim();
+  if (!owner) return false;
+  return owner === String(userId);
+}
+
+async function loadMeetingForHost(meetingId, userId) {
+  const result = await query('SELECT * FROM meetings WHERE id = $1', [meetingId]);
+  if (result.rowCount === 0) return { error: 'Meeting not found.', status: 404 };
+  const row = result.rows[0];
+  if (!meetingOwnedByUser(row, userId)) {
+    return { error: 'Not allowed to manage this meeting.', status: 403 };
+  }
+  return { row };
 }
 
 /**
@@ -531,10 +581,31 @@ router.post('/resolve-maps-link', async (req, res) => {
 });
 
 /**
+ * List meetings created by the signed-in user.
+ * GET /api/meetings/mine
+ */
+router.get('/mine', authRequired, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT * FROM meetings
+       WHERE host_user_id = $1
+       ORDER BY meet_date ASC, meet_time ASC`,
+      [req.userId]
+    );
+    return res.json({
+      meetings: result.rows.map(rowToMeeting),
+    });
+  } catch (err) {
+    console.error('list my meetings error:', err);
+    return res.status(500).json({ error: 'Could not load your meetings.' });
+  }
+});
+
+/**
  * Publish / update a meeting so QR check-in works on any device.
  * PUT /api/meetings/:id
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', authRequired, async (req, res) => {
   try {
     const id = String(req.params.id || '').trim();
     if (!id || id.length > 80) {
@@ -620,9 +691,13 @@ router.put('/:id', async (req, res) => {
     const venueLngStr = venueLng != null ? String(venueLng) : '';
     const isInPersonInt = isInPerson ? 1 : 0;
 
-    const existing = await query('SELECT id FROM meetings WHERE id = $1', [id]);
+    const existing = await query('SELECT id, host_user_id FROM meetings WHERE id = $1', [id]);
 
     if (existing.rowCount > 0) {
+      const owner = String(existing.rows[0].host_user_id || '').trim();
+      if (owner && owner !== String(req.userId)) {
+        return res.status(403).json({ error: 'Not allowed to edit this meeting.' });
+      }
       await query(
         `UPDATE meetings SET
           title = $2,
@@ -641,6 +716,7 @@ router.put('/:id', async (req, res) => {
           agenda = $15,
           meal_menu_json = $16,
           program_schedule_json = $17,
+          host_user_id = $18,
           updated_at = NOW()
          WHERE id = $1`,
         [
@@ -661,6 +737,7 @@ router.put('/:id', async (req, res) => {
           agenda,
           mealMenuJson,
           programScheduleJson,
+          String(req.userId),
         ]
       );
     } else {
@@ -669,8 +746,8 @@ router.put('/:id', async (req, res) => {
           id, title, meet_date, meet_time, duration_mins,
           location, online_link, google_place, venue_lat, venue_lng, venue_radius_m,
           is_in_person, organiser, status, agenda,
-          meal_menu_json, program_schedule_json
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+          meal_menu_json, program_schedule_json, host_user_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
         [
           id,
           title,
@@ -689,6 +766,7 @@ router.put('/:id', async (req, res) => {
           agenda,
           mealMenuJson,
           programScheduleJson,
+          String(req.userId),
         ]
       );
     }
@@ -698,6 +776,26 @@ router.put('/:id', async (req, res) => {
   } catch (err) {
     console.error('publish meeting error:', err);
     return res.status(500).json({ error: 'Could not publish meeting.' });
+  }
+});
+
+/**
+ * Delete a meeting (host only).
+ * DELETE /api/meetings/:id
+ */
+router.delete('/:id', authRequired, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const loaded = await loadMeetingForHost(id, req.userId);
+    if (loaded.error) {
+      return res.status(loaded.status).json({ error: loaded.error });
+    }
+    await query('DELETE FROM meeting_attendance WHERE meeting_id = $1', [id]);
+    await query('DELETE FROM meetings WHERE id = $1', [id]);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('delete meeting error:', err);
+    return res.status(500).json({ error: 'Could not delete meeting.' });
   }
 });
 
@@ -712,7 +810,11 @@ router.get('/:id', async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Meeting not found. Ask the host to enable check-in QR.' });
     }
-    return res.json({ meeting: rowToMeeting(result.rows[0]) });
+    const departments = await getMeetingDepartments(query);
+    return res.json({
+      meeting: rowToMeeting(result.rows[0]),
+      departments,
+    });
   } catch (err) {
     console.error('get meeting error:', err);
     return res.status(500).json({ error: 'Could not load meeting.' });
@@ -748,6 +850,7 @@ router.post('/:id/attendance', async (req, res) => {
     const fullName = String(req.body?.fullName || '').trim();
     const email = normalizeEmail(req.body?.email);
     const phone = String(req.body?.phone || '').trim();
+    const department = normalizeDepartmentName(req.body?.department);
     const breakfastChoice = resolveMealChoice(
       mealMenu.breakfast,
       req.body?.breakfastChoice
@@ -793,8 +896,11 @@ router.post('/:id/attendance', async (req, res) => {
     if (fullName.length < 2) {
       return res.status(400).json({ error: 'Full name is required.' });
     }
+    if (!isValidDepartment(department)) {
+      return res.status(400).json({ error: 'Department is required (at least 2 characters).' });
+    }
     if (!isValidEmail(email)) {
-      return res.status(400).json({ error: 'Enter a valid email address.' });
+      return res.status(400).json({ error: 'Enter a valid email address or leave it blank.' });
     }
     if (!isValidPhone(phone)) {
       return res.status(400).json({ error: 'Enter a valid phone number.' });
@@ -802,7 +908,7 @@ router.post('/:id/attendance', async (req, res) => {
     if (!consentDetails) {
       return res.status(400).json({
         error:
-          'You must allow sharing your name, email and phone with the meeting host.',
+          'You must allow sharing your name, department and phone with the meeting host.',
       });
     }
     if (!consentLocation) {
@@ -887,11 +993,32 @@ router.post('/:id/attendance', async (req, res) => {
       : '';
     const distStr = distanceM != null ? String(distanceM) : '';
 
-    const dup = await query(
-      `SELECT * FROM meeting_attendance
-       WHERE meeting_id = $1 AND email = $2`,
-      [meetingId, email]
-    );
+    let dup;
+    if (email) {
+      dup = await query(
+        `SELECT * FROM meeting_attendance
+         WHERE meeting_id = $1 AND LOWER(email) = $2`,
+        [meetingId, email]
+      );
+    } else {
+      const phoneDigits = String(phone || '').replace(/\D/g, '');
+      const candidates = await query(
+        `SELECT * FROM meeting_attendance
+         WHERE meeting_id = $1
+           AND LOWER(full_name) = $2
+           AND LOWER(department) = $3`,
+        [meetingId, fullName.toLowerCase(), department.toLowerCase()]
+      );
+      const matched = (candidates.rows || []).find((row) => {
+        const rowDigits = String(row.phone || '').replace(/\D/g, '');
+        return (
+          rowDigits === phoneDigits ||
+          (phoneDigits.length >= 7 &&
+            rowDigits.endsWith(phoneDigits.slice(-9)))
+        );
+      });
+      dup = { rowCount: matched ? 1 : 0, rows: matched ? [matched] : [] };
+    }
     if (dup.rowCount > 0) {
       const existingAtt = rowToAttendance(dup.rows[0]);
       return res.status(200).json({
@@ -907,18 +1034,19 @@ router.post('/:id/attendance', async (req, res) => {
     const id = newId();
     await query(
       `INSERT INTO meeting_attendance (
-        id, meeting_id, full_name, email, phone,
+        id, meeting_id, full_name, email, phone, department,
         latitude, longitude, location_accuracy,
         location_match, distance_m,
         consent_details, consent_location,
         breakfast_choice, lunch_choice, dinner_choice
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [
         id,
         meetingId,
         fullName,
         email,
         phone,
+        department,
         latStr,
         lngStr,
         accStr,
@@ -970,12 +1098,12 @@ router.post('/:id/attendance', async (req, res) => {
  * List attendance (host view — name, email, phone).
  * GET /api/meetings/:id/attendance
  */
-router.get('/:id/attendance', async (req, res) => {
+router.get('/:id/attendance', authRequired, async (req, res) => {
   try {
     const meetingId = String(req.params.id || '').trim();
-    const meeting = await query('SELECT id FROM meetings WHERE id = $1', [meetingId]);
-    if (meeting.rowCount === 0) {
-      return res.status(404).json({ error: 'Meeting not found.' });
+    const loaded = await loadMeetingForHost(meetingId, req.userId);
+    if (loaded.error) {
+      return res.status(loaded.status).json({ error: loaded.error });
     }
 
     const result = await query(
@@ -999,9 +1127,13 @@ router.get('/:id/attendance', async (req, res) => {
  * Optional delete attendance (host cleanup)
  * DELETE /api/meetings/:id/attendance/:attendanceId
  */
-router.delete('/:id/attendance/:attendanceId', async (req, res) => {
+router.delete('/:id/attendance/:attendanceId', authRequired, async (req, res) => {
   try {
     const meetingId = String(req.params.id || '').trim();
+    const loaded = await loadMeetingForHost(meetingId, req.userId);
+    if (loaded.error) {
+      return res.status(loaded.status).json({ error: loaded.error });
+    }
     const attendanceId = String(req.params.attendanceId || '').trim();
     const result = await query(
       `DELETE FROM meeting_attendance WHERE id = $1 AND meeting_id = $2`,

@@ -148,14 +148,9 @@ export async function resolveDownloadUrl(filename) {
     return { url: null, source: 'missing' };
   }
 
-  const remote = remoteFallbackUrl(name);
-  if (isLocalDevHost()) {
-    const okRemote = await probeDownloadUrl(remote);
-    if (okRemote) return { url: remote, source: 'remote' };
-    return { url: null, source: 'missing' };
-  }
-  // Hosted + allowlisted: offer GH (open in new tab; CORS often blocks probe)
-  return { url: remote, source: 'remote' };
+  // Allowlisted GitHub release assets — browser fetch probe often fails (CORS)
+  // but the URL is still a valid direct download (opens in new tab).
+  return { url: remoteFallbackUrl(name), source: 'remote' };
 }
 
 /**

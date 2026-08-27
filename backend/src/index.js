@@ -67,6 +67,7 @@ app.get('/health', async (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/settings', require('./routes/settings'));
 app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/booking', require('./routes/booking'));
 app.use('/api/verify', require('./routes/verify'));
