@@ -29,6 +29,8 @@ const files = [
   'components/AppToast.css',
   'components/AuthPanel.js',
   'components/AuthPanel.css',
+  'components/PasswordInput.js',
+  'components/PasswordInput.css',
   'components/GlicoLifeLogo.js',
   'components/GlicoLifeLogo.css',
   'components/GlicoBrandBar.js',

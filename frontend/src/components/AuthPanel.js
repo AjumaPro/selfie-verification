@@ -15,7 +15,9 @@ import {
   isSuperAdminLoginPublic,
 } from '../config/authUi';
 import { BRAND } from '../utils/brandAssets';
+import { PASSWORD_HINT, validatePasswordClient } from '../utils/passwordRules';
 import GlicoLifeLogo from './GlicoLifeLogo';
+import PasswordInput from './PasswordInput';
 import './AuthPanel.css';
 
 const emptyLogin = { email: '', password: '' };
@@ -44,8 +46,9 @@ function detectDesktopShell() {
 /**
  * Authentication sections: Sign in · Register · Super Admin.
  * Shown for Image Recognition on web and for Windows/Mac Electron installs.
+ * @param {{ deviceOnly?: boolean }} props
  */
-const AuthPanel = () => {
+const AuthPanel = ({ deviceOnly = false }) => {
   const { login, loginSuperAdmin, register, busy } = useAuth();
   const [mode, setMode] = useState('login'); // login | register | superadmin
   const [loginForm, setLoginForm] = useState(emptyLogin);
@@ -56,6 +59,7 @@ const AuthPanel = () => {
   const [info, setInfo] = useState('');
   const [shell, setShell] = useState(() => detectDesktopShell());
   const showAdminTab = isSuperAdminLoginPublic();
+  const isDevice = Boolean(deviceOnly || shell.desktop);
 
   useEffect(() => {
     if (hasSuperAdminLoginOverride()) {
@@ -113,6 +117,11 @@ const AuthPanel = () => {
       setError('Passwords do not match.');
       return;
     }
+    const passErr = validatePasswordClient(registerForm.password);
+    if (passErr) {
+      setError(passErr);
+      return;
+    }
     try {
       const result = await register(registerForm);
       setRegisterForm(emptyRegister);
@@ -161,10 +170,8 @@ const AuthPanel = () => {
       </div>
       <div className="form-group full-width">
         <label htmlFor={`${prefix}-password`}>Password</label>
-        <input
+        <PasswordInput
           id={`${prefix}-password`}
-          className="form-input"
-          type="password"
           autoComplete="current-password"
           value={form.password}
           onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
@@ -371,10 +378,8 @@ const AuthPanel = () => {
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-password">Password</label>
-            <input
+            <PasswordInput
               id="reg-password"
-              className="form-input"
-              type="password"
               autoComplete="new-password"
               value={registerForm.password}
               onChange={(e) =>
@@ -386,10 +391,8 @@ const AuthPanel = () => {
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-confirm">Confirm password</label>
-            <input
+            <PasswordInput
               id="reg-confirm"
-              className="form-input"
-              type="password"
               autoComplete="new-password"
               value={registerForm.confirmPassword}
               onChange={(e) =>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FaUserShield,
   FaUsers,
@@ -11,6 +11,9 @@ import {
   FaEdit,
   FaUserCog,
   FaBuilding,
+  FaEye,
+  FaCopy,
+  FaEyeSlash,
 } from 'react-icons/fa';
 import {
   listUsers,
@@ -20,11 +23,15 @@ import {
   changeOwnPassword,
   updateOwnProfile,
   resetUserPassword,
+  fetchUserPassword,
   updateUser,
   fetchMeetingDepartments,
   saveMeetingDepartments,
 } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import { useAppToast } from '../hooks/useAppToast';
+import PasswordInput from './PasswordInput';
+import './AppToast.css';
 import './SuperAdminDashboard.css';
 
 const emptyCreate = {
@@ -37,6 +44,8 @@ const emptyCreate = {
 
 const SuperAdminDashboard = () => {
   const { user, refreshUser } = useAuth();
+  const { toast, flash } = useAppToast(4200);
+  const actionBannerRef = useRef(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -66,6 +75,13 @@ const SuperAdminDashboard = () => {
   });
   const [resetTarget, setResetTarget] = useState(null);
   const [resetPassword, setResetPassword] = useState('');
+  const [viewTarget, setViewTarget] = useState(null);
+  const [viewPassword, setViewPassword] = useState('');
+  const [viewAvailable, setViewAvailable] = useState(false);
+  const [viewMessage, setViewMessage] = useState('');
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewRevealed, setViewRevealed] = useState(false);
+  const [passwordModalTab, setPasswordModalTab] = useState('view'); // view | reset
   const [departmentsText, setDepartmentsText] = useState('');
   const [savingDepartments, setSavingDepartments] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
@@ -120,16 +136,41 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const showFeedback = useCallback(
+    (kind, message) => {
+      const msg = String(message || '').trim();
+      if (!msg) return;
+      if (kind === 'error') {
+        setError(msg);
+        setInfo('');
+      } else {
+        setInfo(msg);
+        setError('');
+      }
+      flash(msg);
+      // Keep banner in view even when acting from bottom of the table
+      window.requestAnimationFrame(() => {
+        actionBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    },
+    [flash]
+  );
+
   const runAction = async (id, action, successMsg) => {
-    setBusyId(id);
+    const userId = String(id || '').trim();
+    if (!userId) {
+      showFeedback('error', 'Missing user id — refresh the page and try again.');
+      return;
+    }
+    setBusyId(userId);
     setError('');
     setInfo('');
     try {
-      await action();
-      if (successMsg) setInfo(successMsg);
+      await action(userId);
+      if (successMsg) showFeedback('info', successMsg);
       await load();
     } catch (err) {
-      setError(err.message || 'Action failed');
+      showFeedback('error', err.message || 'Action failed');
     } finally {
       setBusyId(null);
     }
@@ -163,8 +204,12 @@ const SuperAdminDashboard = () => {
     setInfo('');
     try {
       await createUser({ ...createForm, role: 'user' });
+      const createdPassword = createForm.password;
       setCreateForm(emptyCreate);
-      setInfo('Account created.');
+      showFeedback(
+        'info',
+        `Account created. Password to share: ${createdPassword}`
+      );
       await load();
     } catch (err) {
       setError(err.message || 'Could not create account');
@@ -225,24 +270,81 @@ const SuperAdminDashboard = () => {
       organization: u.organization || '',
     });
     setResetTarget(null);
+    setViewTarget(null);
     setError('');
     setInfo('');
   };
 
+  const openPasswordModal = async (u, tab = 'view') => {
+    setEditUser(null);
+    setResetTarget(u);
+    setResetPassword('');
+    setViewTarget(u);
+    setViewPassword('');
+    setViewAvailable(false);
+    setViewMessage('');
+    setViewRevealed(false);
+    setPasswordModalTab(tab);
+    setError('');
+    setInfo('');
+
+    if (tab !== 'view') return;
+
+    setViewLoading(true);
+    setBusyId(String(u.id));
+    try {
+      const data = await fetchUserPassword(u.id);
+      setViewAvailable(Boolean(data?.available && data?.password));
+      setViewPassword(data?.password || '');
+      setViewMessage('');
+    } catch (err) {
+      setViewAvailable(false);
+      setViewPassword('');
+      setViewMessage(
+        err.message ||
+          'No viewable password stored yet. Reset the password to create one you can share.'
+      );
+    } finally {
+      setViewLoading(false);
+      setBusyId(null);
+    }
+  };
+
+  const closePasswordModal = () => {
+    setResetTarget(null);
+    setResetPassword('');
+    setViewTarget(null);
+    setViewPassword('');
+    setViewAvailable(false);
+    setViewMessage('');
+    setViewRevealed(false);
+    setPasswordModalTab('view');
+  };
+
+  const copyViewPassword = async () => {
+    if (!viewPassword) return;
+    try {
+      await navigator.clipboard.writeText(viewPassword);
+      showFeedback('info', 'Password copied. Share it securely with the user.');
+    } catch {
+      showFeedback('error', 'Could not copy password. Select and copy it manually.');
+    }
+  };
+
   const onSaveEdit = async (e) => {
     e.preventDefault();
-    if (!editUser) return;
-    setBusyId(editUser.id);
+    if (!editUser?.id) return;
+    setBusyId(String(editUser.id));
     setError('');
     setInfo('');
     try {
       const next = await updateUser(editUser.id, editForm);
-      if (next.id === user?.id) refreshUser?.(next);
+      if (String(next.id) === String(user?.id)) refreshUser?.(next);
       setEditUser(null);
-      setInfo('Account updated.');
+      showFeedback('info', 'Account updated.');
       await load();
     } catch (err) {
-      setError(err.message || 'Could not update account');
+      showFeedback('error', err.message || 'Could not update account');
     } finally {
       setBusyId(null);
     }
@@ -250,21 +352,29 @@ const SuperAdminDashboard = () => {
 
   const onResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetTarget) return;
+    if (!resetTarget?.id) return;
     if (resetPassword.length < 6) {
-      setError('New password must be at least 6 characters.');
+      showFeedback('error', 'New password must be at least 6 characters.');
       return;
     }
-    setBusyId(resetTarget.id);
+    setBusyId(String(resetTarget.id));
     setError('');
     setInfo('');
     try {
-      await resetUserPassword(resetTarget.id, resetPassword);
-      setInfo(`Password reset for ${resetTarget.email}.`);
-      setResetTarget(null);
+      const result = await resetUserPassword(resetTarget.id, resetPassword);
+      const nextPassword = result?.password || resetPassword;
+      setViewPassword(nextPassword);
+      setViewAvailable(true);
+      setViewMessage('');
+      setViewRevealed(true);
+      setPasswordModalTab('view');
       setResetPassword('');
+      showFeedback(
+        'info',
+        `Password reset for ${resetTarget.email}. Copy and share it securely.`
+      );
     } catch (err) {
-      setError(err.message || 'Could not reset password');
+      showFeedback('error', err.message || 'Could not reset password');
     } finally {
       setBusyId(null);
     }
@@ -275,6 +385,11 @@ const SuperAdminDashboard = () => {
 
   return (
     <section className="admin-dash card">
+      {toast && (
+        <div className="app-toast-fixed success" role="status">
+          {toast}
+        </div>
+      )}
       <div className="admin-dash-header">
         <div>
           <h2>
@@ -314,8 +429,18 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      {error && <div className="admin-error">{error}</div>}
-      {info && <div className="admin-info">{info}</div>}
+      <div ref={actionBannerRef}>
+        {error && (
+          <div className="admin-error" role="alert">
+            {error}
+          </div>
+        )}
+        {info && (
+          <div className="admin-info" role="status">
+            {info}
+          </div>
+        )}
+      </div>
 
       <div className="admin-self-grid">
         <form className="admin-create" onSubmit={onSaveProfile}>
@@ -359,9 +484,7 @@ const SuperAdminDashboard = () => {
             <FaKey /> Change my password
           </h3>
           <div className="admin-create-grid">
-            <input
-              className="form-input"
-              type="password"
+            <PasswordInput
               placeholder="Current password"
               value={passwordForm.currentPassword}
               onChange={(e) =>
@@ -369,10 +492,9 @@ const SuperAdminDashboard = () => {
               }
               required
               autoComplete="current-password"
+              aria-label="Current password"
             />
-            <input
-              className="form-input"
-              type="password"
+            <PasswordInput
               placeholder="New password (min 6)"
               value={passwordForm.newPassword}
               onChange={(e) =>
@@ -381,10 +503,9 @@ const SuperAdminDashboard = () => {
               minLength={6}
               required
               autoComplete="new-password"
+              aria-label="New password"
             />
-            <input
-              className="form-input"
-              type="password"
+            <PasswordInput
               placeholder="Confirm new password"
               value={passwordForm.confirmPassword}
               onChange={(e) =>
@@ -393,6 +514,7 @@ const SuperAdminDashboard = () => {
               minLength={6}
               required
               autoComplete="new-password"
+              aria-label="Confirm new password"
             />
             <button type="submit" className="btn btn-primary" disabled={savingPassword}>
               {savingPassword ? 'Updating…' : 'Update password'}
@@ -454,14 +576,13 @@ const SuperAdminDashboard = () => {
               setCreateForm((f) => ({ ...f, organization: e.target.value }))
             }
           />
-          <input
-            className="form-input"
-            type="password"
+          <PasswordInput
             placeholder="Password (min 6)"
             value={createForm.password}
             onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
             minLength={6}
             required
+            aria-label="Password"
           />
           <select
             className="form-input"
@@ -478,82 +599,197 @@ const SuperAdminDashboard = () => {
       </form>
 
       {editUser && (
-        <form className="admin-create admin-edit-panel" onSubmit={onSaveEdit}>
-          <h3>
-            <FaEdit /> Edit account — {editUser.email}
-          </h3>
-          <div className="admin-create-grid">
-            <input
-              className="form-input"
-              value={editForm.fullName}
-              onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
-              placeholder="Full name"
-              required
-            />
-            <input
-              className="form-input"
-              type="email"
-              value={editForm.email}
-              onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="Email"
-              required
-            />
-            <input
-              className="form-input"
-              value={editForm.organization}
-              onChange={(e) =>
-                setEditForm((f) => ({ ...f, organization: e.target.value }))
-              }
-              placeholder="Organization"
-            />
-            <button type="submit" className="btn btn-primary" disabled={busyId === editUser.id}>
-              Save changes
-            </button>
-            <button
-              type="button"
-              className="action-btn"
-              onClick={() => setEditUser(null)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <div
+          className="admin-modal-backdrop"
+          role="presentation"
+          onClick={() => setEditUser(null)}
+        >
+          <form
+            className="admin-modal"
+            onSubmit={onSaveEdit}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>
+              <FaEdit /> Edit account
+            </h3>
+            <p className="admin-modal-sub">{editUser.email}</p>
+            <div className="admin-modal-grid">
+              <input
+                className="form-input"
+                value={editForm.fullName}
+                onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+                placeholder="Full name"
+                required
+              />
+              <input
+                className="form-input"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="Email"
+                required
+              />
+              <input
+                className="form-input"
+                value={editForm.organization}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, organization: e.target.value }))
+                }
+                placeholder="Organization"
+              />
+              <div className="admin-modal-actions">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={busyId === String(editUser.id)}
+                >
+                  Save changes
+                </button>
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={() => setEditUser(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       )}
 
-      {resetTarget && (
-        <form className="admin-create admin-edit-panel" onSubmit={onResetPassword}>
-          <h3>
-            <FaKey /> Reset password — {resetTarget.email}
-          </h3>
-          <div className="admin-create-grid">
-            <input
-              className="form-input"
-              type="password"
-              placeholder="New password (min 6)"
-              value={resetPassword}
-              onChange={(e) => setResetPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={busyId === resetTarget.id}
-            >
-              Set new password
-            </button>
-            <button
-              type="button"
-              className="action-btn"
-              onClick={() => {
-                setResetTarget(null);
-                setResetPassword('');
-              }}
-            >
-              Cancel
-            </button>
+      {(viewTarget || resetTarget) && (
+        <div
+          className="admin-modal-backdrop"
+          role="presentation"
+          onClick={closePasswordModal}
+        >
+          <div
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-password-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="admin-password-modal-title">
+              <FaKey /> Password — {(viewTarget || resetTarget)?.email}
+            </h3>
+            <p className="admin-modal-sub">
+              View the stored password to share with the user, or set a new one.
+            </p>
+
+            <div className="admin-password-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={passwordModalTab === 'view'}
+                className={`admin-password-tab ${
+                  passwordModalTab === 'view' ? 'active' : ''
+                }`}
+                onClick={() => openPasswordModal(viewTarget || resetTarget, 'view')}
+              >
+                <FaEye /> View
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={passwordModalTab === 'reset'}
+                className={`admin-password-tab ${
+                  passwordModalTab === 'reset' ? 'active' : ''
+                }`}
+                onClick={() => setPasswordModalTab('reset')}
+              >
+                <FaKey /> Reset
+              </button>
+            </div>
+
+            {passwordModalTab === 'view' && (
+              <div className="admin-modal-grid">
+                {viewLoading ? (
+                  <p className="admin-modal-sub">Loading password…</p>
+                ) : viewAvailable ? (
+                  <>
+                    <label className="admin-password-label" htmlFor="admin-view-password">
+                      Current password
+                    </label>
+                    <div className="admin-password-reveal-row">
+                      <input
+                        id="admin-view-password"
+                        className="form-input"
+                        type={viewRevealed ? 'text' : 'password'}
+                        value={viewPassword}
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        className="action-btn"
+                        title={viewRevealed ? 'Hide' : 'Show'}
+                        onClick={() => setViewRevealed((v) => !v)}
+                      >
+                        {viewRevealed ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                      <button
+                        type="button"
+                        className="action-btn approve"
+                        title="Copy password"
+                        onClick={copyViewPassword}
+                      >
+                        <FaCopy /> Copy
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="admin-modal-sub admin-modal-warn">
+                    {viewMessage ||
+                      'No viewable password stored yet. Use Reset to set one, then you can view and share it.'}
+                  </p>
+                )}
+                <div className="admin-modal-actions">
+                  <button type="button" className="action-btn" onClick={closePasswordModal}>
+                    Close
+                  </button>
+                  {!viewAvailable && (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setPasswordModalTab('reset')}
+                    >
+                      Set password
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {passwordModalTab === 'reset' && (
+              <form className="admin-modal-grid" onSubmit={onResetPassword}>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="New password (min 6)"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  minLength={6}
+                  required
+                  autoFocus
+                  autoComplete="new-password"
+                />
+                <div className="admin-modal-actions">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={busyId === String((resetTarget || viewTarget)?.id || '')}
+                  >
+                    Set new password
+                  </button>
+                  <button type="button" className="action-btn" onClick={closePasswordModal}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
-        </form>
+        </div>
       )}
 
       {loading ? (
@@ -574,11 +810,12 @@ const SuperAdminDashboard = () => {
             </thead>
             <tbody>
               {users.map((u) => {
-                const isSelf = u.id === user?.id;
+                const userId = String(u.id || '');
+                const isSelf = userId && userId === String(user?.id || '');
                 const isAdmin = u.role === 'superadmin';
-                const busy = busyId === u.id;
+                const busy = busyId === userId;
                 return (
-                  <tr key={u.id} className={u.status === 'pending' ? 'row-pending' : ''}>
+                  <tr key={userId || u.email} className={u.status === 'pending' ? 'row-pending' : ''}>
                     <td>{u.fullName}</td>
                     <td>{u.email}</td>
                     <td>{u.organization || '—'}</td>
@@ -596,23 +833,25 @@ const SuperAdminDashboard = () => {
                         <button
                           type="button"
                           className="action-btn"
-                          title="Edit"
-                          disabled={busy}
-                          onClick={() => openEdit(u)}
+                          title="Edit account"
+                          disabled={busy || !userId}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openEdit(u);
+                          }}
                         >
                           <FaEdit /> Edit
                         </button>
                         <button
                           type="button"
                           className="action-btn"
-                          title="Reset password"
-                          disabled={busy}
-                          onClick={() => {
-                            setResetTarget(u);
-                            setResetPassword('');
-                            setEditUser(null);
-                            setError('');
-                            setInfo('');
+                          title="View or reset password"
+                          disabled={busy || !userId}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openPasswordModal(u, 'view');
                           }}
                         >
                           <FaKey /> Password
@@ -621,14 +860,16 @@ const SuperAdminDashboard = () => {
                           <button
                             type="button"
                             className="action-btn approve"
-                            disabled={busy}
-                            onClick={() =>
+                            disabled={busy || !userId}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               runAction(
-                                u.id,
-                                () => setUserStatus(u.id, 'approved'),
-                                'Account approved.'
-                              )
-                            }
+                                userId,
+                                (id) => setUserStatus(id, 'approved'),
+                                `${u.email} approved.`
+                              );
+                            }}
                           >
                             <FaCheck /> Approve
                           </button>
@@ -637,14 +878,23 @@ const SuperAdminDashboard = () => {
                           <button
                             type="button"
                             className="action-btn reject"
-                            disabled={busy}
-                            onClick={() =>
+                            disabled={busy || !userId}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (
+                                !window.confirm(
+                                  `Reject account for ${u.email}? They will not be able to sign in.`
+                                )
+                              ) {
+                                return;
+                              }
                               runAction(
-                                u.id,
-                                () => setUserStatus(u.id, 'rejected'),
-                                'Account rejected.'
-                              )
-                            }
+                                userId,
+                                (id) => setUserStatus(id, 'rejected'),
+                                `${u.email} rejected.`
+                              );
+                            }}
                           >
                             <FaTimes /> Reject
                           </button>
@@ -653,15 +903,22 @@ const SuperAdminDashboard = () => {
                           <button
                             type="button"
                             className="action-btn delete"
-                            disabled={busy}
-                            onClick={() => {
+                            disabled={busy || !userId}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               if (
-                                window.confirm(
+                                !window.confirm(
                                   `Delete account for ${u.email}? This cannot be undone.`
                                 )
                               ) {
-                                runAction(u.id, () => deleteUser(u.id), 'Account deleted.');
+                                return;
                               }
+                              runAction(
+                                userId,
+                                (id) => deleteUser(id),
+                                `${u.email} deleted.`
+                              );
                             }}
                           >
                             <FaTrash /> Delete

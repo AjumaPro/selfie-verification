@@ -16,6 +16,7 @@ import {
 } from '../config/authUi';
 import { BRAND } from '../utils/brandAssets';
 import GlicoLifeLogo from './GlicoLifeLogo';
+import PasswordInput from './PasswordInput';
 import './AuthPanel.css';
 
 const emptyLogin = { email: '', password: '' };
@@ -161,10 +162,8 @@ const AuthPanel = () => {
       </div>
       <div className="form-group full-width">
         <label htmlFor={`${prefix}-password`}>Password</label>
-        <input
+        <PasswordInput
           id={`${prefix}-password`}
-          className="form-input"
-          type="password"
           autoComplete="current-password"
           value={form.password}
           onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
@@ -371,10 +370,8 @@ const AuthPanel = () => {
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-password">Password</label>
-            <input
+            <PasswordInput
               id="reg-password"
-              className="form-input"
-              type="password"
               autoComplete="new-password"
               value={registerForm.password}
               onChange={(e) =>
@@ -386,10 +383,8 @@ const AuthPanel = () => {
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-confirm">Confirm password</label>
-            <input
+            <PasswordInput
               id="reg-confirm"
-              className="form-input"
-              type="password"
               autoComplete="new-password"
               value={registerForm.confirmPassword}
               onChange={(e) =>
