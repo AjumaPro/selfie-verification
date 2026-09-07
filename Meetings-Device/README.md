@@ -65,6 +65,8 @@ REACT_APP_AUTH_API_URL=https://YOUR-APP.ondigitalocean.app
 
 ## Notes
 
-- No login required for Meetings (same as web).
+- **Hosts must sign in** to create/manage meetings (same as the website).
+- Guests stay public: QR `?join=` check-in and `?book=` booking need no account.
 - QR check-in and location need **HTTPS** (or localhost) and user GPS permission.
 - Keep this package in sync via `npm run sync` after Meetings changes in `frontend/`.
+- Desktop installers: set `REACT_APP_AUTH_API_URL` (or `REACT_APP_PUBLIC_WEB_URL`) to your live HTTPS app before `npm run electron:build` so QR links are phone-scannable.

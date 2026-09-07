@@ -380,15 +380,17 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
     }
   };
 
-  const downloadQr = () => {
-    if (!qrDataUrl) return;
+  const downloadQr = async () => {
+    if (!joinUrl) return;
     const { safeTitle, datePart } = meetingFileSlug(meeting);
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = `glico-checkin-${safeTitle}-${datePart}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    try {
+      await downloadScannableQr(
+        joinUrl,
+        `glico-checkin-${safeTitle}-${datePart}.png`
+      );
+    } catch {
+      /* ignore */
+    }
   };
 
   const downloadFoodList = (format = 'csv') => {

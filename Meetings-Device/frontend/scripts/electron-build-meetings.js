@@ -34,6 +34,20 @@ function run(cmd, opts = {}) {
       CSC_IDENTITY_AUTO_DISCOVERY: 'false',
       REACT_APP_DEVICE_APP: 'false',
       GENERATE_SOURCEMAP: 'false',
+      // Guest QR / join links must be HTTPS — never file://
+      REACT_APP_PUBLIC_WEB_URL:
+        process.env.REACT_APP_PUBLIC_WEB_URL ||
+        process.env.REACT_APP_AUTH_API_URL ||
+        process.env.REACT_APP_DESKTOP_AUTH_API_URL ||
+        '',
+      REACT_APP_AUTH_API_URL:
+        process.env.REACT_APP_AUTH_API_URL ||
+        process.env.REACT_APP_DESKTOP_AUTH_API_URL ||
+        '',
+      REACT_APP_DESKTOP_AUTH_API_URL:
+        process.env.REACT_APP_DESKTOP_AUTH_API_URL ||
+        process.env.REACT_APP_AUTH_API_URL ||
+        '',
     },
     ...opts,
   });

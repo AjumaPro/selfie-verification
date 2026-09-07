@@ -4,6 +4,7 @@
 
 import { resolveApiBase } from '../config/apiBase';
 import { getToken } from './authService';
+import { getPublicWebOrigin } from '../utils/publicWebOrigin';
 
 const API_BASE = resolveApiBase();
 
@@ -52,12 +53,14 @@ export function newVerifySessionId() {
 /**
  * Canonical guest URL. Prefer `/verify/:id` (path survives PWA / in-app openers
  * better than `?verify=` alone). Query form still accepted when opening old QRs.
+ * Desktop Electron uses REACT_APP_PUBLIC_WEB_URL / AUTH API origin (not file://).
  */
 export function getVerifyUrl(sessionId) {
   if (typeof window === 'undefined') return '';
   const id = String(sessionId || '').trim();
   if (!id) return '';
-  const origin = String(window.location.origin || '').replace(/\/$/, '');
+  const origin = getPublicWebOrigin();
+  if (!origin) return '';
   return `${origin}/verify/${encodeURIComponent(id)}`;
 }
 

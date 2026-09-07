@@ -5,6 +5,7 @@
 
 import { resolveApiBase } from '../config/apiBase';
 import { getToken } from './authService';
+import { getPublicWebOrigin } from '../utils/publicWebOrigin';
 
 const API_BASE = resolveApiBase();
 const HOST_KEY_STORAGE = 'glico_meetings_host_key_v1';
@@ -69,9 +70,11 @@ async function request(path, options = {}) {
 
 export function getJoinUrl(meetingId) {
   if (typeof window === 'undefined') return '';
-  const base = `${window.location.origin}${window.location.pathname || '/'}`;
-  const clean = base.replace(/\/$/, '') || window.location.origin;
-  return `${clean}?join=${encodeURIComponent(meetingId)}`;
+  const id = String(meetingId || '').trim();
+  if (!id) return '';
+  const origin = getPublicWebOrigin();
+  if (!origin) return '';
+  return `${origin}/?join=${encodeURIComponent(id)}`;
 }
 
 export function mapsEmbedUrl(place) {
