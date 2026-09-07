@@ -80,10 +80,31 @@ const clientDir = path.join(__dirname, '..', 'public');
 const clientIndex = path.join(clientDir, 'index.html');
 
 if (fs.existsSync(clientIndex)) {
+  // Old builds used homepage "./" so /verify/:id resolved assets to /verify/static/…
+  // Map those mistaken paths back to the real public root.
+  app.use((req, _res, next) => {
+    const pathOnly = String(req.path || '');
+    const rewritten = pathOnly.replace(
+      /^\/verify\/(?=(?:static|icons|downloads|models)\/|manifest\.json$|asset-manifest\.json$|favicon\.png$|Glico\.png$|sw\.js$)/i,
+      '/'
+    );
+    if (rewritten !== pathOnly) {
+      const qIdx = String(req.url || '').indexOf('?');
+      const query = qIdx >= 0 ? String(req.url).slice(qIdx) : '';
+      req.url = rewritten + query;
+    }
+    next();
+  });
+
   app.use(express.static(clientDir, { index: false }));
   app.get('*', (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
+    // Never SPA-fallback asset-looking paths (avoids blank /verify/* when
+    // relative ./static/... wrongly resolves under /verify/).
+    if (/\.(js|css|map|json|ico|png|jpe?g|gif|webp|svg|woff2?|ttf|eot)$/i.test(req.path)) {
+      return res.status(404).type('text').send('Not found');
+    }
     return res.sendFile(clientIndex);
   });
   console.log('Serving UI from', clientDir);
