@@ -43,6 +43,24 @@ const emptyCreate = {
   status: 'approved',
 };
 
+function generateShareablePassword() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let out = '';
+  const bytes = new Uint8Array(12);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  for (let i = 0; i < bytes.length; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  // Ensure letter + number for password policy
+  if (!/[A-Za-z]/.test(out)) out = `A${out.slice(1)}`;
+  if (!/[0-9]/.test(out)) out = `${out.slice(0, -1)}7`;
+  return out;
+}
+
 const SuperAdminDashboard = () => {
   const { user, refreshUser } = useAuth();
   const { toast, flash } = useAppToast(4200);
@@ -300,7 +318,10 @@ const SuperAdminDashboard = () => {
     setError('');
     setInfo('');
 
-    if (tab !== 'view') return;
+    if (tab !== 'view') {
+      setResetPassword(generateShareablePassword());
+      return;
+    }
 
     setViewLoading(true);
     setBusyId(String(u.id));
@@ -309,13 +330,17 @@ const SuperAdminDashboard = () => {
       setViewAvailable(Boolean(data?.available && data?.password));
       setViewPassword(data?.password || '');
       setViewMessage('');
+      setPasswordModalTab('view');
     } catch (err) {
+      // Older accounts only have a hash — open Reset with a ready-to-save password
       setViewAvailable(false);
       setViewPassword('');
       setViewMessage(
         err.message ||
-          'No viewable password stored yet. Reset the password to create one you can share.'
+          'This account was created before viewable passwords were enabled. Set a new password below, then copy and share it.'
       );
+      setResetPassword(generateShareablePassword());
+      setPasswordModalTab('reset');
     } finally {
       setViewLoading(false);
       setBusyId(null);
@@ -341,6 +366,10 @@ const SuperAdminDashboard = () => {
     } catch {
       showFeedback('error', 'Could not copy password. Select and copy it manually.');
     }
+  };
+
+  const applyGeneratedPassword = () => {
+    setResetPassword(generateShareablePassword());
   };
 
   const onSaveEdit = async (e) => {
@@ -758,20 +787,23 @@ const SuperAdminDashboard = () => {
                 ) : (
                   <p className="admin-modal-sub admin-modal-warn">
                     {viewMessage ||
-                      'No viewable password stored yet. Use Reset to set one, then you can view and share it.'}
+                      'No viewable password stored yet for this account. Set a new one to share it.'}
                   </p>
                 )}
                 <div className="admin-modal-actions">
                   <button type="button" className="action-btn" onClick={closePasswordModal}>
                     Close
                   </button>
-                  {!viewAvailable && (
+                  {!viewAvailable && !viewLoading && (
                     <button
                       type="button"
                       className="btn btn-primary"
-                      onClick={() => setPasswordModalTab('reset')}
+                      onClick={() => {
+                        if (!resetPassword) setResetPassword(generateShareablePassword());
+                        setPasswordModalTab('reset');
+                      }}
                     >
-                      Set password
+                      Set password to share
                     </button>
                   )}
                 </div>
@@ -780,24 +812,45 @@ const SuperAdminDashboard = () => {
 
             {passwordModalTab === 'reset' && (
               <form className="admin-modal-grid" onSubmit={onResetPassword}>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder={`New password (${PASSWORD_HINT.toLowerCase()})`}
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                  minLength={8}
-                  required
-                  autoFocus
-                  autoComplete="new-password"
-                />
+                {viewMessage && !viewAvailable && (
+                  <p className="admin-modal-sub admin-modal-warn">{viewMessage}</p>
+                )}
+                <label className="admin-password-label" htmlFor="admin-reset-password">
+                  New password to share
+                </label>
+                <div className="admin-password-reveal-row">
+                  <input
+                    id="admin-reset-password"
+                    className="form-input"
+                    type="text"
+                    placeholder={`New password (${PASSWORD_HINT.toLowerCase()})`}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    minLength={8}
+                    required
+                    autoFocus
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="action-btn"
+                    title="Generate a new password"
+                    onClick={applyGeneratedPassword}
+                  >
+                    Generate
+                  </button>
+                </div>
+                <p className="admin-modal-sub">
+                  Saving stores a viewable copy so you can open <strong>View</strong> anytime and
+                  share it with the user.
+                </p>
                 <div className="admin-modal-actions">
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={busyId === String((resetTarget || viewTarget)?.id || '')}
                   >
-                    Set new password
+                    Save &amp; show password
                   </button>
                   <button type="button" className="action-btn" onClick={closePasswordModal}>
                     Cancel
