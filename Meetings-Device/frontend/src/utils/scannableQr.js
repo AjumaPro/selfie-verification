@@ -26,27 +26,69 @@ export function makeScannableQrDataUrl(text, kind = 'preview') {
   return QRCode.toDataURL(String(text || ''), opts);
 }
 
-function dataUrlToFile(dataUrl, filename) {
+function dataUrlToBlob(dataUrl) {
   const [header, b64] = String(dataUrl).split(',');
   const mime = /data:([^;]+)/.exec(header)?.[1] || 'image/png';
   const bin = atob(b64 || '');
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-  return new File([bytes], filename, { type: mime });
+  return new Blob([bytes], { type: mime });
+}
+
+/** iOS / iPadOS ignore <a download> for blobs — Share → Save Image is reliable. */
+function prefersShareToSave() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = String(navigator.userAgent || '');
+  if (/iPad|iPhone|iPod/i.test(ua)) return true;
+  // iPadOS 13+ reports as MacIntel with touch
+  return navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1;
+}
+
+function triggerBlobDownload(blob, filename) {
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+    return { method: 'download', objectUrl };
+  } catch (err) {
+    try {
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      return { method: 'open', objectUrl };
+    } catch {
+      URL.revokeObjectURL(objectUrl);
+      throw err;
+    }
+  }
 }
 
 /**
- * Save / share a high-res QR so another phone can scan it from Photos or screen.
- * Prefers Web Share (mobile), then <a download>, then open image tab (iOS fallback).
+ * Save a high-res QR PNG.
+ * Desktop/Android: real file download via blob URL (data: + download is flaky).
+ * iOS: Web Share sheet (Save Image) — <a download> is ignored there.
  */
 export async function downloadScannableQr(text, filename = 'glico-qr.png') {
   const dataUrl = await makeScannableQrDataUrl(text, 'download');
   const safeName = String(filename || 'glico-qr.png').replace(/[^\w.-]+/g, '_');
+  const blob = dataUrlToBlob(dataUrl);
 
-  try {
-    if (navigator.share && navigator.canShare) {
-      const file = dataUrlToFile(dataUrl, safeName);
-      if (navigator.canShare({ files: [file] })) {
+  if (prefersShareToSave() && typeof navigator.share === 'function') {
+    try {
+      const file =
+        typeof File !== 'undefined'
+          ? new File([blob], safeName, { type: blob.type || 'image/png' })
+          : null;
+      if (
+        file &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
         await navigator.share({
           files: [file],
           title: 'QR code',
@@ -54,31 +96,20 @@ export async function downloadScannableQr(text, filename = 'glico-qr.png') {
         });
         return { method: 'share' };
       }
+    } catch (err) {
+      // Cancelled share — still try opening the image so the user can save it
+      if (err && err.name === 'AbortError') {
+        /* fall through */
+      } else if (err && err.name !== 'NotAllowedError') {
+        /* fall through */
+      }
     }
-  } catch (err) {
-    // User cancelled share — treat as done
-    if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
-      return { method: 'share-cancelled' };
-    }
+    // iOS fallback: open PNG so user can long-press → Save Image
+    const objectUrl = URL.createObjectURL(blob);
+    window.open(objectUrl, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    return { method: 'ios-open' };
   }
 
-  try {
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = safeName;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    // iOS often ignores download and does nothing with data: URLs — open image next
-    const isIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent || '');
-    if (isIOS) {
-      window.open(dataUrl, '_blank', 'noopener,noreferrer');
-      return { method: 'ios-open' };
-    }
-    return { method: 'download' };
-  } catch {
-    window.open(dataUrl, '_blank', 'noopener,noreferrer');
-    return { method: 'open' };
-  }
+  return triggerBlobDownload(blob, safeName);
 }

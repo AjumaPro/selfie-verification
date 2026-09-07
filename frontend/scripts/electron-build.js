@@ -104,7 +104,15 @@ try {
   );
 
   parkDownloads();
-  run('npm run build');
+  // Keep relative assets for file:// installers (web DO build sets PUBLIC_URL=/).
+  run('npm run build', {
+    env: {
+      ...process.env,
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false',
+      PUBLIC_URL: './',
+      REACT_APP_DEVICE_APP: process.env.REACT_APP_DEVICE_APP || 'true',
+    },
+  });
 
   const targets = [];
   if (wantMac) targets.push('--mac dmg zip');

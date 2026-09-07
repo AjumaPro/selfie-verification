@@ -388,8 +388,8 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
         joinUrl,
         `glico-checkin-${safeTitle}-${datePart}.png`
       );
-    } catch {
-      /* ignore */
+    } catch (err) {
+      window.alert(err?.message || 'Could not save QR code.');
     }
   };
 

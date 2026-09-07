@@ -427,7 +427,7 @@ const VerifyShare = () => {
                 onClick={downloadQr}
                 disabled={!verifyUrl}
               >
-                <FaDownload aria-hidden /> Save / share QR
+                <FaDownload aria-hidden /> Download QR
               </button>
             </div>
             <p className="verify-share-qr-tip">

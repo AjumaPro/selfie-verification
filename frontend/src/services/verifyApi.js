@@ -51,8 +51,9 @@ export function newVerifySessionId() {
 }
 
 /**
- * Canonical guest URL. Prefer `/verify/:id` (path survives PWA / in-app openers
- * better than `?verify=` alone). Query form still accepted when opening old QRs.
+ * Canonical guest URL uses `/?verify=` (same pattern as meetings `/?join=`).
+ * Path form `/verify/:id` still opens in App, but breaks with CRA `homepage: "./"`
+ * because relative `./static/...` resolves under `/verify/` and loads HTML as JS.
  * Desktop Electron uses REACT_APP_PUBLIC_WEB_URL / AUTH API origin (not file://).
  */
 export function getVerifyUrl(sessionId) {
@@ -61,7 +62,7 @@ export function getVerifyUrl(sessionId) {
   if (!id) return '';
   const origin = getPublicWebOrigin();
   if (!origin) return '';
-  return `${origin}/verify/${encodeURIComponent(id)}`;
+  return `${origin}/?verify=${encodeURIComponent(id)}`;
 }
 
 export async function upsertVerifySession(sessionId, { title, note, status }) {

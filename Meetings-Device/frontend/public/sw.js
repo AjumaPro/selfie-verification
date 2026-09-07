@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals -- `self` is the Service Worker global */
 /* GLICO Life Platform — offline shell cache for installable PWA */
-const CACHE_NAME = 'glico-platform-v4';
+const CACHE_NAME = 'glico-platform-v5';
 const PRECACHE = [
   './',
   './index.html',
