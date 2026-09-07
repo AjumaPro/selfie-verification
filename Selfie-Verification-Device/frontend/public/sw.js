@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals -- `self` is the Service Worker global */
 /* GLICO Life Platform — offline shell cache for installable PWA */
-const CACHE_NAME = 'glico-platform-v3';
+const CACHE_NAME = 'glico-platform-v4';
 const PRECACHE = [
   './',
   './index.html',
@@ -45,11 +45,24 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response && response.status === 200 && response.type === 'basic') {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            // Cache shell by path only (ignore ?verify= / ?join=) so navigations share one entry
+            const cacheReq =
+              request.mode === 'navigate'
+                ? new Request(url.origin + '/')
+                : request;
+            caches.open(CACHE_NAME).then((cache) => cache.put(cacheReq, clone));
           }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() =>
+          caches.match(request).then(
+            (hit) =>
+              hit ||
+              caches.match('./index.html') ||
+              caches.match('./') ||
+              caches.match(url.origin + '/')
+          )
+        )
     );
     return;
   }

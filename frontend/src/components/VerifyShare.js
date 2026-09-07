@@ -113,9 +113,11 @@ const VerifyShare = () => {
     }
     let cancelled = false;
     QRCode.toDataURL(verifyUrl, {
-      width: 240,
+      width: 360,
       margin: 2,
-      color: { dark: '#103078', light: '#ffffff' },
+      errorCorrectionLevel: 'M',
+      // Pure black — navy QR codes often fail phone cameras / downloaded prints
+      color: { dark: '#000000', light: '#ffffff' },
     })
       .then((url) => {
         if (!cancelled) setQrDataUrl(url);
@@ -220,14 +222,31 @@ const VerifyShare = () => {
     }
   };
 
-  const downloadQr = () => {
-    if (!qrDataUrl) return;
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = `glico-verify-${sessionId.slice(0, 8)}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const downloadQr = async () => {
+    if (!verifyUrl) return;
+    try {
+      // Larger PNG for print / download so scanners can read it reliably
+      const hiRes = await QRCode.toDataURL(verifyUrl, {
+        width: 720,
+        margin: 3,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#000000', light: '#ffffff' },
+      });
+      const a = document.createElement('a');
+      a.href = hiRes;
+      a.download = `glico-verify-${(sessionId || 'link').slice(0, 8)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      if (!qrDataUrl) return;
+      const a = document.createElement('a');
+      a.href = qrDataUrl;
+      a.download = `glico-verify-${(sessionId || 'link').slice(0, 8)}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   };
 
   const dropResult = async (resultId) => {
@@ -412,7 +431,9 @@ const VerifyShare = () => {
             </label>
             <p className="verify-share-hint">
               <FaLink aria-hidden /> Send this link by WhatsApp / SMS, or print the
-              QR for guests to scan.
+              QR for guests to scan. Ask guests to open in <strong>Chrome</strong>{' '}
+              (camera works best there). After you update, create a fresh QR — old
+              navy QR images may not scan.
             </p>
           </div>
         </div>

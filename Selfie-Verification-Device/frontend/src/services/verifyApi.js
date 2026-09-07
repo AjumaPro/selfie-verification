@@ -49,11 +49,16 @@ export function newVerifySessionId() {
   return `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/**
+ * Canonical guest URL. Prefer `/verify/:id` (path survives PWA / in-app openers
+ * better than `?verify=` alone). Query form still accepted when opening old QRs.
+ */
 export function getVerifyUrl(sessionId) {
   if (typeof window === 'undefined') return '';
-  const base = `${window.location.origin}${window.location.pathname || '/'}`;
-  const clean = base.replace(/\/$/, '') || window.location.origin;
-  return `${clean}?verify=${encodeURIComponent(sessionId)}`;
+  const id = String(sessionId || '').trim();
+  if (!id) return '';
+  const origin = String(window.location.origin || '').replace(/\/$/, '');
+  return `${origin}/verify/${encodeURIComponent(id)}`;
 }
 
 export async function upsertVerifySession(sessionId, { title, note, status }) {

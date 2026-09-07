@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FaIdCard,
   FaCheckCircle,
   FaShieldAlt,
+  FaChrome,
 } from 'react-icons/fa';
 import ImageUpload from './ImageUpload';
 import CameraCapture from './CameraCapture';
@@ -22,6 +23,58 @@ import { BRAND } from '../utils/brandAssets';
 import GlicoLifeLogo from './GlicoLifeLogo';
 import './VerifyJoin.css';
 
+const BROWSER_OK_KEY = 'glico_verify_join_browser_ok';
+
+function detectInAppBrowser() {
+  if (typeof navigator === 'undefined') {
+    return { isIOS: false, isAndroid: false, isInApp: false, appName: '' };
+  }
+  const ua = String(navigator.userAgent || '');
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const apps = [
+    ['WhatsApp', /WhatsApp/i],
+    ['Instagram', /Instagram/i],
+    ['Facebook', /FBAN|FBAV|FB_IAB|FBJS/i],
+    ['Telegram', /Telegram/i],
+    ['TikTok', /TikTok|BytedanceWebview/i],
+  ];
+  let appName = '';
+  for (const [name, re] of apps) {
+    if (re.test(ua)) {
+      appName = name;
+      break;
+    }
+  }
+  const isInApp = !!appName || (isAndroid && /; wv\)/i.test(ua));
+  return {
+    isIOS,
+    isAndroid,
+    isInApp,
+    appName: appName || (isInApp ? 'in-app browser' : ''),
+  };
+}
+
+function openVerifyInChrome() {
+  if (typeof window === 'undefined') return;
+  const url = window.location.href;
+  const env = detectInAppBrowser();
+  if (env.isAndroid) {
+    const withoutScheme = url.replace(/^https?:\/\//i, '');
+    const fallback = encodeURIComponent(url);
+    window.location.href = `intent://${withoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
+    return;
+  }
+  if (env.isIOS) {
+    const chromeUrl = /^https:/i.test(url)
+      ? url.replace(/^https:\/\//i, 'googlechromes://')
+      : url.replace(/^http:\/\//i, 'googlechrome://');
+    window.location.href = chromeUrl;
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 /**
  * Public guest page (?verify=id): Ghana Card + selfie → host receives result.
  */
@@ -31,6 +84,15 @@ const VerifyJoin = ({ sessionId, onClose }) => {
   const [sessionError, setSessionError] = useState('');
   const [modelsReady, setModelsReady] = useState(false);
   const [modelsError, setModelsError] = useState('');
+  const browserEnv = useMemo(() => detectInAppBrowser(), []);
+  const [browserGateDismissed, setBrowserGateDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem(BROWSER_OK_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -184,8 +246,63 @@ const VerifyJoin = ({ sessionId, onClose }) => {
       apiResult.verified === 'TRUE' ||
       apiResult.verified === true);
 
+  const showBrowserGate =
+    browserEnv.isInApp && !browserGateDismissed && !submitted;
+
+  const dismissBrowserGate = () => {
+    try {
+      sessionStorage.setItem(BROWSER_OK_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setBrowserGateDismissed(true);
+  };
+
   return (
     <div className="App verify-join-page">
+      {showBrowserGate && (
+        <div
+          className="verify-join-browser-gate"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="verify-join-browser-gate-title"
+        >
+          <div className="verify-join-browser-gate-card">
+            <span className="verify-join-browser-gate-icon" aria-hidden>
+              <FaChrome />
+            </span>
+            <h2 id="verify-join-browser-gate-title">Open in Chrome</h2>
+            <p>
+              {browserEnv.appName || 'This app'} opens an in-app browser that
+              often blocks the camera needed for selfie verification. Open this
+              link in Chrome (or Safari on iPhone), then continue.
+            </p>
+            <div className="verify-join-browser-gate-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={openVerifyInChrome}
+              >
+                <FaChrome aria-hidden /> Open in Chrome
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={dismissBrowserGate}
+              >
+                Continue here anyway
+              </button>
+            </div>
+            {browserEnv.isIOS && (
+              <p className="verify-join-browser-gate-foot">
+                On iPhone: tap <strong>···</strong> or <strong>Share</strong> →{' '}
+                <strong>Open in Chrome</strong> / <strong>Safari</strong>.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <header className="verify-join-header">
         <GlicoLifeLogo compact markClassName="verify-join-logo" />
         <div>

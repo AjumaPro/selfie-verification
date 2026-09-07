@@ -63,7 +63,11 @@ function getVerifySessionIdFromUrl() {
   if (typeof window === 'undefined') return '';
   try {
     const params = new URLSearchParams(window.location.search);
-    return String(params.get('verify') || '').trim();
+    const fromQuery = String(params.get('verify') || '').trim();
+    if (fromQuery) return fromQuery;
+    const path = String(window.location.pathname || '');
+    const match = path.match(/^\/verify\/([A-Za-z0-9_-]+)\/?$/);
+    return match ? match[1] : '';
   } catch {
     return '';
   }
@@ -244,6 +248,9 @@ function App() {
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete('verify');
+      if (/^\/verify\//i.test(url.pathname)) {
+        url.pathname = '/';
+      }
       window.history.replaceState({}, '', url.pathname + url.search + url.hash);
     } catch {
       /* ignore */
