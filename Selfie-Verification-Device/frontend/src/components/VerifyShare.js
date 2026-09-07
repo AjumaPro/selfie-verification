@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import {
   FaCopy,
   FaDownload,
@@ -9,6 +8,8 @@ import {
   FaTrash,
   FaCheckCircle,
   FaTimesCircle,
+  FaExpand,
+  FaTimes,
 } from 'react-icons/fa';
 import {
   newVerifySessionId,
@@ -19,6 +20,10 @@ import {
   deleteVerifySession,
   listMyVerifySessions,
 } from '../services/verifyApi';
+import {
+  makeScannableQrDataUrl,
+  downloadScannableQr,
+} from '../utils/scannableQr';
 import './VerifyShare.css';
 
 const STORAGE_KEY = 'glico_verify_active_session_v1';
@@ -55,6 +60,7 @@ const VerifyShare = () => {
   const [results, setResults] = useState([]);
   const [session, setSession] = useState(null);
   const [past, setPast] = useState([]);
+  const [qrFullscreen, setQrFullscreen] = useState(false);
 
   const verifyUrl = sessionId ? getVerifyUrl(sessionId) : '';
 
@@ -112,13 +118,7 @@ const VerifyShare = () => {
       return undefined;
     }
     let cancelled = false;
-    QRCode.toDataURL(verifyUrl, {
-      width: 360,
-      margin: 2,
-      errorCorrectionLevel: 'M',
-      // Pure black — navy QR codes often fail phone cameras / downloaded prints
-      color: { dark: '#000000', light: '#ffffff' },
-    })
+    makeScannableQrDataUrl(verifyUrl, 'preview')
       .then((url) => {
         if (!cancelled) setQrDataUrl(url);
       })
@@ -129,6 +129,20 @@ const VerifyShare = () => {
       cancelled = true;
     };
   }, [verifyUrl]);
+
+  useEffect(() => {
+    if (!qrFullscreen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setQrFullscreen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [qrFullscreen]);
 
   useEffect(() => {
     if (!sessionId) return undefined;
@@ -225,27 +239,12 @@ const VerifyShare = () => {
   const downloadQr = async () => {
     if (!verifyUrl) return;
     try {
-      // Larger PNG for print / download so scanners can read it reliably
-      const hiRes = await QRCode.toDataURL(verifyUrl, {
-        width: 720,
-        margin: 3,
-        errorCorrectionLevel: 'M',
-        color: { dark: '#000000', light: '#ffffff' },
-      });
-      const a = document.createElement('a');
-      a.href = hiRes;
-      a.download = `glico-verify-${(sessionId || 'link').slice(0, 8)}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch {
-      if (!qrDataUrl) return;
-      const a = document.createElement('a');
-      a.href = qrDataUrl;
-      a.download = `glico-verify-${(sessionId || 'link').slice(0, 8)}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      await downloadScannableQr(
+        verifyUrl,
+        `glico-verify-${(sessionId || 'link').slice(0, 8)}.png`
+      );
+    } catch (err) {
+      setError(err.message || 'Could not save QR code.');
     }
   };
 
@@ -398,15 +397,44 @@ const VerifyShare = () => {
         <div className="verify-share-qr-grid">
           <div className="verify-share-qr-block">
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt="Verification QR code" className="verify-share-qr" />
+              <button
+                type="button"
+                className="verify-share-qr-tap"
+                onClick={() => setQrFullscreen(true)}
+                aria-label="Show QR full screen for scanning"
+              >
+                <img
+                  src={qrDataUrl}
+                  alt="Verification QR code"
+                  className="verify-share-qr"
+                />
+              </button>
             ) : (
               <div className="verify-share-qr-ph">QR…</div>
             )}
             <div className="verify-share-qr-btns">
-              <button type="button" className="btn btn-secondary" onClick={downloadQr}>
-                <FaDownload aria-hidden /> Download QR
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setQrFullscreen(true)}
+                disabled={!qrDataUrl}
+              >
+                <FaExpand aria-hidden /> Show for scan
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={downloadQr}
+                disabled={!verifyUrl}
+              >
+                <FaDownload aria-hidden /> Save / share QR
               </button>
             </div>
+            <p className="verify-share-qr-tip">
+              On a phone: tap <strong>Show for scan</strong>, turn brightness up,
+              hold still for the guest camera. Or save the PNG and open it full
+              screen from Photos.
+            </p>
           </div>
           <div className="verify-share-link-block">
             <p className="verify-share-status">
@@ -430,12 +458,37 @@ const VerifyShare = () => {
               </div>
             </label>
             <p className="verify-share-hint">
-              <FaLink aria-hidden /> Send this link by WhatsApp / SMS, or print the
-              QR for guests to scan. Ask guests to open in <strong>Chrome</strong>{' '}
-              (camera works best there). After you update, create a fresh QR — old
-              navy QR images may not scan.
+              <FaLink aria-hidden /> Send this link by WhatsApp / SMS, or show the
+              QR on this screen. Guests should open the page in{' '}
+              <strong>Chrome</strong> for the selfie camera.
             </p>
           </div>
+        </div>
+      )}
+
+      {qrFullscreen && qrDataUrl && (
+        <div
+          className="verify-share-qr-fs"
+          role="dialog"
+          aria-modal="true"
+          aria-label="QR code full screen"
+        >
+          <button
+            type="button"
+            className="verify-share-qr-fs-close"
+            onClick={() => setQrFullscreen(false)}
+            aria-label="Close"
+          >
+            <FaTimes aria-hidden /> Close
+          </button>
+          <img
+            src={qrDataUrl}
+            alt="Verification QR code — hold another phone camera here"
+            className="verify-share-qr-fs-img"
+          />
+          <p className="verify-share-qr-fs-hint">
+            Raise brightness · hold phone steady · guest scans with Camera
+          </p>
         </div>
       )}
 

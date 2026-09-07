@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import QRCode from 'qrcode';
 import { FaCopy, FaQrcode, FaSync, FaExternalLinkAlt, FaDownload } from 'react-icons/fa';
 import {
   getJoinUrl,
@@ -13,6 +12,10 @@ import {
   hasPerPersonFoodDownload,
   resolveFoodDownloadVisibility,
 } from '../utils/foodDownloadOptions';
+import {
+  makeScannableQrDataUrl,
+  downloadScannableQr,
+} from '../utils/scannableQr';
 import './MeetingCheckIn.css';
 
 function tallyChoices(list, key) {
@@ -298,11 +301,7 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
 
   useEffect(() => {
     let cancelled = false;
-    QRCode.toDataURL(joinUrl, {
-      width: 240,
-      margin: 2,
-      color: { dark: '#103078', light: '#ffffff' },
-    })
+    makeScannableQrDataUrl(joinUrl, 'preview')
       .then((url) => {
         if (!cancelled) setQrDataUrl(url);
       })
@@ -381,15 +380,17 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
     }
   };
 
-  const downloadQr = () => {
-    if (!qrDataUrl) return;
+  const downloadQr = async () => {
+    if (!joinUrl) return;
     const { safeTitle, datePart } = meetingFileSlug(meeting);
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = `glico-checkin-${safeTitle}-${datePart}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    try {
+      await downloadScannableQr(
+        joinUrl,
+        `glico-checkin-${safeTitle}-${datePart}.png`
+      );
+    } catch {
+      /* ignore */
+    }
   };
 
   const downloadFoodList = (format = 'csv') => {

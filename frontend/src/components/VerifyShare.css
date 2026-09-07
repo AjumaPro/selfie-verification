@@ -190,16 +190,28 @@
 }
 
 .verify-share-qr {
-  width: 200px;
-  height: 200px;
+  width: min(240px, 70vw);
+  height: auto;
+  aspect-ratio: 1;
   display: block;
   border-radius: 8px;
   background: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+}
+
+.verify-share-qr-tap {
+  display: block;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .verify-share-qr-ph {
-  width: 200px;
-  height: 200px;
+  width: min(240px, 70vw);
+  height: min(240px, 70vw);
   display: grid;
   place-items: center;
   background: #e8eef6;
@@ -209,6 +221,77 @@
 
 .verify-share-qr-btns {
   margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.verify-share-qr-btns .btn {
+  width: 100%;
+  min-height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.verify-share-qr-tip {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #556;
+  max-width: 240px;
+}
+
+.verify-share-qr-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.verify-share-qr-fs-close {
+  position: absolute;
+  top: max(0.75rem, env(safe-area-inset-top, 0px));
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  border: 1px solid #ccd;
+  background: #f4f6f9;
+  color: #223;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-weight: 650;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  z-index: 1;
+}
+
+.verify-share-qr-fs-img {
+  width: min(92vw, 92vh, 520px);
+  height: auto;
+  aspect-ratio: 1;
+  background: #fff;
+  padding: 4vw;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+}
+
+.verify-share-qr-fs-hint {
+  margin: 1rem 1rem 0;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: #223;
+  max-width: 22rem;
 }
 
 .verify-share-status {
