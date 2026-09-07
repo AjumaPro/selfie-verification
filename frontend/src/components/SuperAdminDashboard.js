@@ -30,6 +30,7 @@ import {
 } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { useAppToast } from '../hooks/useAppToast';
+import { PASSWORD_HINT, validatePasswordClient } from '../utils/passwordRules';
 import PasswordInput from './PasswordInput';
 import './AppToast.css';
 import './SuperAdminDashboard.css';
@@ -202,6 +203,12 @@ const SuperAdminDashboard = () => {
     setCreating(true);
     setError('');
     setInfo('');
+    const passErr = validatePasswordClient(createForm.password);
+    if (passErr) {
+      setError(passErr);
+      setCreating(false);
+      return;
+    }
     try {
       await createUser({ ...createForm, role: 'user' });
       const createdPassword = createForm.password;
@@ -241,6 +248,11 @@ const SuperAdminDashboard = () => {
     setInfo('');
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setError('New passwords do not match.');
+      return;
+    }
+    const passErr = validatePasswordClient(passwordForm.newPassword);
+    if (passErr) {
+      setError(passErr);
       return;
     }
     setSavingPassword(true);
@@ -353,8 +365,13 @@ const SuperAdminDashboard = () => {
   const onResetPassword = async (e) => {
     e.preventDefault();
     if (!resetTarget?.id) return;
-    if (resetPassword.length < 6) {
-      showFeedback('error', 'New password must be at least 6 characters.');
+    if (resetPassword.length < 8) {
+      showFeedback('error', 'New password must be at least 8 characters.');
+      return;
+    }
+    const passErr = validatePasswordClient(resetPassword);
+    if (passErr) {
+      showFeedback('error', passErr);
       return;
     }
     setBusyId(String(resetTarget.id));
@@ -495,12 +512,12 @@ const SuperAdminDashboard = () => {
               aria-label="Current password"
             />
             <PasswordInput
-              placeholder="New password (min 6)"
+              placeholder={`New password (${PASSWORD_HINT.toLowerCase()})`}
               value={passwordForm.newPassword}
               onChange={(e) =>
                 setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
               }
-              minLength={6}
+              minLength={8}
               required
               autoComplete="new-password"
               aria-label="New password"
@@ -511,7 +528,7 @@ const SuperAdminDashboard = () => {
               onChange={(e) =>
                 setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
               }
-              minLength={6}
+              minLength={8}
               required
               autoComplete="new-password"
               aria-label="Confirm new password"
@@ -577,10 +594,10 @@ const SuperAdminDashboard = () => {
             }
           />
           <PasswordInput
-            placeholder="Password (min 6)"
+            placeholder={`Password (${PASSWORD_HINT.toLowerCase()})`}
             value={createForm.password}
             onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
-            minLength={6}
+            minLength={8}
             required
             aria-label="Password"
           />
@@ -766,10 +783,10 @@ const SuperAdminDashboard = () => {
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="New password (min 6)"
+                  placeholder={`New password (${PASSWORD_HINT.toLowerCase()})`}
                   value={resetPassword}
                   onChange={(e) => setResetPassword(e.target.value)}
-                  minLength={6}
+                  minLength={8}
                   required
                   autoFocus
                   autoComplete="new-password"

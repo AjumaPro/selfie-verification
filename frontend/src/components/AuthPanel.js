@@ -146,8 +146,8 @@ const AuthPanel = ({ deviceOnly = false }) => {
       <label htmlFor="stay-signed-in">
         <strong>Stay signed in on this device</strong>
         <em>
-          {shell.desktop
-            ? 'Recommended for Mac / Windows desktop — skip login next launch'
+          {isDevice
+            ? 'Recommended for this device — skip login next launch'
             : 'Skip login next time you open the app'}
         </em>
       </label>
@@ -214,21 +214,27 @@ const AuthPanel = ({ deviceOnly = false }) => {
           {mode === 'superadmin'
             ? 'Administrator access — approve users and manage the platform.'
             : mode === 'register'
-              ? 'Request access. A superadmin must approve you before Image Recognition works.'
-              : 'Use your approved account for Image Recognition and Ghana Card KYC.'}
+              ? isDevice
+                ? 'Request access for this device. A superadmin must approve you before verification works.'
+                : 'Request access. A superadmin must approve you before Image Recognition works.'
+              : isDevice
+                ? 'Sign in with your approved GLICO account on this device.'
+                : 'Use your approved account for Image Recognition and Ghana Card KYC.'}
         </p>
       </div>
 
-      {shell.desktop && (
+      {(shell.desktop || deviceOnly) && (
         <div className="auth-desktop-banner" role="status">
           <span className="auth-desktop-icon">{platformIcon}</span>
           <div>
             <strong>
-              {shell.platform === 'windows'
-                ? 'Windows desktop app'
-                : shell.platform === 'mac'
-                  ? 'Mac desktop app'
-                  : 'Desktop app'}
+              {deviceOnly && !shell.desktop
+                ? 'Device app'
+                : shell.platform === 'windows'
+                  ? 'Windows desktop app'
+                  : shell.platform === 'mac'
+                    ? 'Mac desktop app'
+                    : 'Desktop app'}
             </strong>
             <p>
               Authentication uses the same GLICO accounts as the website. Choose a
@@ -385,9 +391,10 @@ const AuthPanel = ({ deviceOnly = false }) => {
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, password: e.target.value }))
               }
-              minLength={6}
+              minLength={8}
               required
             />
+            <p className="auth-field-hint">{PASSWORD_HINT}</p>
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-confirm">Confirm password</label>
@@ -401,7 +408,7 @@ const AuthPanel = ({ deviceOnly = false }) => {
                   confirmPassword: e.target.value,
                 }))
               }
-              minLength={6}
+              minLength={8}
               required
             />
           </div>

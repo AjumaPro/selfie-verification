@@ -65,6 +65,12 @@ async function migratePostgres(client) {
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_status ON users (status)`);
+
+  // Encrypted copy for superadmin "view password" (login still uses password_hash)
+  await client.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS password_vault TEXT
+  `);
 }
 
 async function migrateSqlite(client) {
@@ -96,15 +102,25 @@ async function migrateSqlite(client) {
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
   await client.query(`CREATE INDEX IF NOT EXISTS idx_users_status ON users (status)`);
+
+  try {
+    await client.query(`ALTER TABLE users ADD COLUMN password_vault TEXT`);
+  } catch (e) {
+    if (!/duplicate column/i.test(String(e.message || ''))) {
+      console.warn('password_vault column note:', e.message);
+    }
+  }
 }
 
 async function seedSuperadmin(client) {
+  const { encryptPasswordForVault } = require('../utils/passwordVault');
   const email = String(process.env.SUPERADMIN_EMAIL || 'superadmin@glico.local')
     .trim()
     .toLowerCase();
   const password = String(process.env.SUPERADMIN_PASSWORD || 'SuperAdmin@123');
   const fullName = String(process.env.SUPERADMIN_NAME || 'Super Admin').trim();
   const passwordHash = await bcrypt.hash(password, 12);
+  const passwordVault = encryptPasswordForVault(password);
 
   const legacyEmails = ['superadmin@glico.local'];
 
@@ -123,11 +139,12 @@ async function seedSuperadmin(client) {
          SET email = $1,
              full_name = $2,
              password_hash = $3,
+             password_vault = $4,
              role = 'superadmin',
              status = 'approved',
              updated_at = NOW()
-         WHERE email = $4`,
-        [email, fullName, passwordHash, legacyEmail]
+         WHERE email = $5`,
+        [email, fullName, passwordHash, passwordVault, legacyEmail]
       );
       console.log(`✓ Superadmin migrated: ${legacyEmail} → ${email}`);
       return;
@@ -146,16 +163,17 @@ async function seedSuperadmin(client) {
            status = 'approved',
            full_name = $2,
            password_hash = $3,
+           password_vault = $4,
            updated_at = NOW()
        WHERE email = $1`,
-      [email, fullName, passwordHash]
+      [email, fullName, passwordHash, passwordVault]
     );
     console.log(`✓ Superadmin ready: ${email}`);
   } else {
     await client.query(
-      `INSERT INTO users (email, full_name, organization, password_hash, role, status)
-       VALUES ($1, $2, $3, $4, 'superadmin', 'approved')`,
-      [email, fullName, 'GLICO', passwordHash]
+      `INSERT INTO users (email, full_name, organization, password_hash, password_vault, role, status)
+       VALUES ($1, $2, $3, $4, $5, 'superadmin', 'approved')`,
+      [email, fullName, 'GLICO', passwordHash, passwordVault]
     );
     console.log(`✓ Superadmin created: ${email}`);
   }

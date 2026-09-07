@@ -11,6 +11,9 @@ const { getJwtSecret } = require('./middleware/auth');
 const app = express();
 const port = Number(process.env.PORT) || 4000;
 
+// App Platform / reverse proxies: use X-Forwarded-For for rate limiting
+app.set('trust proxy', 1);
+
 function assertProductionSecrets() {
   if (process.env.NODE_ENV !== 'production') return;
   // Warn early if JWT is weak; do not crash the process (health checks need the server up)
@@ -134,6 +137,20 @@ async function start() {
     console.log('✓ Verify-share schema ready');
   } catch (err) {
     console.error('Verify schema setup failed:', err.message);
+  }
+
+  // Ensure password vault column exists (superadmin view-password)
+  try {
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_vault TEXT`);
+  } catch (err) {
+    // SQLite may not support IF NOT EXISTS on ADD COLUMN
+    try {
+      await query(`ALTER TABLE users ADD COLUMN password_vault TEXT`);
+    } catch (e2) {
+      if (!/duplicate column/i.test(String(e2.message || err.message || ''))) {
+        console.warn('password_vault column note:', e2.message || err.message);
+      }
+    }
   }
 
   app.listen(port, '0.0.0.0', () => {

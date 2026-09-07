@@ -6,15 +6,42 @@ const {
   publicUser,
   normalizeEmail,
   validateRegister,
+  validatePassword,
   statusLoginError,
 } = require('./authHelpers');
+const {
+  encryptPasswordForVault,
+  decryptPasswordFromVault,
+} = require('../utils/passwordVault');
+const { createRateLimiter, authAttemptKey, clientIp } = require('../middleware/rateLimit');
 
 const router = express.Router();
+
+const loginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 12,
+  keyFn: authAttemptKey,
+  message: 'Too many sign-in attempts. Please wait 15 minutes and try again.',
+});
+
+const registerLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  keyFn: (req) => `reg:${clientIp(req)}`,
+  message: 'Too many registration attempts from this network. Please try again later.',
+});
 
 const USER_SELECT =
   'id, email, full_name, organization, role, status, password_hash, created_at';
 
-router.post('/register', async (req, res) => {
+async function setPasswordColumns(plainPassword) {
+  const password = String(plainPassword || '');
+  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordVault = encryptPasswordForVault(password);
+  return { passwordHash, passwordVault };
+}
+
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { fullName, email, password, organization } = req.body || {};
     const err = validateRegister({ fullName, email, password });
@@ -23,7 +50,7 @@ router.post('/register', async (req, res) => {
     const mail = normalizeEmail(email);
     const name = String(fullName).trim();
     const org = String(organization || '').trim();
-    const passwordHash = await bcrypt.hash(String(password), 12);
+    const { passwordHash, passwordVault } = await setPasswordColumns(password);
 
     const existing = await query('SELECT id FROM users WHERE email = $1', [mail]);
     if (existing.rowCount > 0) {
@@ -33,10 +60,10 @@ router.post('/register', async (req, res) => {
     }
 
     const result = await query(
-      `INSERT INTO users (email, full_name, organization, password_hash, role, status)
-       VALUES ($1, $2, $3, $4, 'user', 'pending')
+      `INSERT INTO users (email, full_name, organization, password_hash, password_vault, role, status)
+       VALUES ($1, $2, $3, $4, $5, 'user', 'pending')
        RETURNING id, email, full_name, organization, role, status, created_at`,
-      [mail, name, org, passwordHash]
+      [mail, name, org, passwordHash, passwordVault]
     );
 
     // Self-registration does not log the user in — superadmin must approve first
@@ -97,7 +124,7 @@ async function loginWithRoleCheck(req, res, { requireRole = null } = {}) {
   return res.json({ user, token });
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     return await loginWithRoleCheck(req, res);
   } catch (e) {
@@ -119,7 +146,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/superadmin/login', async (req, res) => {
+router.post('/superadmin/login', loginLimiter, async (req, res) => {
   try {
     return await loginWithRoleCheck(req, res, { requireRole: 'superadmin' });
   } catch (e) {
@@ -207,12 +234,12 @@ router.post('/users', authRequired, requireSuperAdmin, async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists.' });
     }
 
-    const passwordHash = await bcrypt.hash(String(password), 12);
+    const { passwordHash, passwordVault } = await setPasswordColumns(password);
     const result = await query(
-      `INSERT INTO users (email, full_name, organization, password_hash, role, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (email, full_name, organization, password_hash, password_vault, role, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, email, full_name, organization, role, status, created_at`,
-      [mail, name, org, passwordHash, nextRole, nextStatus]
+      [mail, name, org, passwordHash, passwordVault, nextRole, nextStatus]
     );
 
     return res.status(201).json({ user: publicUser(result.rows[0]) });
@@ -224,8 +251,11 @@ router.post('/users', authRequired, requireSuperAdmin, async (req, res) => {
 
 router.patch('/users/:id/status', authRequired, requireSuperAdmin, async (req, res) => {
   try {
-    const id = req.params.id;
-    const nextStatus = String(req.body?.status || '').toLowerCase();
+    const id = String(req.params.id || '').trim();
+    const nextStatus = String(req.body?.status || '').toLowerCase().trim();
+    if (!id) {
+      return res.status(400).json({ error: 'User id is required.' });
+    }
     if (!['pending', 'approved', 'rejected'].includes(nextStatus)) {
       return res.status(400).json({ error: 'Status must be pending, approved, or rejected.' });
     }
@@ -234,7 +264,7 @@ router.patch('/users/:id/status', authRequired, requireSuperAdmin, async (req, r
     if (existing.rowCount === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (existing.rows[0].role === 'superadmin' && nextStatus !== 'approved') {
+    if (String(existing.rows[0].role) === 'superadmin' && nextStatus !== 'approved') {
       return res.status(400).json({ error: 'Cannot reject or pend a superadmin account.' });
     }
 
@@ -248,14 +278,17 @@ router.patch('/users/:id/status', authRequired, requireSuperAdmin, async (req, r
     return res.json({ user: publicUser(result.rows[0]) });
   } catch (e) {
     console.error('status update error:', e);
-    return res.status(500).json({ error: 'Could not update account status' });
+    return res.status(500).json({ error: e.message || 'Could not update account status' });
   }
 });
 
 router.delete('/users/:id', authRequired, requireSuperAdmin, async (req, res) => {
   try {
-    const id = req.params.id;
-    if (id === req.userId) {
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      return res.status(400).json({ error: 'User id is required.' });
+    }
+    if (String(id) === String(req.userId)) {
       return res.status(400).json({ error: 'You cannot delete your own account.' });
     }
 
@@ -263,7 +296,7 @@ router.delete('/users/:id', authRequired, requireSuperAdmin, async (req, res) =>
     if (existing.rowCount === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (existing.rows[0].role === 'superadmin') {
+    if (String(existing.rows[0].role) === 'superadmin') {
       return res.status(400).json({ error: 'Cannot delete a superadmin account.' });
     }
 
@@ -271,7 +304,13 @@ router.delete('/users/:id', authRequired, requireSuperAdmin, async (req, res) =>
     return res.json({ ok: true, id });
   } catch (e) {
     console.error('delete user error:', e);
-    return res.status(500).json({ error: 'Could not delete account' });
+    if (e?.code === '23503') {
+      return res.status(409).json({
+        error:
+          'Cannot delete this account because related records still exist. Reject the account instead, or contact support.',
+      });
+    }
+    return res.status(500).json({ error: e.message || 'Could not delete account' });
   }
 });
 
@@ -284,8 +323,9 @@ router.patch('/me/password', authRequired, async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Current and new password are required.' });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    const passErr = validatePassword(newPassword);
+    if (passErr) {
+      return res.status(400).json({ error: passErr });
     }
 
     const result = await query(
@@ -301,10 +341,10 @@ router.patch('/me/password', authRequired, async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect.' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const { passwordHash, passwordVault } = await setPasswordColumns(newPassword);
     await query(
-      `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`,
-      [req.userId, passwordHash]
+      `UPDATE users SET password_hash = $2, password_vault = $3, updated_at = NOW() WHERE id = $1`,
+      [req.userId, passwordHash, passwordVault]
     );
 
     return res.json({ ok: true, message: 'Password updated.' });
@@ -351,14 +391,68 @@ router.patch('/me', authRequired, async (req, res) => {
   }
 });
 
+/** Superadmin views a user's password (from encrypted vault) */
+router.get('/users/:id/password', authRequired, requireSuperAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      return res.status(400).json({ error: 'User id is required.' });
+    }
+
+    const existing = await query(
+      `SELECT id, email, full_name, role, password_vault FROM users WHERE id = $1`,
+      [id]
+    );
+    if (existing.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const row = existing.rows[0];
+    if (!row.password_vault) {
+      return res.status(404).json({
+        error:
+          'No viewable password stored for this account yet. Use Reset to set a password, then you can view and share it.',
+        available: false,
+      });
+    }
+
+    let password;
+    try {
+      password = decryptPasswordFromVault(row.password_vault);
+    } catch (err) {
+      console.error('password vault decrypt error:', err.message);
+      return res.status(500).json({
+        error:
+          'Could not decrypt stored password. Reset the password to create a new viewable copy.',
+        available: false,
+      });
+    }
+
+    return res.json({
+      available: true,
+      password,
+      email: row.email,
+      fullName: row.full_name,
+      userId: String(row.id),
+    });
+  } catch (e) {
+    console.error('view password error:', e);
+    return res.status(500).json({ error: e.message || 'Could not view password' });
+  }
+});
+
 /** Superadmin resets another user's password */
 router.patch('/users/:id/password', authRequired, requireSuperAdmin, async (req, res) => {
   try {
-    const id = req.params.id;
+    const id = String(req.params.id || '').trim();
     const newPassword = String(req.body?.newPassword || '');
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    if (!id) {
+      return res.status(400).json({ error: 'User id is required.' });
+    }
+    const passErr = validatePassword(newPassword);
+    if (passErr) {
+      return res.status(400).json({ error: passErr });
     }
 
     const existing = await query(`SELECT id, role FROM users WHERE id = $1`, [id]);
@@ -366,16 +460,20 @@ router.patch('/users/:id/password', authRequired, requireSuperAdmin, async (req,
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const { passwordHash, passwordVault } = await setPasswordColumns(newPassword);
     await query(
-      `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`,
-      [id, passwordHash]
+      `UPDATE users SET password_hash = $2, password_vault = $3, updated_at = NOW() WHERE id = $1`,
+      [id, passwordHash, passwordVault]
     );
 
-    return res.json({ ok: true, message: 'Password reset.' });
+    return res.json({
+      ok: true,
+      message: 'Password reset.',
+      password: newPassword,
+    });
   } catch (e) {
     console.error('reset password error:', e);
-    return res.status(500).json({ error: 'Could not reset password' });
+    return res.status(500).json({ error: e.message || 'Could not reset password' });
   }
 });
 

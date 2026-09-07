@@ -204,13 +204,19 @@ export async function createUser(payload) {
   return user;
 }
 
+function userPathId(id) {
+  const value = String(id || '').trim();
+  if (!value) throw new Error('Missing user id');
+  return encodeURIComponent(value);
+}
+
 export async function setUserStatus(id, status) {
   const token = getToken();
   if (!token) throw new Error('Not signed in');
-  const { user } = await request(`/api/auth/users/${id}/status`, {
+  const { user } = await request(`/api/auth/users/${userPathId(id)}/status`, {
     method: 'PATCH',
     token,
-    body: { status },
+    body: { status: String(status || '').toLowerCase() },
   });
   return user;
 }
@@ -218,7 +224,7 @@ export async function setUserStatus(id, status) {
 export async function deleteUser(id) {
   const token = getToken();
   if (!token) throw new Error('Not signed in');
-  return request(`/api/auth/users/${id}`, { method: 'DELETE', token });
+  return request(`/api/auth/users/${userPathId(id)}`, { method: 'DELETE', token });
 }
 
 export async function changeOwnPassword({ currentPassword, newPassword }) {
@@ -248,17 +254,24 @@ export async function updateOwnProfile({ fullName, email, organization }) {
 export async function resetUserPassword(id, newPassword) {
   const token = getToken();
   if (!token) throw new Error('Not signed in');
-  return request(`/api/auth/users/${id}/password`, {
+  return request(`/api/auth/users/${userPathId(id)}/password`, {
     method: 'PATCH',
     token,
-    body: { newPassword },
+    body: { newPassword: String(newPassword || '') },
   });
+}
+
+/** Superadmin: fetch viewable password for sharing with a user */
+export async function fetchUserPassword(id) {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return request(`/api/auth/users/${userPathId(id)}/password`, { token });
 }
 
 export async function updateUser(id, { fullName, email, organization }) {
   const token = getToken();
   if (!token) throw new Error('Not signed in');
-  const { user } = await request(`/api/auth/users/${id}`, {
+  const { user } = await request(`/api/auth/users/${userPathId(id)}`, {
     method: 'PATCH',
     token,
     body: { fullName, email, organization },
