@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaCopy, FaQrcode, FaSync, FaExternalLinkAlt, FaDownload } from 'react-icons/fa';
+import {
+  FaCopy,
+  FaQrcode,
+  FaSync,
+  FaExternalLinkAlt,
+  FaDownload,
+  FaFilePdf,
+  FaFileWord,
+  FaTimes,
+} from 'react-icons/fa';
 import {
   getJoinUrl,
   publishMeeting,
@@ -12,6 +21,16 @@ import {
   hasPerPersonFoodDownload,
   resolveFoodDownloadVisibility,
 } from '../utils/foodDownloadOptions';
+import {
+  ATTENDANCE_DOWNLOAD_FIELDS,
+  ATTENDANCE_FILTERS,
+  defaultAttendanceDownloadOptions,
+  filterApprovedAttendance,
+  locationStatusLabel,
+  meetingFileSlug,
+  normalizeAttendanceDownloadOptions,
+} from '../utils/attendanceDownloadOptions';
+import { downloadAttendanceList } from '../utils/attendanceExport';
 import {
   makeScannableQrDataUrl,
   downloadScannableQr,
@@ -28,29 +47,6 @@ function tallyChoices(list, key) {
   return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
 }
 
-function locationStatusLabel(a) {
-  if (!a) return { text: '—', cls: '' };
-  if (a.locationMatch === 'at_venue') {
-    return {
-      text:
-        a.distanceM != null
-          ? `At venue · ${Math.round(a.distanceM)} m`
-          : 'At venue',
-      cls: 'match-ok',
-    };
-  }
-  if (a.locationMatch === 'away') {
-    return {
-      text:
-        a.distanceM != null
-          ? `Not at venue · ${Math.round(a.distanceM)} m away`
-          : 'Not at venue',
-      cls: 'match-away',
-    };
-  }
-  return { text: 'Unverified', cls: 'match-unknown' };
-}
-
 function csvEscape(cell) {
   const s = String(cell ?? '');
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -65,16 +61,6 @@ function downloadBlob(filename, content, type) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
-}
-
-function meetingFileSlug(meeting) {
-  const safeTitle = String(meeting?.title || 'meeting')
-    .replace(/[^\w\s-]+/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .slice(0, 40);
-  const datePart = String(meeting?.date || '').replace(/[^\d-]/g, '') || 'nodate';
-  return { safeTitle: safeTitle || 'meeting', datePart };
 }
 
 /** CSV: each person + the food they selected (for catering / kitchen). */
@@ -246,8 +232,36 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
   const [loadingList, setLoadingList] = useState(false);
   const [listError, setListError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportOptions, setExportOptions] = useState(() =>
+    defaultAttendanceDownloadOptions()
+  );
+  const [exportFilter, setExportFilter] = useState('all');
+  const [exportBusy, setExportBusy] = useState('');
+
+  useEffect(() => {
+    if (!exportOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape' && !exportBusy) setExportOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [exportOpen, exportBusy]);
 
   const joinUrl = getJoinUrl(meeting.id);
+  const approvedCount = useMemo(
+    () => filterApprovedAttendance(attendance, 'all').length,
+    [attendance]
+  );
+  const exportPreviewCount = useMemo(
+    () => filterApprovedAttendance(attendance, exportFilter).length,
+    [attendance, exportFilter]
+  );
   const venueQuery =
     meeting.venueLat != null && meeting.venueLng != null
       ? `${meeting.venueLat},${meeting.venueLng}`
@@ -410,6 +424,28 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
       buildFoodSelectionsCsv(meeting, attendance),
       'text/csv;charset=utf-8'
     );
+  };
+
+  const openAttendanceExport = () => {
+    setExportOptions(defaultAttendanceDownloadOptions());
+    setExportFilter('all');
+    setExportOpen(true);
+  };
+
+  const runAttendanceExport = async (format) => {
+    setExportBusy(format);
+    try {
+      await downloadAttendanceList(meeting, attendance, {
+        options: normalizeAttendanceDownloadOptions(exportOptions),
+        filterKey: exportFilter,
+        format,
+      });
+      setExportOpen(false);
+    } catch (err) {
+      window.alert(err?.message || 'Could not download attendance list.');
+    } finally {
+      setExportBusy('');
+    }
   };
 
   const drop = async (attId) => {
@@ -629,6 +665,14 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
               <>
                 <button
                   type="button"
+                  className="meeting-checkin-download-food primary-export"
+                  onClick={openAttendanceExport}
+                  title="Download attendance list as PDF or Word"
+                >
+                  <FaDownload aria-hidden /> Attendance list
+                </button>
+                <button
+                  type="button"
                   className="meeting-checkin-download-food"
                   onClick={() => downloadFoodList('csv')}
                   title="Download names and food selections as CSV"
@@ -765,6 +809,115 @@ const MeetingCheckIn = ({ meeting, onPublished }) => {
           </div>
         )}
       </div>
+
+      {exportOpen && (
+        <div
+          className="meeting-checkin-export-overlay"
+          role="presentation"
+          onClick={() => !exportBusy && setExportOpen(false)}
+        >
+          <div
+            className="meeting-checkin-export-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="attendance-export-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="meeting-checkin-export-head">
+              <div>
+                <h3 id="attendance-export-title">Download attendance list</h3>
+                <p>
+                  Guests who approved to join ({approvedCount}). Choose columns,
+                  filter, then download PDF or Word.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="meeting-checkin-export-close"
+                onClick={() => !exportBusy && setExportOpen(false)}
+                aria-label="Close"
+              >
+                <FaTimes aria-hidden />
+              </button>
+            </div>
+
+            <fieldset className="meeting-checkin-export-fieldset">
+              <legend>Who to include</legend>
+              <div className="meeting-checkin-export-filters">
+                {ATTENDANCE_FILTERS.map((f) => (
+                  <label key={f.key} className="meeting-checkin-export-option">
+                    <input
+                      type="radio"
+                      name="attendance-filter"
+                      checked={exportFilter === f.key}
+                      onChange={() => setExportFilter(f.key)}
+                      disabled={!!exportBusy}
+                    />
+                    <span>{f.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="meeting-checkin-export-count">
+                {exportPreviewCount} attendant
+                {exportPreviewCount === 1 ? '' : 's'} with current filter
+              </p>
+            </fieldset>
+
+            <fieldset className="meeting-checkin-export-fieldset">
+              <legend>Columns to include</legend>
+              <div className="meeting-checkin-export-grid">
+                {ATTENDANCE_DOWNLOAD_FIELDS.map((field) => {
+                  const checked = exportOptions[field.key] !== false;
+                  return (
+                    <label
+                      key={field.key}
+                      className={`meeting-checkin-export-option${
+                        field.alwaysOn ? ' is-locked' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={!!field.alwaysOn || !!exportBusy}
+                        onChange={(e) =>
+                          setExportOptions((prev) =>
+                            normalizeAttendanceDownloadOptions({
+                              ...prev,
+                              [field.key]: e.target.checked,
+                            })
+                          )
+                        }
+                      />
+                      <span>{field.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="meeting-checkin-export-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!!exportBusy}
+                onClick={() => runAttendanceExport('pdf')}
+              >
+                <FaFilePdf aria-hidden />{' '}
+                {exportBusy === 'pdf' ? 'Preparing PDF…' : 'Download PDF'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={!!exportBusy}
+                onClick={() => runAttendanceExport('word')}
+              >
+                <FaFileWord aria-hidden />{' '}
+                {exportBusy === 'word' ? 'Preparing Word…' : 'Download Word'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

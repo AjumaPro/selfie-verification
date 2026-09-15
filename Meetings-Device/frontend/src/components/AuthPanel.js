@@ -15,6 +15,7 @@ import {
   isSuperAdminLoginPublic,
 } from '../config/authUi';
 import { BRAND } from '../utils/brandAssets';
+import { PASSWORD_HINT, validatePasswordClient } from '../utils/passwordRules';
 import GlicoLifeLogo from './GlicoLifeLogo';
 import PasswordInput from './PasswordInput';
 import './AuthPanel.css';
@@ -45,8 +46,9 @@ function detectDesktopShell() {
 /**
  * Authentication sections: Sign in · Register · Super Admin.
  * Shown for Image Recognition on web and for Windows/Mac Electron installs.
+ * @param {{ deviceOnly?: boolean }} props
  */
-const AuthPanel = () => {
+const AuthPanel = ({ deviceOnly = false }) => {
   const { login, loginSuperAdmin, register, busy } = useAuth();
   const [mode, setMode] = useState('login'); // login | register | superadmin
   const [loginForm, setLoginForm] = useState(emptyLogin);
@@ -57,6 +59,7 @@ const AuthPanel = () => {
   const [info, setInfo] = useState('');
   const [shell, setShell] = useState(() => detectDesktopShell());
   const showAdminTab = isSuperAdminLoginPublic();
+  const isDevice = Boolean(deviceOnly || shell.desktop);
 
   useEffect(() => {
     if (hasSuperAdminLoginOverride()) {
@@ -114,6 +117,11 @@ const AuthPanel = () => {
       setError('Passwords do not match.');
       return;
     }
+    const passErr = validatePasswordClient(registerForm.password);
+    if (passErr) {
+      setError(passErr);
+      return;
+    }
     try {
       const result = await register(registerForm);
       setRegisterForm(emptyRegister);
@@ -138,8 +146,8 @@ const AuthPanel = () => {
       <label htmlFor="stay-signed-in">
         <strong>Stay signed in on this device</strong>
         <em>
-          {shell.desktop
-            ? 'Recommended for Mac / Windows desktop — skip login next launch'
+          {isDevice
+            ? 'Recommended for this device — skip login next launch'
             : 'Skip login next time you open the app'}
         </em>
       </label>
@@ -206,21 +214,27 @@ const AuthPanel = () => {
           {mode === 'superadmin'
             ? 'Administrator access — approve users and manage the platform.'
             : mode === 'register'
-              ? 'Request access. A superadmin must approve you before Image Recognition works.'
-              : 'Use your approved account for Image Recognition and Ghana Card KYC.'}
+              ? isDevice
+                ? 'Request access for this device. A superadmin must approve you before verification works.'
+                : 'Request access. A superadmin must approve you before Image Recognition works.'
+              : isDevice
+                ? 'Sign in with your approved GLICO account on this device.'
+                : 'Use your approved account for Image Recognition and Ghana Card KYC.'}
         </p>
       </div>
 
-      {shell.desktop && (
+      {(shell.desktop || deviceOnly) && (
         <div className="auth-desktop-banner" role="status">
           <span className="auth-desktop-icon">{platformIcon}</span>
           <div>
             <strong>
-              {shell.platform === 'windows'
-                ? 'Windows desktop app'
-                : shell.platform === 'mac'
-                  ? 'Mac desktop app'
-                  : 'Desktop app'}
+              {deviceOnly && !shell.desktop
+                ? 'Device app'
+                : shell.platform === 'windows'
+                  ? 'Windows desktop app'
+                  : shell.platform === 'mac'
+                    ? 'Mac desktop app'
+                    : 'Desktop app'}
             </strong>
             <p>
               Authentication uses the same GLICO accounts as the website. Choose a
@@ -377,9 +391,10 @@ const AuthPanel = () => {
               onChange={(e) =>
                 setRegisterForm((f) => ({ ...f, password: e.target.value }))
               }
-              minLength={6}
+              minLength={8}
               required
             />
+            <p className="auth-field-hint">{PASSWORD_HINT}</p>
           </div>
           <div className="form-group full-width">
             <label htmlFor="reg-confirm">Confirm password</label>
@@ -393,7 +408,7 @@ const AuthPanel = () => {
                   confirmPassword: e.target.value,
                 }))
               }
-              minLength={6}
+              minLength={8}
               required
             />
           </div>

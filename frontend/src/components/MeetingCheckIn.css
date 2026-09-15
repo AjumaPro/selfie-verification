@@ -575,3 +575,135 @@
     padding: 0.45rem;
   }
 }
+
+.meeting-checkin-download-food.primary-export {
+  background: #103078;
+  border-color: #103078;
+  color: #fff;
+}
+
+.meeting-checkin-download-food.primary-export:hover {
+  background: #0c2460;
+  border-color: #0c2460;
+}
+
+.meeting-checkin-export-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.meeting-checkin-export-modal {
+  width: min(560px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(16, 48, 120, 0.2);
+  padding: 1.1rem 1.2rem 1.25rem;
+}
+
+.meeting-checkin-export-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.meeting-checkin-export-head h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  color: #103078;
+}
+
+.meeting-checkin-export-head p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.meeting-checkin-export-close {
+  border: none;
+  background: transparent;
+  color: #4a5568;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.meeting-checkin-export-close:hover {
+  background: #f0f4fa;
+  color: #103078;
+}
+
+.meeting-checkin-export-fieldset {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem 0.9rem;
+  margin: 0 0 0.85rem;
+}
+
+.meeting-checkin-export-fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #103078;
+}
+
+.meeting-checkin-export-filters,
+.meeting-checkin-export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.75rem;
+}
+
+.meeting-checkin-export-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: #2d3748;
+  cursor: pointer;
+}
+
+.meeting-checkin-export-option.is-locked {
+  opacity: 0.85;
+}
+
+.meeting-checkin-export-option input {
+  margin-top: 0.15rem;
+  accent-color: #d03038;
+}
+
+.meeting-checkin-export-count {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.meeting-checkin-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.meeting-checkin-export-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+@media (max-width: 560px) {
+  .meeting-checkin-export-filters,
+  .meeting-checkin-export-grid {
+    grid-template-columns: 1fr;
+  }
+}

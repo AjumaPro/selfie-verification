@@ -8,6 +8,7 @@
   "homepage": "./",
   "dependencies": {
     "@craco/craco": "^7.1.0",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
