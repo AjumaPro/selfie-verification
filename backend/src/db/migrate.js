@@ -114,13 +114,26 @@ async function migrateSqlite(client) {
 
 async function seedSuperadmin(client) {
   const { encryptPasswordForVault } = require('../utils/passwordVault');
-  const email = String(process.env.SUPERADMIN_EMAIL || 'superadmin@glico.local')
+  // Defaults match .do/app.yaml so App Platform still seeds correctly if
+  // SUPERADMIN_* secrets were never applied in the dashboard.
+  const email = String(
+    process.env.SUPERADMIN_EMAIL || 'infoajumapro@gmail.com'
+  )
     .trim()
     .toLowerCase();
-  const password = String(process.env.SUPERADMIN_PASSWORD || 'SuperAdmin@123');
-  const fullName = String(process.env.SUPERADMIN_NAME || 'Super Admin').trim();
+  const password = String(
+    process.env.SUPERADMIN_PASSWORD || 'MyGlicoFIF@2025'
+  );
+  const fullName = String(
+    process.env.SUPERADMIN_NAME || 'Francis Sarpaning'
+  ).trim();
   const passwordHash = await bcrypt.hash(password, 12);
-  const passwordVault = encryptPasswordForVault(password);
+  let passwordVault = null;
+  try {
+    passwordVault = encryptPasswordForVault(password);
+  } catch (err) {
+    console.warn('password_vault seed skipped:', err.message);
+  }
 
   const legacyEmails = ['superadmin@glico.local'];
 
@@ -139,7 +152,7 @@ async function seedSuperadmin(client) {
          SET email = $1,
              full_name = $2,
              password_hash = $3,
-             password_vault = $4,
+             password_vault = COALESCE($4, password_vault),
              role = 'superadmin',
              status = 'approved',
              updated_at = NOW()
@@ -163,7 +176,7 @@ async function seedSuperadmin(client) {
            status = 'approved',
            full_name = $2,
            password_hash = $3,
-           password_vault = $4,
+           password_vault = COALESCE($4, password_vault),
            updated_at = NOW()
        WHERE email = $1`,
       [email, fullName, passwordHash, passwordVault]
