@@ -1,0 +1,359 @@
+.install-device {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 1px solid #eaf6fc;
+}
+
+.install-device-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: none;
+  background: #eaf6fc;
+  cursor: pointer;
+  text-align: left;
+}
+
+.install-device-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.install-device-icon {
+  font-size: 1.6rem;
+  color: #103078;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.install-device-title h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  color: #103078;
+}
+
+.install-device-title p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.install-device-chevron {
+  font-size: 1.4rem;
+  color: #103078;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.install-device-body {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.install-lead {
+  margin: 0 0 1rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+.install-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: stretch;
+}
+
+.install-action-card {
+  background: #f5f7fb;
+  border: 1px solid #c5d0e8;
+  border-radius: 12px;
+  padding: 1.1rem 1.15rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.install-pwa-card {
+  border-color: #90caf9;
+  background: linear-gradient(165deg, #e8f4fc 0%, #f5f7fb 100%);
+}
+
+.install-pwa-card .install-primary-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.install-action-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: #103078;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.install-action-card p {
+  margin: 0 0 0.9rem;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.install-primary-btn.secondary-action {
+  background: #48a8e8;
+}
+
+.install-action-card .install-primary-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.desktop-btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.install-primary-btn.mac-btn {
+  background: #48a8e8;
+}
+
+a.install-primary-btn {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+a.install-primary-btn.is-disabled,
+button.install-primary-btn.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+  background: #94a3b8 !important;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+button.install-primary-btn:disabled {
+  opacity: 0.65;
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.install-action-card code,
+.install-step code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.install-local-banner {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  color: #0d47a1;
+}
+
+.install-local-banner strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.install-local-banner p {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.install-local-url {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.install-local-url code {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.4rem 0.6rem;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  word-break: break-all;
+  color: #1565c0;
+}
+
+.install-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: #48a8e8;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.install-copy-btn:hover {
+  background: #1a7ab8;
+}
+
+.install-sw-status {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  opacity: 0.9;
+}
+
+.install-note.highlight-note {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: #fff8e1;
+  border-left: 4px solid #ffc107;
+  border-radius: 6px;
+  color: #6d4c00;
+}
+
+.install-primary-btn,
+.install-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.install-primary-btn {
+  padding: 0.85rem 1.4rem;
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  color: #fff;
+  background: #d03038;
+}
+
+.install-primary-btn:hover:not(:disabled) {
+  background: #a8242c;
+}
+
+.install-primary-btn:disabled,
+.install-secondary-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.install-secondary-btn {
+  margin-top: 0.75rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  color: #fff;
+  background: #48a8e8;
+  border: none;
+}
+
+.install-secondary-btn:hover:not(:disabled) {
+  background: #1a7ab8;
+}
+
+.install-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.install-step {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.install-step.highlight {
+  border-color: #7bc4ef;
+  background: #eaf6fc;
+}
+
+.install-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+  font-weight: 700;
+  color: #103078;
+  font-size: 0.95rem;
+}
+
+.install-step ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #444;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.install-step li {
+  margin-bottom: 0.35rem;
+}
+
+.inline-ico {
+  vertical-align: -0.1em;
+  color: #103078;
+}
+
+.install-note {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: #777;
+  line-height: 1.45;
+}
+
+.install-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.install-status.success {
+  background: #eaf6fc;
+  color: #103078;
+}
+
+.install-status.success svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+@media (max-width: 600px) {
+  .install-device-header {
+    padding: 1rem 1.1rem;
+  }
+
+  .install-device-body {
+    padding: 0 1.1rem 1.25rem;
+  }
+
+  .install-primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

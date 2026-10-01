@@ -1,0 +1,145 @@
+.description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.mode-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-option {
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.mode-option strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #222;
+  font-size: 1rem;
+}
+
+.mode-option span {
+  display: block;
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.mode-option:hover {
+  border-color: #7bc4ef;
+}
+
+.mode-option.active {
+  border-color: #103078;
+  background: #eaf6fc;
+  box-shadow: 0 0 0 1px #103078;
+}
+
+.form-row {
+  margin-bottom: 1rem;
+}
+
+.form-group.full-width {
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 0.4rem;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.form-hint.warn {
+  color: #b26a00;
+}
+
+.image-info-success {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  background: #eaf6fc;
+  color: #103078;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.local-detect-details {
+  margin-top: 1rem;
+  color: #666;
+}
+
+.local-detect-details summary {
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #d03038;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #a8242c;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #48a8e8;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #1a7ab8;
+}
+
+@media (max-width: 900px) {
+  .mode-options {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,21 @@
+GLICO Pensions Meetings — Mac install (unsigned build)
+
+macOS may say “developer cannot be verified.” That is expected until the
+app is Apple-signed and notarized. Do not click “Move to Bin.”
+
+INSTALL
+-------
+1. Open the .dmg and drag “GLICO Pensions Meetings” into Applications.
+2. First launch — use one of these:
+
+   A) Control-click (right-click) “GLICO Pensions Meetings” → Open → Open again.
+
+   B) System Settings → Privacy & Security → scroll to Security →
+      Open Anyway (then confirm).
+
+3. Optional (Terminal) to clear quarantine:
+     xattr -cr "/Applications/GLICO Pensions Meetings.app"
+     open "/Applications/GLICO Pensions Meetings.app"
+
+Prefer ZIP? Download Glico-Meetings-Mac.zip, unzip, then open the .app
+the same way (Control-click → Open).

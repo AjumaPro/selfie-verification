@@ -1,0 +1,12 @@
+node_modules
+build
+dist-desktop
+.downloads-park
+npm-debug.log
+.env
+.git
+public/downloads/*.exe
+public/downloads/*.dmg
+public/downloads/*.zip
+electron
+*.md

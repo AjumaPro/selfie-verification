@@ -1,0 +1,244 @@
+.header {
+  background: #fff;
+  padding: 0;
+  color: #333;
+  box-shadow: 0 8px 28px rgba(16, 48, 120, 0.06);
+}
+
+.header-stripes {
+  display: flex;
+  height: 4px;
+  width: 100%;
+}
+
+.header-stripes .stripe {
+  flex: 1;
+  display: block;
+}
+
+.header-stripes .stripe-red {
+  background: var(--glico-red);
+}
+
+.header-stripes .stripe-sky {
+  background: var(--glico-sky);
+}
+
+.header-stripes .stripe-navy {
+  background: var(--glico-navy);
+}
+
+.header-device .header-logo {
+  height: 58px;
+  max-width: 280px;
+}
+
+.header-content {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1.15rem 1.25rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  padding-top: max(1.15rem, env(safe-area-inset-top, 0px));
+}
+
+.header-main {
+  text-align: left;
+  flex: 1;
+  min-width: 220px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+}
+
+.header-logo,
+.header-brand .glico-life-lockup-mark {
+  height: 52px;
+  width: auto;
+  max-width: 240px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.header-brand .glico-life-lockup {
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.header-kicker {
+  margin: 0 0 0.12rem !important;
+  font-size: 0.68rem !important;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--glico-sky-dark) !important;
+}
+
+.header-brand-text h1 {
+  font-size: 1.28rem;
+  margin: 0 0 0.15rem;
+  font-weight: 700;
+  color: var(--glico-navy);
+  letter-spacing: -0.02em;
+}
+
+.header-user-icon.admin {
+  color: var(--glico-navy);
+}
+
+.header-role-pill {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: var(--glico-navy-soft);
+  color: var(--glico-navy);
+  font-size: 0.65rem;
+  font-weight: 700;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.header-brand-text p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--glico-muted);
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.header-apps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--glico-border);
+  background: #fff;
+  color: var(--glico-navy);
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 650;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.header-apps-btn:hover {
+  background: var(--glico-navy-soft);
+}
+
+.header-in-app .header-brand-text h1 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.8rem;
+  background: #f7f9fc;
+  border: 1px solid var(--glico-border);
+  border-radius: 12px;
+}
+
+.header-user-icon {
+  color: var(--glico-red);
+  font-size: 1.05rem;
+}
+
+.header-user-info > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.header-user-name {
+  font-weight: 700;
+  color: var(--glico-navy);
+  font-size: 0.9rem;
+}
+
+.header-user-email {
+  font-size: 0.78rem;
+  color: var(--glico-muted);
+}
+
+.header-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--glico-navy);
+  color: white;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.header-logout:hover {
+  background: var(--glico-navy-deep);
+}
+
+@media (max-width: 1024px) {
+  .header-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .header-user {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .header-apps-btn,
+  .header-logout {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-brand {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .header-logo {
+    height: 44px;
+    max-width: 200px;
+  }
+
+  .header-brand-text h1 {
+    font-size: 1.08rem;
+  }
+
+  .header-user {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .header-logout {
+    min-height: 2.5rem;
+  }
+}

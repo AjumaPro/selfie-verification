@@ -1,0 +1,444 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  FaIdCard,
+  FaCheckCircle,
+  FaShieldAlt,
+  FaChrome,
+} from 'react-icons/fa';
+import ImageUpload from './ImageUpload';
+import CameraCapture from './CameraCapture';
+import { loadModels, verifySelfie } from '../services/faceDetection';
+import {
+  kycFaceVerification,
+  processImageForAPI,
+  cropPickedImageToStandard,
+} from '../services/thirdPartyVerification';
+import apiConfig from '../config/api';
+import VerificationResultCard from './VerificationResultCard';
+import {
+  fetchPublicVerifySession,
+  submitVerifyResult,
+} from '../services/verifyApi';
+import { buildKycAttemptPayload } from '../utils/kycAttempt';
+import { BRAND } from '../utils/brandAssets';
+import GlicoLifeLogo from './GlicoLifeLogo';
+import './VerifyJoin.css';
+
+const BROWSER_OK_KEY = 'glico_verify_join_browser_ok';
+
+function detectInAppBrowser() {
+  if (typeof navigator === 'undefined') {
+    return { isIOS: false, isAndroid: false, isInApp: false, appName: '' };
+  }
+  const ua = String(navigator.userAgent || '');
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const apps = [
+    ['WhatsApp', /WhatsApp/i],
+    ['Instagram', /Instagram/i],
+    ['Facebook', /FBAN|FBAV|FB_IAB|FBJS/i],
+    ['Telegram', /Telegram/i],
+    ['TikTok', /TikTok|BytedanceWebview/i],
+  ];
+  let appName = '';
+  for (const [name, re] of apps) {
+    if (re.test(ua)) {
+      appName = name;
+      break;
+    }
+  }
+  const isInApp = !!appName || (isAndroid && /; wv\)/i.test(ua));
+  return {
+    isIOS,
+    isAndroid,
+    isInApp,
+    appName: appName || (isInApp ? 'in-app browser' : ''),
+  };
+}
+
+function openVerifyInChrome() {
+  if (typeof window === 'undefined') return;
+  const url = window.location.href;
+  const env = detectInAppBrowser();
+  if (env.isAndroid) {
+    const withoutScheme = url.replace(/^https?:\/\//i, '');
+    const fallback = encodeURIComponent(url);
+    window.location.href = `intent://${withoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
+    return;
+  }
+  if (env.isIOS) {
+    const chromeUrl = /^https:/i.test(url)
+      ? url.replace(/^https:\/\//i, 'googlechromes://')
+      : url.replace(/^http:\/\//i, 'googlechrome://');
+    window.location.href = chromeUrl;
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/**
+ * Public guest page (?verify=id): Ghana Card + selfie → host receives result.
+ */
+const VerifyJoin = ({ sessionId, onClose }) => {
+  const [loadingSession, setLoadingSession] = useState(true);
+  const [session, setSession] = useState(null);
+  const [sessionError, setSessionError] = useState('');
+  const [modelsReady, setModelsReady] = useState(false);
+  const [modelsError, setModelsError] = useState('');
+  const browserEnv = useMemo(() => detectInAppBrowser(), []);
+  const [browserGateDismissed, setBrowserGateDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem(BROWSER_OK_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageInfo, setImageInfo] = useState(null);
+  const [processingPick, setProcessingPick] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [ghanaCardNumber, setGhanaCardNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [apiResult, setApiResult] = useState(null);
+  const [submitted, setSubmitted] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingSession(true);
+    setSessionError('');
+    fetchPublicVerifySession(sessionId)
+      .then((data) => {
+        if (!cancelled) setSession(data.session);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setSessionError(
+            err.message ||
+              'Verification link not found. Ask the host for a new QR or URL.'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSession(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadModels()
+      .then(() => {
+        if (!cancelled) setModelsReady(true);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setModelsError(
+            err.message ||
+              'Face models failed to load. You can still try verification.'
+          );
+          setModelsReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const applyCroppedImage = async (file) => {
+    setProcessingPick(true);
+    setError('');
+    setApiResult(null);
+    try {
+      const cropped = await cropPickedImageToStandard(file);
+      setImage(cropped.file);
+      setImagePreview(cropped.previewUrl);
+      setImageInfo(cropped.info);
+    } catch (err) {
+      setImage(null);
+      setImagePreview(null);
+      setImageInfo(null);
+      setError(err.message || 'Failed to prepare selfie.');
+    } finally {
+      setProcessingPick(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!image) {
+      setError('Please take or upload a selfie first.');
+      return;
+    }
+    if (!ghanaCardNumber || ghanaCardNumber.trim() === '') {
+      setError('Please enter your Ghana Card number (e.g. GHA-xxxxxxxxx-x).');
+      return;
+    }
+    if (!apiConfig.baseUrl || !apiConfig.userId || !apiConfig.merchantKey) {
+      setError('Verification is not configured. Contact the host / administrator.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setApiResult(null);
+    setSubmitted(null);
+
+    let localFaceOk = false;
+    let apiResponse = null;
+    try {
+      try {
+        if (modelsReady) {
+          const localData = await verifySelfie(image);
+          localFaceOk = !!(localData && localData.success !== false);
+        }
+      } catch {
+        localFaceOk = false;
+      }
+
+      const processedImage = await processImageForAPI(image);
+      apiResponse = await kycFaceVerification({
+        baseUrl: apiConfig.baseUrl,
+        pinNumber: ghanaCardNumber.trim(),
+        imageBase64: processedImage.base64,
+        dataType: processedImage.dataType,
+        center: apiConfig.center,
+        userId: apiConfig.userId,
+        merchantKey: apiConfig.merchantKey,
+      });
+      setApiResult(apiResponse);
+
+      const saved = await submitVerifyResult(
+        sessionId,
+        buildKycAttemptPayload({
+          ghanaCard: ghanaCardNumber.trim(),
+          apiResponse,
+          localFaceOk,
+          source: 'share',
+        })
+      );
+      setSubmitted(saved);
+    } catch (err) {
+      const message = err.message || 'Verification failed. Please try again.';
+      setError(message);
+      try {
+        const saved = await submitVerifyResult(
+          sessionId,
+          buildKycAttemptPayload({
+            ghanaCard: ghanaCardNumber.trim(),
+            apiResponse,
+            localFaceOk,
+            error: message,
+            source: 'share',
+          })
+        );
+        setSubmitted(saved);
+      } catch {
+        /* host still needs a Ghana Card; ignore secondary save errors */
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const apiVerified =
+    apiResult &&
+    (apiResult.data?.verified === 'TRUE' ||
+      apiResult.data?.verified === true ||
+      apiResult.verified === 'TRUE' ||
+      apiResult.verified === true);
+
+  const showBrowserGate =
+    browserEnv.isInApp && !browserGateDismissed && !submitted;
+
+  const dismissBrowserGate = () => {
+    try {
+      sessionStorage.setItem(BROWSER_OK_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setBrowserGateDismissed(true);
+  };
+
+  return (
+    <div className="App verify-join-page">
+      {showBrowserGate && (
+        <div
+          className="verify-join-browser-gate"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="verify-join-browser-gate-title"
+        >
+          <div className="verify-join-browser-gate-card">
+            <span className="verify-join-browser-gate-icon" aria-hidden>
+              <FaChrome />
+            </span>
+            <h2 id="verify-join-browser-gate-title">Open in Chrome</h2>
+            <p>
+              {browserEnv.appName || 'This app'} opens an in-app browser that
+              often blocks the camera needed for selfie verification. Open this
+              link in Chrome (or Safari on iPhone), then continue.
+            </p>
+            <div className="verify-join-browser-gate-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={openVerifyInChrome}
+              >
+                <FaChrome aria-hidden /> Open in Chrome
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={dismissBrowserGate}
+              >
+                Continue here anyway
+              </button>
+            </div>
+            {browserEnv.isIOS && (
+              <p className="verify-join-browser-gate-foot">
+                On iPhone: tap <strong>···</strong> or <strong>Share</strong> →{' '}
+                <strong>Open in Chrome</strong> / <strong>Safari</strong>.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <header className="verify-join-header">
+        <GlicoLifeLogo compact markClassName="verify-join-logo" />
+        <div>
+          <h1>Member KYC</h1>
+          <p>{BRAND.name} · Ghana Card and selfie</p>
+        </div>
+      </header>
+
+      <main className="verify-join-main">
+        {loadingSession && (
+          <div className="verify-join-card">
+            <div className="loading-spinner" />
+            <p>Loading verification…</p>
+          </div>
+        )}
+
+        {sessionError && (
+          <div className="verify-join-card">
+            <p className="verify-join-error" role="alert">
+              {sessionError}
+            </p>
+            {onClose && (
+              <button type="button" className="btn btn-primary" onClick={onClose}>
+                Close
+              </button>
+            )}
+          </div>
+        )}
+
+        {session && !submitted && (
+          <div className="verify-join-card">
+            <h2>
+              <FaIdCard aria-hidden /> {session.title}
+            </h2>
+            {session.note ? (
+              <p className="verify-join-note">{session.note}</p>
+            ) : (
+              <p className="verify-join-note">
+                Enter your Ghana Card number and take a clear selfie. Your result
+                is sent to the host automatically.
+              </p>
+            )}
+
+            {modelsError && (
+              <p className="verify-join-hint">{modelsError}</p>
+            )}
+
+            <div className="form-row">
+              <label className="form-group full-width">
+                Ghana Card number
+                <input
+                  className="form-input"
+                  value={ghanaCardNumber}
+                  onChange={(e) => setGhanaCardNumber(e.target.value)}
+                  placeholder="GHA-xxxxxxxxx-x"
+                  autoComplete="off"
+                  inputMode="text"
+                />
+              </label>
+            </div>
+
+            <div className="verify-join-selfie">
+              <p className="verify-join-consent-title">
+                <FaShieldAlt aria-hidden /> Your selfie
+              </p>
+              {showCamera ? (
+                <CameraCapture
+                  onCapture={(file) => {
+                    setShowCamera(false);
+                    applyCroppedImage(file);
+                  }}
+                  onClose={() => setShowCamera(false)}
+                />
+              ) : (
+                <ImageUpload
+                  label="Upload or take selfie"
+                  onImageSelect={(file) => applyCroppedImage(file)}
+                  imagePreview={imagePreview}
+                  onCameraClick={() => setShowCamera(true)}
+                />
+              )}
+              {processingPick && (
+                <p className="verify-join-hint">Preparing selfie…</p>
+              )}
+              {imageInfo && !processingPick && (
+                <p className="image-info-success">
+                  Image ready ({imageInfo.width}×{imageInfo.height})
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <p className="verify-join-error" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              className="btn btn-primary verify-join-submit"
+              onClick={handleVerify}
+              disabled={loading || processingPick || !image}
+            >
+              {loading ? 'Verifying…' : 'Verify & send to host'}
+            </button>
+          </div>
+        )}
+
+        {submitted && (
+          <div className="verify-join-card verify-join-done">
+            <h2>
+              <FaCheckCircle aria-hidden /> Submitted
+            </h2>
+            <p>{submitted.message || 'Your result was sent to the host dashboard.'}</p>
+            {apiResult && (
+              <VerificationResultCard
+                apiResult={apiResult}
+                title={apiVerified ? 'Approved' : 'Attempted'}
+              />
+            )}
+            {onClose && (
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                Done
+              </button>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default VerifyJoin;

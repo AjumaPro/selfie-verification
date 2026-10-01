@@ -1,0 +1,221 @@
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const { pool, engine } = require('./pool');
+
+async function migratePostgres(client) {
+  await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
+
+  const { ensureMeetingsSchema } = require('./meetingsSchema');
+  await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensurePlatformSettingsSchema } = require('./platformSettingsSchema');
+  await ensurePlatformSettingsSchema((text, params) => client.query(text, params));
+  const { ensureVerifySchema } = require('./verifySchema');
+  await ensureVerifySchema((text, params) => client.query(text, params));
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT NOT NULL UNIQUE,
+      full_name TEXT NOT NULL,
+      organization TEXT NOT NULL DEFAULT '',
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'
+  `);
+
+  await client.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved'
+  `);
+  await client.query(`
+    ALTER TABLE users ALTER COLUMN status SET DEFAULT 'pending'
+  `);
+
+  try {
+    await client.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check`);
+    await client.query(`
+      ALTER TABLE users
+      ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'superadmin'))
+    `);
+  } catch (e) {
+    console.warn('role constraint note:', e.message);
+  }
+
+  try {
+    await client.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check`);
+    await client.query(`
+      ALTER TABLE users
+      ADD CONSTRAINT users_status_check
+      CHECK (status IN ('pending', 'approved', 'rejected'))
+    `);
+  } catch (e) {
+    console.warn('status constraint note:', e.message);
+  }
+
+  await client.query(`
+    UPDATE users SET status = 'approved' WHERE role = 'superadmin'
+  `);
+
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_status ON users (status)`);
+
+  // Encrypted copy for superadmin "view password" (login still uses password_hash)
+  await client.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS password_vault TEXT
+  `);
+}
+
+async function migrateSqlite(client) {
+  const { ensureMeetingsSchema } = require('./meetingsSchema');
+  await ensureMeetingsSchema((text, params) => client.query(text, params));
+  const { ensurePlatformSettingsSchema } = require('./platformSettingsSchema');
+  await ensurePlatformSettingsSchema((text, params) => client.query(text, params));
+  const { ensureVerifySchema } = require('./verifySchema');
+  await ensureVerifySchema((text, params) => client.query(text, params));
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY DEFAULT (gen_uuid()),
+      email TEXT NOT NULL UNIQUE,
+      full_name TEXT NOT NULL,
+      organization TEXT NOT NULL DEFAULT '',
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'superadmin')),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.query(`
+    UPDATE users SET status = 'approved' WHERE role = 'superadmin'
+  `);
+
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_role ON users (role)`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_users_status ON users (status)`);
+
+  try {
+    await client.query(`ALTER TABLE users ADD COLUMN password_vault TEXT`);
+  } catch (e) {
+    if (!/duplicate column/i.test(String(e.message || ''))) {
+      console.warn('password_vault column note:', e.message);
+    }
+  }
+}
+
+async function seedSuperadmin(client) {
+  const { encryptPasswordForVault } = require('../utils/passwordVault');
+  // Defaults match .do/app.yaml so App Platform still seeds correctly if
+  // SUPERADMIN_* secrets were never applied in the dashboard.
+  const email = String(
+    process.env.SUPERADMIN_EMAIL || 'infoajumapro@gmail.com'
+  )
+    .trim()
+    .toLowerCase();
+  const password = String(
+    process.env.SUPERADMIN_PASSWORD || 'MyGlicoFIF@2025'
+  );
+  const fullName = String(
+    process.env.SUPERADMIN_NAME || 'Francis Sarpaning'
+  ).trim();
+  const passwordHash = await bcrypt.hash(password, 12);
+  let passwordVault = null;
+  try {
+    passwordVault = encryptPasswordForVault(password);
+  } catch (err) {
+    console.warn('password_vault seed skipped:', err.message);
+  }
+
+  const legacyEmails = ['superadmin@glico.local'];
+
+  for (const legacyEmail of legacyEmails) {
+    if (legacyEmail === email) continue;
+    const legacy = await client.query(
+      'SELECT id FROM users WHERE email = $1 AND role = $2',
+      [legacyEmail, 'superadmin']
+    );
+    if (legacy.rowCount === 0) continue;
+
+    const target = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (target.rowCount === 0) {
+      await client.query(
+        `UPDATE users
+         SET email = $1,
+             full_name = $2,
+             password_hash = $3,
+             password_vault = COALESCE($4, password_vault),
+             role = 'superadmin',
+             status = 'approved',
+             updated_at = NOW()
+         WHERE email = $5`,
+        [email, fullName, passwordHash, passwordVault, legacyEmail]
+      );
+      console.log(`✓ Superadmin migrated: ${legacyEmail} → ${email}`);
+      return;
+    }
+
+    await client.query('DELETE FROM users WHERE email = $1', [legacyEmail]);
+    console.log(`✓ Removed legacy superadmin ${legacyEmail} (${email} already exists)`);
+  }
+
+  const existing = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+
+  if (existing.rowCount > 0) {
+    await client.query(
+      `UPDATE users
+       SET role = 'superadmin',
+           status = 'approved',
+           full_name = $2,
+           password_hash = $3,
+           password_vault = COALESCE($4, password_vault),
+           updated_at = NOW()
+       WHERE email = $1`,
+      [email, fullName, passwordHash, passwordVault]
+    );
+    console.log(`✓ Superadmin ready: ${email}`);
+  } else {
+    await client.query(
+      `INSERT INTO users (email, full_name, organization, password_hash, password_vault, role, status)
+       VALUES ($1, $2, $3, $4, $5, 'superadmin', 'approved')`,
+      [email, fullName, 'GLICO', passwordHash, passwordVault]
+    );
+    console.log(`✓ Superadmin created: ${email}`);
+  }
+}
+
+async function migrate() {
+  const client = await pool.connect();
+  try {
+    if (engine === 'sqlite') {
+      console.log('Migrating SQLite (local/device)…');
+      await migrateSqlite(client);
+    } else {
+      console.log('Migrating PostgreSQL…');
+      await migratePostgres(client);
+    }
+    await seedSuperadmin(client);
+    const { seedMeetingDepartments } = require('../services/meetingDepartments');
+    const departments = await seedMeetingDepartments((text, params) =>
+      client.query(text, params)
+    );
+    console.log(`✓ Meeting departments ready (${departments.length})`);
+    console.log('✓ Migration complete');
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+migrate().catch((err) => {
+  console.error('Migration failed:', err.message);
+  process.exit(1);
+});

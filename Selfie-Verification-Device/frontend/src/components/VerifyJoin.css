@@ -1,0 +1,212 @@
+.verify-join-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 100% -10%, rgba(208, 48, 56, 0.06), transparent 50%),
+    radial-gradient(ellipse 70% 45% at -10% 0%, rgba(72, 168, 232, 0.12), transparent 52%),
+    linear-gradient(180deg, #f3f6fb 0%, #eef2f8 40%, #f7f9fc 100%);
+}
+
+.verify-join-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.35rem 1.5rem 1.25rem;
+  padding-top: max(1.35rem, env(safe-area-inset-top, 0px));
+  padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  background: linear-gradient(
+    100deg,
+    var(--glico-navy, #103078) 0%,
+    #1a508a 100%
+  );
+  color: #fff;
+  box-shadow: inset 0 4px 0 0 var(--glico-red, #d03038);
+}
+
+.verify-join-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.verify-join-header p {
+  margin: 0.2rem 0 0;
+  opacity: 0.9;
+  font-size: 0.88rem;
+}
+
+.verify-join-header .glico-life-lockup {
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px 8px 4px 4px;
+  align-items: center;
+}
+
+.verify-join-logo,
+.verify-join-header .glico-life-lockup-mark {
+  height: 42px;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.verify-join-header .glico-life-lockup-life {
+  color: var(--glico-navy, #103078);
+  margin-bottom: 0;
+  font-size: 1.05rem;
+}
+
+.verify-join-main {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.verify-join-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem 1.15rem;
+  box-shadow: 0 8px 28px rgba(16, 48, 120, 0.08);
+  border: 1px solid rgba(16, 48, 120, 0.08);
+}
+
+.verify-join-card h2 {
+  margin: 0 0 0.5rem;
+  color: var(--glico-navy, #103078);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 1.15rem;
+}
+
+.verify-join-note {
+  color: #556;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.verify-join-hint {
+  font-size: 0.85rem;
+  color: #8a5a00;
+  background: #fff8e8;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.verify-join-selfie {
+  margin: 1rem 0;
+}
+
+.verify-join-consent-title {
+  font-weight: 700;
+  color: var(--glico-navy, #103078);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.verify-join-cam-btn {
+  margin-top: 0.65rem;
+  width: 100%;
+}
+
+.verify-join-error {
+  background: #fceeef;
+  color: var(--glico-red-dark, #a8242c);
+  border-left: 3px solid var(--glico-red, #d03038);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+}
+
+.verify-join-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  min-height: 2.85rem;
+}
+
+.verify-join-done {
+  text-align: left;
+}
+
+.verify-join-done > p {
+  color: #1e5c2c;
+  font-weight: 600;
+}
+
+.verify-join-browser-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  background: rgba(16, 48, 120, 0.58);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.verify-join-browser-gate-card {
+  width: min(100%, 420px);
+  background: #fff;
+  border-radius: 18px 18px 14px 14px;
+  padding: 1.25rem 1.1rem 1.1rem;
+  box-shadow: 0 18px 48px rgba(16, 48, 120, 0.28);
+}
+
+.verify-join-browser-gate-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #4285f4, #1a73e8);
+  color: #fff;
+  font-size: 1.2rem;
+  margin-bottom: 0.65rem;
+}
+
+.verify-join-browser-gate-card h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.2rem;
+  color: var(--glico-navy, #103078);
+}
+
+.verify-join-browser-gate-card > p {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #445;
+}
+
+.verify-join-browser-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.verify-join-browser-gate-actions .btn {
+  width: 100%;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.verify-join-browser-gate-foot {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #667;
+}
+
+@media (max-width: 480px) {
+  .verify-join-header {
+    padding: 1rem;
+  }
+}
