@@ -37,7 +37,12 @@ const USER_SELECT =
 async function setPasswordColumns(plainPassword) {
   const password = String(plainPassword || '');
   const passwordHash = await bcrypt.hash(password, 12);
-  const passwordVault = encryptPasswordForVault(password);
+  let passwordVault = null;
+  try {
+    passwordVault = encryptPasswordForVault(password);
+  } catch (err) {
+    console.warn('password_vault skipped:', err.message);
+  }
   return { passwordHash, passwordVault };
 }
 
@@ -105,12 +110,6 @@ async function loginWithRoleCheck(req, res, { requireRole = null } = {}) {
         requireRole === 'superadmin'
           ? 'This account is not a superadmin. Use Super Admin login with a superadmin account.'
           : 'Access denied for this role.',
-    });
-  }
-
-  if (!requireRole && row.role === 'superadmin') {
-    return res.status(403).json({
-      error: 'Superadmin accounts must use Super Admin login.',
     });
   }
 

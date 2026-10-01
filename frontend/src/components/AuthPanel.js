@@ -20,6 +20,10 @@ import PasswordInput from './PasswordInput';
 import './AuthPanel.css';
 
 const emptyLogin = { email: '', password: '' };
+const emptyAdmin = {
+  email: 'superadmin@glico.local',
+  password: '',
+};
 const emptyRegister = {
   fullName: '',
   email: '',
@@ -51,7 +55,7 @@ const AuthPanel = ({ deviceOnly = false }) => {
   const { login, loginSuperAdmin, register, busy } = useAuth();
   const [mode, setMode] = useState('login'); // login | register | superadmin
   const [loginForm, setLoginForm] = useState(emptyLogin);
-  const [adminForm, setAdminForm] = useState(emptyLogin);
+  const [adminForm, setAdminForm] = useState(emptyAdmin);
   const [registerForm, setRegisterForm] = useState(emptyRegister);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -319,7 +323,8 @@ const AuthPanel = ({ deviceOnly = false }) => {
       {mode === 'superadmin' && canUseSuperAdminLogin() && (
         <form className="auth-form" onSubmit={onSuperAdminLogin} noValidate>
           <p className="auth-section-hint">
-            Section: <strong>Admin</strong> — superadmin credentials only (not regular staff login)
+            Section: <strong>Admin</strong> — use <code>superadmin@glico.local</code> or
+            your GLICO admin email (not regular staff login)
           </p>
           {emailPasswordFields('admin', adminForm, setAdminForm)}
           {rememberField}

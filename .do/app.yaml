@@ -1,0 +1,99 @@
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+name: glicocapitalverification
+region: fra
+features:
+  - buildpack-stack=ubuntu-22
+databases:
+  - name: app-ea0b9c53-dba8-4742-8971-0c03
+    cluster_name: app-ea0b9c53-dba8-4742-8971-0c0319d87830
+    engine: PG
+    version: "17"
+    production: true
+    db_name: defaultdb
+    db_user: dev-db-848789
+services:
+  - name: web
+    github:
+      repo: AjumaPro/selfie-verification
+      branch: glico-pensions-id
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    http_port: 8080
+    build_command: npm run build
+    run_command: npm start
+    health_check:
+      http_path: /health
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+      - key: DB_CLIENT
+        value: postgres
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        value: ${app-ea0b9c53-dba8-4742-8971-0c03.DATABASE_URL}
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        type: SECRET
+        value: glico-pensions-id-jwt-change-in-app-platform
+        scope: RUN_TIME
+      - key: JWT_EXPIRES_IN
+        value: 30d
+        scope: RUN_TIME
+      - key: CORS_ORIGIN
+        value: "*"
+        scope: RUN_TIME
+      - key: SUPERADMIN_NAME
+        value: Francis Sarpaning
+        scope: RUN_TIME
+      - key: SUPERADMIN_EMAIL
+        type: SECRET
+        value: infoajumapro@gmail.com
+        scope: RUN_TIME
+      - key: SUPERADMIN_PASSWORD
+        type: SECRET
+        value: MyGlicoFIF@2025
+        scope: RUN_TIME
+      - key: SUPERADMIN_LEGACY_PASSWORD
+        type: SECRET
+        value: SuperAdmin@123
+        scope: RUN_TIME
+      - key: REACT_APP_AUTH_API_URL
+        value: ""
+        scope: BUILD_TIME
+      - key: REACT_APP_API_BASE_URL
+        value: https://selfie.imsgh.org:2035/skyface
+        scope: BUILD_TIME
+      - key: SELFIE_API_BASE_URL
+        value: https://selfie.imsgh.org:2035/skyface
+        scope: BUILD_TIME
+      - key: REACT_APP_SHOW_SUPERADMIN_LOGIN
+        value: "true"
+        scope: BUILD_TIME
+      - key: REACT_APP_DEFAULT_CENTER
+        value: BRANCHLESS
+        scope: BUILD_TIME
+      - key: SELFIE_CENTER
+        value: BRANCHLESS
+        scope: BUILD_TIME
+      - key: REACT_APP_DEFAULT_USER_ID
+        value: string
+        scope: BUILD_TIME
+      - key: SELFIE_USER_ID
+        value: string
+        scope: BUILD_TIME
+      - key: REACT_APP_DEFAULT_MERCHANT_KEY
+        value: 6a92c82d-71dd-432e-9afc-c1ce6cfe7612
+        scope: BUILD_TIME
+      - key: SELFIE_MERCHANT_KEY
+        value: 6a92c82d-71dd-432e-9afc-c1ce6cfe7612
+        scope: BUILD_TIME
