@@ -136,7 +136,15 @@
   letter-spacing: 0.04em;
 }
 
-.vdash-details {
+.vdash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.vdash-details,
+.vdash-delete {
   border: 1px solid var(--glico-border, #d4dcec);
   background: #fff;
   color: var(--glico-navy, #103078);
@@ -146,6 +154,23 @@
   font-size: 0.8rem;
   font-weight: 650;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.vdash-delete {
+  border-color: #f0c4c6;
+  color: var(--glico-red-dark, #a8242c);
+}
+
+.vdash-delete:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.vdash-delete-inline {
+  margin-top: 0.85rem;
 }
 
 .vdash-detail-row td {

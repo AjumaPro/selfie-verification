@@ -121,6 +121,12 @@ export async function removeVerifyResult(sessionId, resultId) {
   );
 }
 
+export async function deleteVerifyAttempt(resultId) {
+  return request(`/api/verify/results/${encodeURIComponent(resultId)}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function deleteVerifySession(sessionId) {
   return request(`/api/verify/sessions/${encodeURIComponent(sessionId)}`, {
     method: 'DELETE',

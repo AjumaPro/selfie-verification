@@ -523,6 +523,49 @@ router.get('/sessions/:id/results', authRequired, async (req, res) => {
   }
 });
 
+async function findResultForDelete(resultId) {
+  const id = String(resultId || '').trim();
+  if (!id) return null;
+  const r = await query(
+    `SELECT
+       r.*,
+       COALESCE(NULLIF(r.host_user_id, ''), s.host_user_id, '') AS owner_id
+     FROM verify_results r
+     LEFT JOIN verify_sessions s ON s.id = r.session_id
+     WHERE r.id = $1`,
+    [id]
+  );
+  return r.rowCount ? r.rows[0] : null;
+}
+
+async function canDeleteResult(row, userId, jwtRole) {
+  if (!row) return false;
+  if (String(row.owner_id || '') === String(userId || '')) return true;
+  return isLiveSuperAdmin(userId, jwtRole);
+}
+
+/**
+ * DELETE /api/verify/results/:id — owner or superadmin removes saved KYC details.
+ */
+router.delete('/results/:id', authRequired, async (req, res) => {
+  try {
+    const row = await findResultForDelete(req.params.id);
+    if (!row) {
+      return res.status(404).json({ error: 'Saved details not found.' });
+    }
+    if (!(await canDeleteResult(row, req.userId, req.userRole))) {
+      return res.status(403).json({
+        error: 'You can only delete your own saved details.',
+      });
+    }
+    await query(`DELETE FROM verify_results WHERE id = $1`, [row.id]);
+    return res.json({ ok: true, id: row.id });
+  } catch (err) {
+    console.error('verify delete saved details:', err);
+    return res.status(500).json({ error: 'Could not delete saved details.' });
+  }
+});
+
 /**
  * DELETE /api/verify/sessions/:id/results/:resultId
  */
@@ -531,15 +574,21 @@ router.delete(
   authRequired,
   async (req, res) => {
     try {
-      const owned = await getOwnedSession(req.params.id, req.userId);
-      if (!owned) {
-        return res.status(404).json({ error: 'Session not found.' });
+      const row = await findResultForDelete(req.params.resultId);
+      if (!row) {
+        return res.status(404).json({ error: 'Saved details not found.' });
       }
-      await query(
-        `DELETE FROM verify_results WHERE id = $1 AND session_id = $2`,
-        [String(req.params.resultId || '').trim(), owned.id]
-      );
-      return res.json({ ok: true });
+      const sessionId = String(req.params.id || '').trim();
+      if (sessionId && String(row.session_id || '') !== sessionId) {
+        return res.status(404).json({ error: 'Saved details not found.' });
+      }
+      if (!(await canDeleteResult(row, req.userId, req.userRole))) {
+        return res.status(403).json({
+          error: 'You can only delete your own saved details.',
+        });
+      }
+      await query(`DELETE FROM verify_results WHERE id = $1`, [row.id]);
+      return res.json({ ok: true, id: row.id });
     } catch (err) {
       console.error('verify delete result:', err);
       return res.status(500).json({ error: 'Could not delete result.' });

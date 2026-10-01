@@ -4,8 +4,9 @@ import {
   FaClipboardList,
   FaSync,
   FaTimesCircle,
+  FaTrash,
 } from 'react-icons/fa';
-import { fetchVerifyDashboard } from '../services/verifyApi';
+import { deleteVerifyAttempt, fetchVerifyDashboard } from '../services/verifyApi';
 import { useAuth } from '../context/AuthContext';
 import { resultToApiResult } from '../utils/kycAttempt';
 import VerificationResultCard from './VerificationResultCard';
@@ -24,6 +25,7 @@ const VerificationDashboard = () => {
   const [scope, setScope] = useState('mine');
   const [results, setResults] = useState([]);
   const [openId, setOpenId] = useState('');
+  const [deletingId, setDeletingId] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,6 +54,38 @@ const VerificationDashboard = () => {
     const t = window.setInterval(load, 15000);
     return () => window.clearInterval(t);
   }, [load]);
+
+  const dropAttempt = async (row) => {
+    const name =
+      [row.forenames, row.surname].filter(Boolean).join(' ') ||
+      row.ghanaCard ||
+      row.nationalId ||
+      'this record';
+    if (
+      !window.confirm(
+        `Delete saved details for ${name}? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setDeletingId(row.id);
+    setError('');
+    try {
+      await deleteVerifyAttempt(row.id);
+      const approved = !!(row.approved || row.verified);
+      setResults((list) => list.filter((item) => item.id !== row.id));
+      setCounts((c) => ({
+        total: Math.max(0, (c.total || 1) - 1),
+        approved: Math.max(0, (c.approved || 0) - (approved ? 1 : 0)),
+        attempted: Math.max(0, (c.attempted || 0) - (approved ? 0 : 1)),
+      }));
+      if (openId === row.id) setOpenId('');
+    } catch (err) {
+      setError(err.message || 'Could not delete saved details.');
+    } finally {
+      setDeletingId('');
+    }
+  };
 
   return (
     <section className="vdash" aria-label="Verification dashboard">
@@ -172,13 +206,24 @@ const VerificationDashboard = () => {
                           : '—'}
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="vdash-details"
-                          onClick={() => setOpenId(open ? '' : r.id)}
-                        >
-                          {open ? 'Hide details' : 'View details'}
-                        </button>
+                        <div className="vdash-actions">
+                          <button
+                            type="button"
+                            className="vdash-details"
+                            onClick={() => setOpenId(open ? '' : r.id)}
+                          >
+                            {open ? 'Hide details' : 'View details'}
+                          </button>
+                          <button
+                            type="button"
+                            className="vdash-delete"
+                            disabled={deletingId === r.id}
+                            onClick={() => dropAttempt(r)}
+                          >
+                            <FaTrash aria-hidden />
+                            {deletingId === r.id ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {open && (
@@ -193,6 +238,17 @@ const VerificationDashboard = () => {
                             apiResult={resultToApiResult(r)}
                             title={approved ? 'Approved' : 'Attempted'}
                           />
+                          <button
+                            type="button"
+                            className="vdash-delete vdash-delete-inline"
+                            disabled={deletingId === r.id}
+                            onClick={() => dropAttempt(r)}
+                          >
+                            <FaTrash aria-hidden />
+                            {deletingId === r.id
+                              ? 'Deleting…'
+                              : 'Delete these saved details'}
+                          </button>
                         </td>
                       </tr>
                     )}
