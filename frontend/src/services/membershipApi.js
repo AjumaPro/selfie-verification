@@ -109,19 +109,3 @@ export async function deleteMembershipSession(sessionId) {
   });
 }
 
-export async function fetchMembershipForm(id) {
-  return request(`/api/membership/${encodeURIComponent(id)}`);
-}
-
-export async function submitMembershipForm(payload) {
-  return request('/api/membership', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deleteMembershipForm(id) {
-  return request(`/api/membership/${encodeURIComponent(id)}`, {
-    method: 'DELETE',
-  });
-}
