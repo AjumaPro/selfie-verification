@@ -1,0 +1,89 @@
+.tpfs-kyc {
+  grid-column: 1 / -1;
+  border: 1px solid var(--glico-border, #d4dcec);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+  background: #f7f9fc;
+}
+
+.tpfs-kyc.is-ok {
+  border-color: #8bc99a;
+  background: #f3faf4;
+}
+
+.tpfs-kyc-head {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.tpfs-kyc-head svg {
+  color: var(--glico-navy, #103078);
+  font-size: 1.2rem;
+  margin-top: 0.15rem;
+}
+
+.tpfs-kyc-head strong {
+  display: block;
+  color: var(--glico-navy, #103078);
+  font-size: 0.95rem;
+}
+
+.tpfs-kyc-head p {
+  margin: 0.2rem 0 0;
+  color: var(--glico-muted, #5b6b82);
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.tpfs-kyc-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  color: #1e5c2c;
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+
+.tpfs-kyc-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--glico-navy, #103078);
+  margin-bottom: 0.75rem;
+}
+
+.tpfs-kyc-label .form-input {
+  width: 100%;
+  margin-top: 0.28rem;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid var(--glico-border, #d4dcec);
+  border-radius: 8px;
+  font: inherit;
+  text-transform: uppercase;
+  background: #fff;
+}
+
+.tpfs-kyc-hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--glico-muted, #5b6b82);
+}
+
+.tpfs-kyc-error {
+  margin: 0 0 0.65rem;
+  color: var(--glico-red-dark, #a8242c);
+  font-weight: 650;
+  font-size: 0.88rem;
+}
+
+.tpfs-kyc-result {
+  margin-top: 0.85rem;
+}
+
+.tpfs-kyc .image-upload-container {
+  margin-bottom: 0.75rem;
+}

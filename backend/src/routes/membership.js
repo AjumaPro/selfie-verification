@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { query } = require('../db/pool');
 const { authRequired } = require('../middleware/auth');
+const { createRateLimiter, clientIp } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -10,8 +11,15 @@ const LIST_SELECT = `
   date_of_employment, first_deduction, surname, first_name, other_names,
   date_of_birth, gender, ghana_card, email, mobile, contribution_rate,
   contribution_other, basic_salary, ssnit_number, declaration_date,
-  created_at, updated_at
+  session_id, source, kyc_verified, created_at, updated_at
 `;
+
+const publicSubmitLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyFn: (req) => `mform:${clientIp(req)}`,
+  message: 'Too many form submissions. Please wait 15 minutes and try again.',
+});
 
 function newId() {
   return crypto.randomUUID().replace(/-/g, '');
@@ -56,19 +64,38 @@ function parseDataUrl(raw, maxChars) {
   return value.slice(0, maxChars);
 }
 
-function isLiveSuperAdmin(userId, jwtRole) {
-  return Promise.resolve().then(async () => {
-    if (String(jwtRole || '') !== 'superadmin' || !userId) return false;
-    const result = await query(`SELECT role, status FROM users WHERE id = $1`, [
-      userId,
-    ]);
-    if (!result.rowCount) return false;
-    const row = result.rows[0];
-    return (
-      String(row.role || '') === 'superadmin' &&
-      String(row.status || '') === 'approved'
-    );
-  });
+function isApprovedKyc(value) {
+  return (
+    value === true ||
+    value === 1 ||
+    String(value || '').toUpperCase() === 'TRUE'
+  );
+}
+
+async function isLiveSuperAdmin(userId, jwtRole) {
+  if (String(jwtRole || '') !== 'superadmin' || !userId) return false;
+  const result = await query(`SELECT role, status FROM users WHERE id = $1`, [
+    userId,
+  ]);
+  if (!result.rowCount) return false;
+  const row = result.rows[0];
+  return (
+    String(row.role || '') === 'superadmin' &&
+    String(row.status || '') === 'approved'
+  );
+}
+
+function rowToSession(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title || 'TPFS membership form',
+    status: row.status || 'open',
+    note: row.note || '',
+    hostUserId: row.host_user_id || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 function parseBody(body) {
@@ -82,6 +109,10 @@ function parseBody(body) {
         ? 'other'
         : '';
   const beneficiaries = parseBeneficiaries(body?.beneficiaries);
+  let kycSnapshot = {};
+  if (body?.kycSnapshot && typeof body.kycSnapshot === 'object') {
+    kycSnapshot = body.kycSnapshot;
+  }
   return {
     staffId: upperClip(body?.staffId, 40),
     schoolName: upperClip(body?.schoolName, 160),
@@ -110,6 +141,8 @@ function parseBody(body) {
     declarationDate: clip(body?.declarationDate, 20),
     photoData: parseDataUrl(body?.photoData, 900000),
     signatureData: parseDataUrl(body?.signatureData, 400000),
+    kycVerified: isApprovedKyc(body?.kycVerified),
+    kycSnapshot,
   };
 }
 
@@ -125,6 +158,9 @@ function validateForm(parsed) {
     return 'Select gender.';
   }
   if (parsed.ghanaCard.length < 8) return 'Ghana Card number is required.';
+  if (!parsed.kycVerified) {
+    return 'Complete Ghana Card self-verification before submitting.';
+  }
   if (!parsed.contributionRate) return 'Select a contribution rate.';
   if (parsed.contributionRate === 'other') {
     const n = Number(parsed.contributionOther);
@@ -158,9 +194,19 @@ function rowToForm(row, { includeMedia = false } = {}) {
   } catch {
     beneficiaries = [];
   }
+  let kycSnapshot = {};
+  try {
+    kycSnapshot = JSON.parse(row.kyc_json || '{}') || {};
+  } catch {
+    kycSnapshot = {};
+  }
   const form = {
     id: row.id,
     createdBy: row.created_by || '',
+    sessionId: row.session_id || '',
+    source: row.source || 'staff',
+    kycVerified: isApprovedKyc(row.kyc_verified),
+    kycSnapshot,
     staffId: row.staff_id || '',
     schoolName: row.school_name || '',
     districtRegion: row.district_region || '',
@@ -197,6 +243,227 @@ function rowToForm(row, { includeMedia = false } = {}) {
   }
   return form;
 }
+
+async function insertForm(parsed, { createdBy, sessionId, source }) {
+  const id = newId();
+  const snapshot = {
+    ...parsed,
+    id,
+    photoData: parsed.photoData ? '1' : '',
+    signatureData: parsed.signatureData ? '1' : '',
+  };
+  await query(
+    `INSERT INTO membership_forms (
+      id, created_by, staff_id, school_name, district_region, union_affiliation,
+      date_of_employment, first_deduction, surname, first_name, other_names,
+      date_of_birth, gender, birth_town, birth_region, birth_country, ghana_card,
+      residential_address, postal_address, email, mobile, contribution_rate,
+      contribution_other, basic_salary, ssnit_number, beneficiaries_json,
+      declaration_date, photo_data, signature_data, form_json,
+      session_id, source, kyc_verified, kyc_json
+    ) VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+      $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34
+    )`,
+    [
+      id,
+      String(createdBy || ''),
+      parsed.staffId,
+      parsed.schoolName,
+      parsed.districtRegion,
+      parsed.unionAffiliation,
+      parsed.dateOfEmployment,
+      parsed.firstDeduction,
+      parsed.surname,
+      parsed.firstName,
+      parsed.otherNames,
+      parsed.dateOfBirth,
+      parsed.gender,
+      parsed.birthTown,
+      parsed.birthRegion,
+      parsed.birthCountry,
+      parsed.ghanaCard,
+      parsed.residentialAddress,
+      parsed.postalAddress,
+      parsed.email,
+      parsed.mobile,
+      parsed.contributionRate,
+      parsed.contributionOther,
+      parsed.basicSalary,
+      parsed.ssnitNumber,
+      JSON.stringify(parsed.beneficiaries),
+      parsed.declarationDate,
+      parsed.photoData,
+      parsed.signatureData,
+      JSON.stringify(snapshot),
+      String(sessionId || ''),
+      source === 'share' ? 'share' : 'staff',
+      parsed.kycVerified ? 'TRUE' : 'FALSE',
+      JSON.stringify(parsed.kycSnapshot || {}),
+    ]
+  );
+  const again = await query(
+    `SELECT ${LIST_SELECT} FROM membership_forms WHERE id = $1`,
+    [id]
+  );
+  return rowToForm(again.rows[0]);
+}
+
+router.get('/sessions/mine', authRequired, async (req, res) => {
+  try {
+    const r = await query(
+      `SELECT * FROM membership_sessions
+       WHERE host_user_id = $1
+       ORDER BY updated_at DESC
+       LIMIT 50`,
+      [String(req.userId)]
+    );
+    return res.json({ sessions: (r.rows || []).map(rowToSession) });
+  } catch (err) {
+    console.error('membership sessions mine:', err);
+    return res.status(500).json({ error: 'Could not list form links.' });
+  }
+});
+
+router.get('/sessions/:id', async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const r = await query(`SELECT * FROM membership_sessions WHERE id = $1`, [
+      id,
+    ]);
+    if (!r.rowCount) {
+      return res.status(404).json({
+        error:
+          'This membership form link was not found. Ask GLICO Pensions staff for a new QR or link.',
+      });
+    }
+    const session = rowToSession(r.rows[0]);
+    if (session.status === 'closed') {
+      return res.status(403).json({
+        error: 'This membership form link is closed. Ask staff for a new link.',
+        session: { id: session.id, title: session.title, status: 'closed' },
+      });
+    }
+    return res.json({
+      session: {
+        id: session.id,
+        title: session.title,
+        note: session.note,
+        status: session.status,
+      },
+    });
+  } catch (err) {
+    console.error('membership get session:', err);
+    return res.status(500).json({ error: 'Could not load membership form link.' });
+  }
+});
+
+router.put('/sessions/:id', authRequired, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id || id.length > 80) {
+      return res.status(400).json({ error: 'Invalid session id.' });
+    }
+    const title =
+      String(req.body?.title || '').trim() || 'TPFS membership form';
+    const note = String(req.body?.note || '').trim().slice(0, 500);
+    const statusRaw = String(req.body?.status || 'open').toLowerCase();
+    const status = statusRaw === 'closed' ? 'closed' : 'open';
+
+    const existing = await query(
+      `SELECT * FROM membership_sessions WHERE id = $1`,
+      [id]
+    );
+    if (existing.rowCount > 0) {
+      const row = existing.rows[0];
+      if (String(row.host_user_id) !== String(req.userId)) {
+        return res.status(403).json({ error: 'Not your form link.' });
+      }
+      await query(
+        `UPDATE membership_sessions
+         SET title = $2, note = $3, status = $4, updated_at = NOW()
+         WHERE id = $1`,
+        [id, title, note, status]
+      );
+    } else {
+      await query(
+        `INSERT INTO membership_sessions (id, title, host_user_id, status, note)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [id, title, String(req.userId), status, note]
+      );
+    }
+    const again = await query(
+      `SELECT * FROM membership_sessions WHERE id = $1`,
+      [id]
+    );
+    return res.json({ session: rowToSession(again.rows[0]) });
+  } catch (err) {
+    console.error('membership put session:', err);
+    return res.status(500).json({ error: 'Could not save form link.' });
+  }
+});
+
+router.delete('/sessions/:id', authRequired, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const r = await query(
+      `SELECT * FROM membership_sessions WHERE id = $1`,
+      [id]
+    );
+    if (!r.rowCount) {
+      return res.status(404).json({ error: 'Form link not found.' });
+    }
+    if (String(r.rows[0].host_user_id) !== String(req.userId)) {
+      const admin = await isLiveSuperAdmin(req.userId, req.userRole);
+      if (!admin) {
+        return res.status(403).json({ error: 'Not your form link.' });
+      }
+    }
+    await query(`DELETE FROM membership_sessions WHERE id = $1`, [id]);
+    return res.json({ ok: true, id });
+  } catch (err) {
+    console.error('membership delete session:', err);
+    return res.status(500).json({ error: 'Could not delete form link.' });
+  }
+});
+
+router.post(
+  '/sessions/:id/submit',
+  publicSubmitLimiter,
+  async (req, res) => {
+    try {
+      const sessionId = String(req.params.id || '').trim();
+      const r = await query(
+        `SELECT * FROM membership_sessions WHERE id = $1`,
+        [sessionId]
+      );
+      if (!r.rowCount) {
+        return res.status(404).json({ error: 'Membership form link not found.' });
+      }
+      if (String(r.rows[0].status || '') === 'closed') {
+        return res.status(403).json({
+          error: 'This membership form link is closed.',
+        });
+      }
+      const parsed = parseBody(req.body || {});
+      const err = validateForm(parsed);
+      if (err) return res.status(400).json({ error: err });
+      const form = await insertForm(parsed, {
+        createdBy: r.rows[0].host_user_id,
+        sessionId,
+        source: 'share',
+      });
+      return res.status(201).json({
+        form,
+        message:
+          'Registration submitted. GLICO Pensions has received your membership form.',
+      });
+    } catch (err) {
+      console.error('membership public submit:', err);
+      return res.status(500).json({ error: 'Could not submit membership form.' });
+    }
+  }
+);
 
 router.get('/', authRequired, async (req, res) => {
   try {
@@ -245,60 +512,13 @@ router.post('/', authRequired, async (req, res) => {
     const parsed = parseBody(req.body || {});
     const err = validateForm(parsed);
     if (err) return res.status(400).json({ error: err });
-
-    const id = newId();
-    const snapshot = { ...parsed, id };
-    await query(
-      `INSERT INTO membership_forms (
-        id, created_by, staff_id, school_name, district_region, union_affiliation,
-        date_of_employment, first_deduction, surname, first_name, other_names,
-        date_of_birth, gender, birth_town, birth_region, birth_country, ghana_card,
-        residential_address, postal_address, email, mobile, contribution_rate,
-        contribution_other, basic_salary, ssnit_number, beneficiaries_json,
-        declaration_date, photo_data, signature_data, form_json
-      ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30
-      )`,
-      [
-        id,
-        String(req.userId),
-        parsed.staffId,
-        parsed.schoolName,
-        parsed.districtRegion,
-        parsed.unionAffiliation,
-        parsed.dateOfEmployment,
-        parsed.firstDeduction,
-        parsed.surname,
-        parsed.firstName,
-        parsed.otherNames,
-        parsed.dateOfBirth,
-        parsed.gender,
-        parsed.birthTown,
-        parsed.birthRegion,
-        parsed.birthCountry,
-        parsed.ghanaCard,
-        parsed.residentialAddress,
-        parsed.postalAddress,
-        parsed.email,
-        parsed.mobile,
-        parsed.contributionRate,
-        parsed.contributionOther,
-        parsed.basicSalary,
-        parsed.ssnitNumber,
-        JSON.stringify(parsed.beneficiaries),
-        parsed.declarationDate,
-        parsed.photoData,
-        parsed.signatureData,
-        JSON.stringify({ ...snapshot, photoData: parsed.photoData ? '1' : '', signatureData: parsed.signatureData ? '1' : '' }),
-      ]
-    );
-    const again = await query(
-      `SELECT ${LIST_SELECT} FROM membership_forms WHERE id = $1`,
-      [id]
-    );
+    const form = await insertForm(parsed, {
+      createdBy: req.userId,
+      sessionId: '',
+      source: 'staff',
+    });
     return res.status(201).json({
-      form: rowToForm(again.rows[0]),
+      form,
       message: 'Membership registration saved.',
     });
   } catch (err) {

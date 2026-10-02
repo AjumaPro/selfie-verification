@@ -7,15 +7,18 @@ import {
   FaIdCard,
   FaSync,
 } from 'react-icons/fa';
-import GlicoLifeLogo from './GlicoLifeLogo';
 import {
   deleteMembershipForm,
   fetchMembershipForm,
+  fetchPublicMembershipSession,
   listMembershipForms,
   submitMembershipForm,
+  submitPublicMembershipForm,
 } from '../services/membershipApi';
 import { fetchVerifyDashboard } from '../services/verifyApi';
 import { compressImageFile } from '../utils/compressImage';
+import GhanaCardSelfVerify from './GhanaCardSelfVerify';
+import GlicoLifeLogo from './GlicoLifeLogo';
 import './MembershipForm.css';
 
 const GHANA_REGIONS = [
@@ -98,6 +101,8 @@ function emptyForm() {
     declarationDate: todayIso(),
     photoData: '',
     signatureData: '',
+    kycVerified: false,
+    kycSnapshot: {},
   };
 }
 
@@ -218,7 +223,11 @@ function SignaturePad({ value, onChange, disabled }) {
   );
 }
 
-const MembershipForm = () => {
+const MembershipForm = ({
+  guestSessionId = '',
+  onGuestClose,
+} = {}) => {
+  const isGuest = Boolean(guestSessionId);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -226,6 +235,9 @@ const MembershipForm = () => {
   const [saved, setSaved] = useState([]);
   const [scope, setScope] = useState('mine');
   const [viewing, setViewing] = useState(false);
+  const [guestSession, setGuestSession] = useState(null);
+  const [guestDone, setGuestDone] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(Boolean(guestSessionId));
   const photoInputRef = useRef(null);
 
   const total = useMemo(
@@ -242,6 +254,7 @@ const MembershipForm = () => {
   };
 
   const loadList = useCallback(async () => {
+    if (isGuest) return;
     try {
       const data = await listMembershipForms();
       setSaved(data.forms || []);
@@ -249,11 +262,37 @@ const MembershipForm = () => {
     } catch (err) {
       setError(err.message || 'Could not load saved forms.');
     }
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (!isGuest) return undefined;
+    let cancelled = false;
+    setError('');
+    setGuestLoading(true);
+    fetchPublicMembershipSession(guestSessionId)
+      .then((data) => {
+        if (!cancelled) setGuestSession(data.session || null);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setGuestSession(null);
+          setError(
+            err.message ||
+              'This membership form link is not available.'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setGuestLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [guestSessionId, isGuest]);
 
   const onPhoto = async (event) => {
     const file = event.target.files && event.target.files[0];
@@ -283,6 +322,8 @@ const MembershipForm = () => {
           normalizeDate(row.birthDate) || prev.dateOfBirth,
         gender: normalizeGender(row.gender) || prev.gender,
         ghanaCard: String(row.ghanaCard || row.nationalId || '').toUpperCase(),
+        kycVerified: true,
+        kycSnapshot: { source: 'dashboard', id: row.id },
       }));
       setInfo('Personal details filled from the latest approved Ghana Card check.');
     } catch (err) {
@@ -334,14 +375,27 @@ const MembershipForm = () => {
       setError('Signature or thumb print is required.');
       return;
     }
+    if (!form.kycVerified) {
+      setError('Complete Ghana Card self-verification before submitting.');
+      return;
+    }
     setBusy(true);
     try {
       const payload = {
         ...form,
-        beneficiaries: form.beneficiaries.filter((row) => String(row.name || '').trim()),
+        beneficiaries: form.beneficiaries.filter((row) =>
+          String(row.name || '').trim()
+        ),
+        kycVerified: true,
       };
-      const result = await submitMembershipForm(payload);
+      const result = isGuest
+        ? await submitPublicMembershipForm(guestSessionId, payload)
+        : await submitMembershipForm(payload);
       setInfo(result.message || 'Membership registration saved.');
+      if (isGuest) {
+        setGuestDone(true);
+        return;
+      }
       setForm(emptyForm());
       setViewing(false);
       await loadList();
@@ -388,6 +442,22 @@ const MembershipForm = () => {
     }
   };
 
+  const applyKycPerson = ({ ghanaCard, person, selfieDataUrl }) => {
+    setForm((prev) => ({
+      ...prev,
+      ghanaCard: String(ghanaCard || prev.ghanaCard).toUpperCase(),
+      surname: String(person?.surname || prev.surname || '').toUpperCase(),
+      firstName: String(person?.forenames || prev.firstName || '').toUpperCase(),
+      otherNames: String(person?.otherNames || prev.otherNames || '').toUpperCase(),
+      dateOfBirth: normalizeDate(person?.birthDate) || prev.dateOfBirth,
+      gender: normalizeGender(person?.gender) || prev.gender,
+      kycVerified: true,
+      kycSnapshot: person || {},
+      photoData: prev.photoData || selfieDataUrl || '',
+    }));
+    setInfo('Ghana Card verified. Personal details were filled from NIA.');
+  };
+
   const startNew = () => {
     setForm(emptyForm());
     setViewing(false);
@@ -396,6 +466,56 @@ const MembershipForm = () => {
   };
 
   const rate = form.contributionRate;
+
+  if (isGuest && guestLoading) {
+    return (
+      <section className="tpfs">
+        <div className="tpfs-sheet">
+          <GlicoLifeLogo markClassName="tpfs-logo" />
+          <p>Loading membership form…</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isGuest && guestDone) {
+    return (
+      <section className="tpfs tpfs-guest-done" aria-live="polite">
+        <div className="tpfs-sheet">
+          <GlicoLifeLogo markClassName="tpfs-logo" />
+          <h2>Registration received</h2>
+          <p>
+            Thank you. Your Teachers’ Provident Fund Scheme membership form has
+            been sent to GLICO Pensions.
+          </p>
+          {onGuestClose && (
+            <button type="button" className="btn btn-primary" onClick={onGuestClose}>
+              Done
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  if (isGuest && error && !guestSession) {
+    return (
+      <section className="tpfs">
+        <div className="tpfs-sheet">
+          <GlicoLifeLogo markClassName="tpfs-logo" />
+          <h2>Form link unavailable</h2>
+          <p className="tpfs-error" role="alert">
+            {error}
+          </p>
+          {onGuestClose && (
+            <button type="button" className="btn btn-secondary" onClick={onGuestClose}>
+              Close
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="tpfs" aria-label="TPFS membership registration">
@@ -457,11 +577,19 @@ const MembershipForm = () => {
             />
           </label>
         </div>
+        {isGuest && guestSession && (
+          <p className="tpfs-guest-note no-print">
+            {guestSession.title}
+            {guestSession.note ? ` — ${guestSession.note}` : ''}
+          </p>
+        )}
 
         <div className="tpfs-toolbar no-print">
-          <button type="button" className="btn btn-secondary" onClick={fillFromKyc}>
-            <FaIdCard aria-hidden /> Fill from last approved KYC
-          </button>
+          {!isGuest && (
+            <button type="button" className="btn btn-secondary" onClick={fillFromKyc}>
+              <FaIdCard aria-hidden /> Fill from last approved KYC
+            </button>
+          )}
           <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
             <FaPrint aria-hidden /> Print / save PDF
           </button>
@@ -631,16 +759,24 @@ const MembershipForm = () => {
                 onChange={(e) => setUpper('birthCountry', e.target.value)}
               />
             </label>
-            <label className="span-2">
-              Ghana Card number
-              <input
-                className="form-input"
-                value={form.ghanaCard}
-                onChange={(e) => setUpper('ghanaCard', e.target.value)}
-                placeholder="GHA-XXXXXXXXX-X"
-                required
+            <div className="span-2">
+              <GhanaCardSelfVerify
+                ghanaCard={form.ghanaCard}
+                verified={form.kycVerified}
+                disabled={viewing}
+                onGhanaCardChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    ghanaCard: value,
+                    kycVerified:
+                      prev.kycVerified && prev.ghanaCard === value
+                        ? prev.kycVerified
+                        : false,
+                  }));
+                }}
+                onApproved={applyKycPerson}
               />
-            </label>
+            </div>
             <label className="span-2">
               Residential address
               <textarea
@@ -854,6 +990,7 @@ const MembershipForm = () => {
         )}
       </form>
 
+      {!isGuest && (
       <div className="tpfs-saved no-print">
         <div className="tpfs-saved-head">
           <h3>
@@ -866,7 +1003,7 @@ const MembershipForm = () => {
         <p>
           {scope === 'all'
             ? 'All submitted TPFS membership forms.'
-            : 'Forms you have submitted from this account.'}
+            : 'Forms you have submitted or received from a shared link.'}
         </p>
         {saved.length === 0 ? (
           <p className="tpfs-empty">No membership forms saved yet.</p>
@@ -878,6 +1015,8 @@ const MembershipForm = () => {
                   <th>Staff ID</th>
                   <th>Name</th>
                   <th>Ghana Card</th>
+                  <th>KYC</th>
+                  <th>Source</th>
                   <th>School / office</th>
                   <th>Rate</th>
                   <th>When</th>
@@ -890,6 +1029,8 @@ const MembershipForm = () => {
                     <td>{row.staffId || '—'}</td>
                     <td>{fullName(row) || '—'}</td>
                     <td>{row.ghanaCard || '—'}</td>
+                    <td>{row.kycVerified ? 'Verified' : '—'}</td>
+                    <td>{row.source === 'share' ? 'Shared link' : 'Staff'}</td>
                     <td>{row.schoolName || '—'}</td>
                     <td>
                       {row.contributionRate === 'other'
@@ -928,6 +1069,7 @@ const MembershipForm = () => {
           </div>
         )}
       </div>
+      )}
     </section>
   );
 };

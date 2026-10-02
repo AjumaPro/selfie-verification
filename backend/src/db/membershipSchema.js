@@ -64,6 +64,42 @@ async function ensureMembershipSchema(query) {
   await query(
     `CREATE INDEX IF NOT EXISTS idx_membership_staff ON membership_forms (staff_id)`
   );
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS membership_sessions (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL DEFAULT 'TPFS membership form',
+      host_user_id TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'open',
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT NOW(),
+      updated_at TEXT NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await tryAddColumn(
+    query,
+    `ALTER TABLE membership_forms ADD COLUMN session_id TEXT NOT NULL DEFAULT ''`
+  );
+  await tryAddColumn(
+    query,
+    `ALTER TABLE membership_forms ADD COLUMN source TEXT NOT NULL DEFAULT 'staff'`
+  );
+  await tryAddColumn(
+    query,
+    `ALTER TABLE membership_forms ADD COLUMN kyc_verified TEXT NOT NULL DEFAULT 'FALSE'`
+  );
+  await tryAddColumn(
+    query,
+    `ALTER TABLE membership_forms ADD COLUMN kyc_json TEXT NOT NULL DEFAULT '{}'`
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_membership_session ON membership_forms (session_id)`
+  );
+  await query(
+    `CREATE INDEX IF NOT EXISTS idx_membership_sessions_host ON membership_sessions (host_user_id)`
+  );
 }
 
 module.exports = { ensureMembershipSchema };

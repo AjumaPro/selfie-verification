@@ -1,5 +1,24 @@
-.tpfs {
-  margin-bottom: 2.5rem;
+.tpfs-guest-note {
+  margin: -0.4rem 0 0.9rem;
+  color: var(--glico-muted, #5b6b82);
+  font-size: 0.9rem;
+}
+
+.tpfs-guest-done .tpfs-sheet {
+  max-width: 36rem;
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+.tpfs-guest-done h2 {
+  margin: 0.85rem 0 0.5rem;
+  color: var(--glico-navy, #103078);
+}
+
+.tpfs-guest-done p {
+  color: var(--glico-muted, #5b6b82);
+  line-height: 1.5;
+  margin-bottom: 1.1rem;
 }
 
 .tpfs-sheet {

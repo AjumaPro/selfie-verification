@@ -13,6 +13,7 @@ import VerifyJoin from './components/VerifyJoin';
 import VerifyShare from './components/VerifyShare';
 import VerificationDashboard from './components/VerificationDashboard';
 import MembershipForm from './components/MembershipForm';
+import MembershipShare from './components/MembershipShare';
 import { useAuth } from './context/AuthContext';
 import { loadModels } from './services/faceDetection';
 import apiConfig from './config/api';
@@ -46,6 +47,16 @@ function getVerifySessionIdFromUrl() {
     const path = String(window.location.pathname || '');
     const match = path.match(/^\/verify\/([A-Za-z0-9_-]+)\/?$/);
     return match ? match[1] : '';
+  } catch {
+    return '';
+  }
+}
+
+function getFormSessionIdFromUrl() {
+  if (typeof window === 'undefined') return '';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get('form') || '').trim();
   } catch {
     return '';
   }
@@ -99,6 +110,9 @@ function App() {
   const [verifySessionId, setVerifySessionId] = useState(() =>
     getVerifySessionIdFromUrl()
   );
+  const [formSessionId, setFormSessionId] = useState(() =>
+    getFormSessionIdFromUrl()
+  );
   const apiReady = apiConfig.isAutoVerificationEnabled;
   const missingConfig = apiConfig.missingConfig || [];
 
@@ -112,6 +126,7 @@ function App() {
   useEffect(() => {
     const onPop = () => {
       setVerifySessionId(getVerifySessionIdFromUrl());
+      setFormSessionId(getFormSessionIdFromUrl());
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -173,9 +188,36 @@ function App() {
     setSection('hub');
   };
 
+  const leaveFormPage = () => {
+    setFormSessionId('');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('form');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    } catch {
+      /* ignore */
+    }
+    setSection('hub');
+  };
+
   if (verifySessionId) {
     return (
       <VerifyJoin sessionId={verifySessionId} onClose={leaveVerifyPage} />
+    );
+  }
+
+  if (formSessionId) {
+    return (
+      <div className={shellClass}>
+        {deviceBrand}
+        <Header activeApp="membership" deviceOnly={deviceOnly} />
+        <div className="container">
+          <MembershipForm
+            guestSessionId={formSessionId}
+            onGuestClose={leaveFormPage}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -327,6 +369,7 @@ function App() {
         />
         <div className="container">
           {nav}
+          <MembershipShare />
           <MembershipForm />
         </div>
       </div>
