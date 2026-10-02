@@ -19,6 +19,10 @@ const appLabels = {
     title: 'ID Verification',
     subtitle: 'Ghana Card · selfie KYC',
   },
+  membership: {
+    title: 'TPFS Membership',
+    subtitle: 'Teachers’ Provident Fund Scheme · Tier-3',
+  },
 };
 
 const Header = ({ activeApp = 'hub', onBackToApps, deviceOnly = false }) => {

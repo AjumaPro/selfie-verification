@@ -12,6 +12,7 @@ import AppHub from './components/AppHub';
 import VerifyJoin from './components/VerifyJoin';
 import VerifyShare from './components/VerifyShare';
 import VerificationDashboard from './components/VerificationDashboard';
+import MembershipForm from './components/MembershipForm';
 import { useAuth } from './context/AuthContext';
 import { loadModels } from './services/faceDetection';
 import apiConfig from './config/api';
@@ -66,6 +67,18 @@ function AppNav({ section, onChange, isAuthenticated }) {
         onClick={() => onChange('recognition')}
       >
         ID Verification
+        {!isAuthenticated && (
+          <span className="app-nav-lock" title="Sign in required">
+            · sign in
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        className={`app-nav-btn ${section === 'membership' ? 'active' : ''}`}
+        onClick={() => onChange('membership')}
+      >
+        TPFS Form
         {!isAuthenticated && (
           <span className="app-nav-lock" title="Sign in required">
             · sign in
@@ -274,6 +287,47 @@ function App() {
           {isAuthenticated && <VerificationDashboard />}
           <InstallOnDevice deviceOnly={deviceOnly} />
           {isSuperAdmin && <SuperAdminDashboard />}
+        </div>
+      </div>
+    );
+  }
+
+  if (section === 'membership' && !isAuthenticated) {
+    return (
+      <div className={shellClass}>
+        {deviceBrand}
+        <Header
+          activeApp="membership"
+          onBackToApps={backToHub}
+          deviceOnly={deviceOnly}
+        />
+        <div className="container">
+          {nav}
+          <div className="app-auth-banner">
+            <h2>TPFS Membership Form</h2>
+            <p>
+              Sign in to complete the Teachers’ Provident Fund Scheme (Tier-3)
+              registration for a member.
+            </p>
+          </div>
+          <AuthPanel deviceOnly={deviceOnly} />
+        </div>
+      </div>
+    );
+  }
+
+  if (section === 'membership' && isAuthenticated) {
+    return (
+      <div className={shellClass}>
+        {deviceBrand}
+        <Header
+          activeApp="membership"
+          onBackToApps={backToHub}
+          deviceOnly={deviceOnly}
+        />
+        <div className="container">
+          {nav}
+          <MembershipForm />
         </div>
       </div>
     );

@@ -61,6 +61,11 @@
   background: var(--glico-red, #d03038);
 }
 
+.app-nav-btn.active:nth-child(3) {
+  color: #fff;
+  background: var(--glico-sky-dark, #1a7ab8);
+}
+
 .app-nav-lock {
   font-weight: 500;
   font-size: 0.8em;

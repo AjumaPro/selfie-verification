@@ -4,8 +4,7 @@ import {
   FaArrowRight,
   FaLock,
   FaShieldAlt,
-  FaQrcode,
-  FaUserCheck,
+  FaFileAlt,
 } from 'react-icons/fa';
 import { BRAND } from '../utils/brandAssets';
 import './AppHub.css';
@@ -60,29 +59,26 @@ const AppHub = ({ onSelect, deviceOnly = false }) => (
         </span>
       </button>
 
-      <div className="app-hub-aside" aria-hidden={false}>
-        <div className="app-hub-aside-item">
-          <FaQrcode aria-hidden />
-          <div>
-            <strong>QR for members</strong>
-            <p>Guests open the link on their phone — no staff account needed.</p>
-          </div>
-        </div>
-        <div className="app-hub-aside-item">
-          <FaUserCheck aria-hidden />
-          <div>
-            <strong>On-device KYC</strong>
-            <p>Capture a selfie against the Ghana Card on this workstation.</p>
-          </div>
-        </div>
-        <div className="app-hub-aside-item">
-          <FaShieldAlt aria-hidden />
-          <div>
-            <strong>GLICO Pensions</strong>
-            <p>{BRAND.tagline}</p>
-          </div>
-        </div>
-      </div>
+      <button
+        type="button"
+        className="app-hub-card app-hub-card-form"
+        onClick={() => onSelect('membership')}
+      >
+        <span className="app-hub-card-icon app-hub-card-icon-navy" aria-hidden>
+          <FaFileAlt />
+        </span>
+        <h3>TPFS Membership Form</h3>
+        <p>
+          Complete the Teachers’ Provident Fund Scheme (Tier-3) registration —
+          personal details, contribution rate, and beneficiaries.
+        </p>
+        <span className="app-hub-card-meta">
+          <FaLock aria-hidden /> Staff sign-in · Printable
+        </span>
+        <span className="app-hub-card-cta">
+          Open form <FaArrowRight aria-hidden />
+        </span>
+      </button>
     </div>
 
     {deviceOnly && (

@@ -46,7 +46,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: '3mb' }));
+app.use(express.json({ limit: '8mb' }));
 
 app.get('/health', async (_req, res) => {
   try {
@@ -74,6 +74,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/booking', require('./routes/booking'));
 app.use('/api/verify', require('./routes/verify'));
+app.use('/api/membership', require('./routes/membership'));
 
 // Production: serve React build from backend/public (copied during root `npm run build`)
 const clientDir = path.join(__dirname, '..', 'public');
@@ -139,6 +140,7 @@ try {
 const { ensureMeetingsSchema } = require('./db/meetingsSchema');
 const { ensureBookingSchema } = require('./db/bookingSchema');
 const { ensureVerifySchema } = require('./db/verifySchema');
+const { ensureMembershipSchema } = require('./db/membershipSchema');
 
 async function start() {
   try {
@@ -158,6 +160,12 @@ async function start() {
     console.log('✓ Verify-share schema ready');
   } catch (err) {
     console.error('Verify schema setup failed:', err.message);
+  }
+  try {
+    await ensureMembershipSchema(query);
+    console.log('✓ Membership form schema ready');
+  } catch (err) {
+    console.error('Membership schema setup failed:', err.message);
   }
 
   // Ensure password vault column exists (superadmin view-password)
